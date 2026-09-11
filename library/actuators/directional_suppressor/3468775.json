@@ -1,0 +1,42 @@
+{
+  "schema_version": "eec-mapping-strict-1.0",
+  "type": "actuator",
+  "name": "HYD_3468775_DIODE",
+  "device_type": "ACTUATOR",
+  "part_number": "3468775",
+  "supplier_pn": "Coil 28DU01-50-1836",
+  "manufacturer": "HYDAC",
+  "priority": "MEDIUM",
+  "safety": "QM",
+  "description": "HYDAC diode coil 3468775.",
+  "notes": "Exact part number. Base row needs manual review before mapping.",
+  "mapping_status": "CATALOG_EXACT_REVIEW_REQUIRED",
+  "source": {
+    "pdf": "PRD_DOC_PRO_5207-00001__SEN__AIN__V7.pdf",
+    "page": 10,
+    "part_number": "3468775"
+  },
+  "connectors": [
+    {
+      "part_number": "AMP_JUNIOR_TIMER_2P",
+      "family": "CUSTOM",
+      "gender": "MALE",
+      "total_cavities": 2,
+      "ip_rating": "IP65/IP67",
+      "mounting": "axial",
+      "name": "X1",
+      "used_cavities": 2,
+      "max_pin_number": 2,
+      "sealed": true,
+      "color": "black",
+      "rated_voltage": 0,
+      "rated_current": 0,
+      "temperature_min": -30,
+      "temperature_max": 60
+    }
+  ],
+  "pins": [],
+  "signals": [],
+  "suppressor_diode": "P4KE68CA",
+  "blocking_voltage_v": 68
+}

@@ -1,0 +1,14 @@
+{
+  "checks": {
+    "schema_aligned_builders": true,
+    "eec_fields_signal": true,
+    "eec_fields_pin": true,
+    "eec_fields_connector": true,
+    "count_capacity_normalization": true,
+    "object_factory": true,
+    "clone_export_save": true,
+    "resizable_views": true,
+    "node_syntax_ok": true
+  },
+  "node_error": ""
+}

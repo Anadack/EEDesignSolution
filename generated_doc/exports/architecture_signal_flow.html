@@ -1,0 +1,475 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Signal Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0d0f14;--surface:#131720;--raised:#1a1f2e;--hover:#1f2538;--active:#242b42;
+  --b0:rgba(255,255,255,.06);--b1:rgba(255,255,255,.10);--b2:rgba(255,255,255,.16);
+  --tp:#e8ecf4;--ts:#8993a8;--tm:#5a6278;--ta:#60a5fa;
+  --accent:#3b82f6;--accent-dim:rgba(59,130,246,.15);
+  --ok:#22c55e;--err:#ef4444;
+  --r:6px;--rm:10px;--rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tp);font-size:13px;line-height:1.5;display:flex;flex-direction:column}
+button,input{font:inherit;color:inherit}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;gap:14px;padding:0 24px;height:56px;background:var(--surface);border-bottom:1px solid var(--b0);flex-shrink:0;z-index:20}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;color:var(--tp);letter-spacing:-.01em;white-space:nowrap}
+.topbar-brand svg{color:var(--accent)}
+.topbar-divider{width:1px;height:24px;background:var(--b1);flex-shrink:0}
+.topbar-kpis{display:flex;gap:20px}
+.kpi-item{display:flex;flex-direction:column;align-items:flex-start}
+.kpi-item .kpi-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--tp);line-height:1.2}
+.kpi-item .kpi-lbl{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tm)}
+.topbar-divider2{flex:1}
+.tab-bar{display:flex;gap:2px;background:var(--raised);border:1px solid var(--b1);border-radius:var(--rm);padding:3px}
+.tab-btn{padding:5px 16px;border-radius:7px;border:none;background:transparent;color:var(--ts);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab-btn.active{background:var(--accent);color:#fff}
+.tab-btn:not(.active):hover{background:var(--hover);color:var(--tp)}
+
+/* Filter bar */
+.filter-bar{display:flex;align-items:center;gap:8px;padding:10px 24px;background:var(--surface);border-bottom:1px solid var(--b0);flex-shrink:0;flex-wrap:wrap}
+.filter-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--tm);margin-right:4px;white-space:nowrap}
+.filter-group{display:flex;gap:4px;flex-wrap:wrap}
+.filter-pill{padding:4px 10px;background:var(--raised);border:1px solid var(--b1);border-radius:20px;font-size:11px;font-weight:600;color:var(--ts);cursor:pointer;transition:all .12s;white-space:nowrap;user-select:none}
+.filter-pill:hover{border-color:var(--b2);color:var(--tp)}
+.filter-pill.active{border-color:var(--accent);color:var(--ta);background:var(--accent-dim)}
+.filter-sep{width:1px;height:20px;background:var(--b1);margin:0 4px;flex-shrink:0;align-self:center}
+.search-wrap{position:relative;margin-left:auto}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--tm);pointer-events:none}
+.search-input{padding:6px 12px 6px 32px;background:var(--raised);border:1px solid var(--b1);border-radius:var(--rm);color:var(--tp);outline:none;font-size:12px;width:220px;transition:border-color .15s}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--tm)}
+
+/* App body */
+.app-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.view{flex:1;overflow:hidden;display:none;flex-direction:column}
+.view.active{display:flex}
+
+/* ===== FLOW VIEW ===== */
+.flow-scroll{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:20px}
+.system-group{display:flex;flex-direction:column;gap:0}
+.system-header{display:flex;align-items:center;gap:10px;padding:8px 0 8px 0;position:sticky;top:0;z-index:5;background:var(--bg)}
+.system-header-line{flex:1;height:1px;background:var(--b1)}
+.system-badge{display:inline-flex;align-items:center;padding:4px 14px;background:var(--raised);border:1px solid var(--b1);border-radius:20px;font-size:11px;font-weight:700;color:var(--ta);letter-spacing:.02em;white-space:nowrap}
+.system-count{font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace}
+.flow-lane{display:flex;align-items:center;gap:0;padding:8px 12px;border-radius:var(--rm);border:1px solid var(--b0);background:var(--surface);margin-bottom:6px;min-height:52px;transition:border-color .15s,background .15s;position:relative}
+.flow-lane:hover{border-color:var(--b1);background:var(--hover)}
+.flow-lane.hidden{display:none}
+
+/* Lane segments */
+.lane-seg{display:flex;flex-direction:column;align-items:flex-start;padding:0 12px;position:relative;flex-shrink:0}
+.lane-seg:not(:last-child)::after{content:'';position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:6px solid var(--b1);z-index:1}
+.lane-seg-connector{width:1px;position:absolute;right:-1px;top:20%;height:60%;background:var(--b1)}
+.seg-label{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tm);margin-bottom:2px}
+.seg-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ts)}
+.seg-val.highlight{color:var(--tp);font-size:13px}
+.seg-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm)}
+
+/* Signal name in the middle */
+.lane-signal{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;position:relative}
+.lane-signal::before,.lane-signal::after{content:'';position:absolute;top:50%;height:1px;width:40px;background:linear-gradient(to right,var(--b1),transparent)}
+.lane-signal::before{right:100%;margin-right:-16px}
+.lane-signal::after{left:100%;margin-left:-16px;background:linear-gradient(to left,var(--b1),transparent)}
+.signal-name{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--tp);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.signal-iface{margin-top:3px}
+
+/* Status dot */
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-left:10px}
+.status-dot.mapped{background:var(--ok);box-shadow:0 0 6px rgba(34,197,94,.5)}
+.status-dot.unmapped{background:var(--err);box-shadow:0 0 6px rgba(239,68,68,.4)}
+
+/* ECU segment */
+.ecu-seg{display:flex;flex-direction:column;align-items:flex-end;padding:0 12px;min-width:160px;flex-shrink:0}
+.ecu-seg .seg-label{text-align:right}
+.ecu-seg .seg-val{text-align:right}
+.ecu-empty{font-size:11px;color:var(--tm);font-style:italic;padding:0 12px}
+
+/* Pills */
+.pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap;border:1px solid transparent}
+.pill-ANALOG{background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.25)}
+.pill-DIGITAL{background:rgba(16,185,129,.12);color:#10b981;border-color:rgba(16,185,129,.25)}
+.pill-CAN{background:rgba(34,211,238,.12);color:#22d3ee;border-color:rgba(34,211,238,.25)}
+.pill-PWM{background:rgba(249,115,22,.12);color:#f97316;border-color:rgba(249,115,22,.25)}
+.pill-FREQ{background:rgba(139,92,246,.12);color:#8b5cf6;border-color:rgba(139,92,246,.25)}
+.pill-POWER{background:rgba(52,211,153,.12);color:#34d399;border-color:rgba(52,211,153,.25)}
+.pill-GROUND{background:rgba(107,114,128,.12);color:#6b7280;border-color:rgba(107,114,128,.25)}
+.pill-RESISTANCE{background:rgba(100,116,139,.12);color:#64748b;border-color:rgba(100,116,139,.25)}
+.pill-LIN{background:rgba(167,139,250,.12);color:#a78bfa;border-color:rgba(167,139,250,.25)}
+.pill-default{background:rgba(148,163,184,.08);color:#94a3b8;border-color:rgba(148,163,184,.2)}
+
+/* ===== TABLE VIEW ===== */
+.table-outer{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px 24px}
+.table-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.table-search2{padding:6px 10px;background:var(--raised);border:1px solid var(--b1);border-radius:var(--r);color:var(--tp);outline:none;font-size:12px;width:220px;transition:border-color .15s}
+.table-search2:focus{border-color:var(--accent)}
+.table-search2::placeholder{color:var(--tm)}
+.csv-btn{padding:5px 10px;background:var(--raised);border:1px solid var(--b1);border-radius:var(--r);color:var(--ts);cursor:pointer;font-size:11px;transition:all .12s}
+.csv-btn:hover{border-color:var(--b2);color:var(--tp)}
+.row-count{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm)}
+.table-scroll{flex:1;overflow:auto;border-radius:var(--rm);border:1px solid var(--b0)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{position:sticky;top:0;background:var(--raised);z-index:2;padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tm);border-bottom:1px solid var(--b1);cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{background:var(--active);color:var(--ts)}
+td{padding:7px 12px;border-bottom:1px solid var(--b0);vertical-align:middle;color:var(--ts)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(255,255,255,.025);color:var(--tp)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px}
+tr.hidden{display:none}
+
+/* Status badges in table */
+.badge-mapped{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);border-radius:4px;font-size:10px;font-weight:700;color:#86efac}
+.badge-unmapped{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:4px;font-size:10px;font-weight:700;color:#fca5a5}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--tm);gap:10px;text-align:center}
+.empty-state svg{opacity:.25}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
+</style></head>
+<body>
+<header class="topbar">
+  <div class="topbar-brand">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Signal Flow
+  </div>
+  <div class="topbar-divider"></div>
+  <div class="topbar-kpis">
+    <div class="kpi-item"><span class="kpi-val" id="kpi-sys">0</span><span class="kpi-lbl">Systems</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpi-sig">0</span><span class="kpi-lbl">Signals</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpi-iface">0</span><span class="kpi-lbl">Interfaces</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpi-ecu">0</span><span class="kpi-lbl">ECUs</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpi-mapped">0</span><span class="kpi-lbl">Mapped</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpi-unmapped">0</span><span class="kpi-lbl">Unmapped</span></div>
+  </div>
+  <div class="topbar-divider2"></div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-flow" onclick="switchTab('flow')">Flow View</button>
+    <button class="tab-btn" id="tab-table" onclick="switchTab('table')">Table View</button>
+  </div>
+</header>
+
+<div class="filter-bar" id="filter-bar">
+  <span class="filter-label">System</span>
+  <div class="filter-group" id="fg-system"></div>
+  <div class="filter-sep"></div>
+  <span class="filter-label">Interface</span>
+  <div class="filter-group" id="fg-iface"></div>
+  <div class="filter-sep"></div>
+  <span class="filter-label">ECU</span>
+  <div class="filter-group" id="fg-ecu"></div>
+  <div class="filter-sep"></div>
+  <div class="filter-group" id="fg-status">
+    <div class="filter-pill" data-filter-type="status" data-filter-val="MAPPED" onclick="toggleFilter(this)">Mapped</div>
+    <div class="filter-pill" data-filter-type="status" data-filter-val="UNMAPPED" onclick="toggleFilter(this)">Unmapped</div>
+  </div>
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="search-input" id="global-search" placeholder="Search signals…" oninput="applyFilters()"/>
+  </div>
+</div>
+
+<div class="app-body">
+  <div class="view active" id="view-flow">
+    <div class="flow-scroll" id="flow-scroll"></div>
+  </div>
+  <div class="view" id="view-table">
+    <div class="table-outer">
+      <div class="table-toolbar">
+        <input class="table-search2" id="table-search" placeholder="Filter table…" oninput="filterTable(this.value)"/>
+        <button class="csv-btn" onclick="exportCSV()">↓ CSV</button>
+        <span class="row-count" id="table-row-count">0 rows</span>
+      </div>
+      <div class="table-scroll">
+        <table id="main-table">
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var DATA = {"source": "generated_doc\\exports\\example_architecture.json", "rows": [{"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "HAT1200_SUPPLY_9_36V", "signal": "HAT1200_SUPPLY_9_36V", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "1", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "HAT1200_0V", "signal": "HAT1200_0V", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "44", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "HAT1200_Angle_4_20mA", "signal": "HAT1200_Angle_4_20mA", "interface": "CURRENT", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "81", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "CURRENT", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HAT3800_Angle_CANopen_M12_5Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "CAN_SHLD", "signal": "CAN_SHLD", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "45", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HAT3800_Angle_CANopen_M12_5Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "CAN_VPLUS_9_36V", "signal": "CAN_VPLUS_9_36V", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "2", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HAT3800_Angle_CANopen_M12_5Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "CAN_GND", "signal": "CAN_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "46", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HAT3800_Angle_CANopen_M12_5Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "CAN_H", "signal": "CAN_H", "interface": "CAN", "role": "INOUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "201", "ecu_pin_name": "VAL_BUS", "ecu_role": "INOUT", "ecu_type": "CAN", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HAT3800_Angle_CANopen_M12_5Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 5, "device_pin": "CAN_L", "signal": "CAN_L", "interface": "CAN", "role": "INOUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "202", "ecu_pin_name": "VAL_BUS", "ecu_role": "INOUT", "ecu_type": "CAN", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HDA4300_Pressure_40bar_A_4_20mA_2Wire", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "HDA4300_LOOP_SUPPLY_PLUS", "signal": "HDA4300_LOOP_SUPPLY_PLUS", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "3", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HDA4300_Pressure_40bar_A_4_20mA_2Wire", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "HDA4300_Pressure_4_20mA", "signal": "HDA4300_Pressure_4_20mA", "interface": "CURRENT", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "82", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "CURRENT", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HDA4300_Pressure_40bar_B_0_10V_3Wire", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "HDA4300_SUPPLY_24V", "signal": "HDA4300_SUPPLY_24V", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "4", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HDA4300_Pressure_40bar_B_0_10V_3Wire", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "HDA4300_0V", "signal": "HDA4300_0V", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "47", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HDA4300_Pressure_40bar_B_0_10V_3Wire", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "HDA4300_Pressure_0_10V", "signal": "HDA4300_Pressure_0_10V", "interface": "ANALOG", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "83", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "ANALOG", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_ETS4100_Temperature_A_4_20mA_2Wire_Probe_050", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "ETS4100_LOOP_SUPPLY_PLUS", "signal": "ETS4100_LOOP_SUPPLY_PLUS", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "5", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_ETS4100_Temperature_A_4_20mA_2Wire_Probe_050", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "ETS4100_Temperature_4_20mA", "signal": "ETS4100_Temperature_4_20mA", "interface": "CURRENT", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "84", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "CURRENT", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_ETS4100_Temperature_B_0_10V_3Wire_Probe_050", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "ETS4100_SUPPLY_24V", "signal": "ETS4100_SUPPLY_24V", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "6", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_ETS4100_Temperature_B_0_10V_3Wire_Probe_050", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "ETS4100_0V", "signal": "ETS4100_0V", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "48", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_ETS4100_Temperature_B_0_10V_3Wire_Probe_050", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "ETS4100_Temperature_0_10V", "signal": "ETS4100_Temperature_0_10V", "interface": "ANALOG", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "85", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "ANALOG", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "EDS410_SUPPLY_PLUS", "signal": "EDS410_SUPPLY_PLUS", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "7", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "EDS410_OUT2_PNP", "signal": "EDS410_OUT2_PNP", "interface": "DIGITAL", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "86", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "EDS410_0V", "signal": "EDS410_0V", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "49", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "EDS410_OUT1_PNP", "signal": "EDS410_OUT1_PNP", "interface": "DIGITAL", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "87", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "EDS810_SUPPLY_PLUS", "signal": "EDS810_SUPPLY_PLUS", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "8", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "EDS810_OUT2_PNP", "signal": "EDS810_OUT2_PNP", "interface": "DIGITAL", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "88", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "EDS810_0V", "signal": "EDS810_0V", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "50", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "EDS810_OUT1_PNP", "signal": "EDS810_OUT1_PNP", "interface": "DIGITAL", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "89", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "HLT700_CAN_SHLD", "signal": "HLT700_CAN_SHLD", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "51", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "HLT700_CAN_VPLUS", "signal": "HLT700_CAN_VPLUS", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "9", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "HLT700_CAN_GND", "signal": "HLT700_CAN_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "52", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "HLT700_CAN_H", "signal": "HLT700_CAN_H", "interface": "CAN", "role": "INOUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "203", "ecu_pin_name": "VAL_BUS", "ecu_role": "INOUT", "ecu_type": "CAN", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 5, "device_pin": "HLT700_CAN_L", "signal": "HLT700_CAN_L", "interface": "CAN", "role": "INOUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "204", "ecu_pin_name": "VAL_BUS", "ecu_role": "INOUT", "ecu_type": "CAN", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "HIT1500_CAN_SHLD", "signal": "HIT1500_CAN_SHLD", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "53", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "HIT1500_CAN_VPLUS", "signal": "HIT1500_CAN_VPLUS", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "10", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "HIT1500_CAN_GND", "signal": "HIT1500_CAN_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "54", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "HIT1500_CAN_H", "signal": "HIT1500_CAN_H", "interface": "CAN", "role": "INOUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "205", "ecu_pin_name": "VAL_BUS", "ecu_role": "INOUT", "ecu_type": "CAN", "status": "MAPPED"}, {"system": "HYDAC_Selected_Sensor_Examples", "component": "", "device": "HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template", "device_type": "SENSOR", "device_connector": "", "device_cavity": 5, "device_pin": "HIT1500_CAN_L", "signal": "HIT1500_CAN_L", "interface": "CAN", "role": "INOUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "206", "ecu_pin_name": "VAL_BUS", "ecu_role": "INOUT", "ecu_type": "CAN", "status": "MAPPED"}, {"system": "Example_HYDAC_Coil_Topologies_System", "component": "", "device": "HYDAC_PROP_12PG_5_6_32_1329_PN4059964_HS_LS", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "HYDAC_4059964_CoilCommand_HS", "signal": "HYDAC_4059964_CoilCommand_HS", "interface": "PWM", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "137", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "PWM", "status": "MAPPED"}, {"system": "Example_HYDAC_Coil_Topologies_System", "component": "", "device": "HYDAC_PROP_12PG_5_6_32_1329_PN4059964_HS_LS", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 2, "device_pin": "HYDAC_4059964_CoilReturn_LS", "signal": "HYDAC_4059964_CoilReturn_LS", "interface": "PWM", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "138", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "PWM", "status": "MAPPED"}, {"system": "Example_HYDAC_Coil_Topologies_System", "component": "", "device": "HYDAC_DIR_12DG_32_1329_UL_V0_PN2610160_HS_GND", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "HYDAC_2610160_CoilCommand_HS", "signal": "HYDAC_2610160_CoilCommand_HS", "interface": "DIGITAL", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "139", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "Example_HYDAC_Coil_Topologies_System", "component": "", "device": "HYDAC_DIR_12DG_32_1329_UL_V0_PN2610160_HS_GND", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 2, "device_pin": "HYDAC_2610160_POWER_GND", "signal": "HYDAC_2610160_POWER_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "43", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "DirCoilCmd_HS", "signal": "DirCoilCmd_HS", "interface": "DIGITAL", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "131", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "DirCoilCmd_HS", "signal": "DirCoilCmd_HS", "interface": "DIGITAL", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "132", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 2, "device_pin": "POWER_GND", "signal": "POWER_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "41", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 2, "device_pin": "POWER_GND", "signal": "POWER_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "42", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SIDE", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "DirCoilCmd_HS", "signal": "DirCoilCmd_HS", "interface": "DIGITAL", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "131", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SIDE", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "DirCoilCmd_HS", "signal": "DirCoilCmd_HS", "interface": "DIGITAL", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "132", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SIDE", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 2, "device_pin": "DirCoilReturn_LS", "signal": "DirCoilReturn_LS", "interface": "DIGITAL", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "133", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "PropCoilCurrentCmd_HS", "signal": "PropCoilCurrentCmd_HS", "interface": "PWM", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "134", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "PWM", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "PropCoilCurrentCmd_HS", "signal": "PropCoilCurrentCmd_HS", "interface": "PWM", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "135", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "PWM", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 2, "device_pin": "POWER_GND", "signal": "POWER_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "41", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 2, "device_pin": "POWER_GND", "signal": "POWER_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "42", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_LOW_S", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "PropCoilCurrentCmd_HS", "signal": "PropCoilCurrentCmd_HS", "interface": "PWM", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "134", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "PWM", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_LOW_S", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 1, "device_pin": "PropCoilCurrentCmd_HS", "signal": "PropCoilCurrentCmd_HS", "interface": "PWM", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "135", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "PWM", "status": "MAPPED"}, {"system": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "component": "", "device": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_LOW_S", "device_type": "ACTUATOR", "device_connector": "", "device_cavity": 2, "device_pin": "PropCoilReturn_LS", "signal": "PropCoilReturn_LS", "interface": "PWM", "role": "INPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "136", "ecu_pin_name": "VAL_OUTPUT", "ecu_role": "OUTPUT", "ecu_type": "PWM", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD11D_DH_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "elobau_424SD11D_DH_120deg_GND1", "signal": "elobau_424SD11D_DH_120deg_GND1", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "55", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD11D_DH_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "elobau_424SD11D_DH_120deg_UB1", "signal": "elobau_424SD11D_DH_120deg_UB1", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "11", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD11D_DH_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "elobau_424SD11D_DH_120deg_ANGLE_4_20MA_OUT1", "signal": "elobau_424SD11D_DH_120deg_ANGLE_4_20MA_OUT1", "interface": "CURRENT", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "90", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "CURRENT", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD11D_DH_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "elobau_424SD11D_DH_120deg_GND2", "signal": "elobau_424SD11D_DH_120deg_GND2", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "56", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD11D_DH_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 5, "device_pin": "elobau_424SD11D_DH_120deg_UB2", "signal": "elobau_424SD11D_DH_120deg_UB2", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "12", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD11D_DH_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 6, "device_pin": "elobau_424SD11D_DH_120deg_SWITCH_OUT2_HIGH_SIDE", "signal": "elobau_424SD11D_DH_120deg_SWITCH_OUT2_HIGH_SIDE", "interface": "DIGITAL", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "91", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD16D_DS_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "elobau_424SD16D_DS_120deg_GND1", "signal": "elobau_424SD16D_DS_120deg_GND1", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "57", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD16D_DS_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "elobau_424SD16D_DS_120deg_UB1", "signal": "elobau_424SD16D_DS_120deg_UB1", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "13", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD16D_DS_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "elobau_424SD16D_DS_120deg_ANGLE_0_5_4_5V_RATIOMETRIC_OUT1", "signal": "elobau_424SD16D_DS_120deg_ANGLE_0_5_4_5V_RATIOMETRIC_OUT1", "interface": "ANALOG", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "92", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "ANALOG", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD16D_DS_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "elobau_424SD16D_DS_120deg_GND2", "signal": "elobau_424SD16D_DS_120deg_GND2", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "58", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD16D_DS_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 5, "device_pin": "elobau_424SD16D_DS_120deg_UB2", "signal": "elobau_424SD16D_DS_120deg_UB2", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "14", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424SD16D_DS_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 6, "device_pin": "elobau_424SD16D_DS_120deg_SWITCH_OUT2_PUSH_PULL", "signal": "elobau_424SD16D_DS_120deg_SWITCH_OUT2_PUSH_PULL", "interface": "DIGITAL", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "93", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "DIGITAL", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424A_4_20MA_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "elobau_424A_4_20MA_120deg_SUPPLY", "signal": "elobau_424A_4_20MA_120deg_SUPPLY", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "15", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424A_4_20MA_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "elobau_424A_4_20MA_120deg_GND", "signal": "elobau_424A_4_20MA_120deg_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "59", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424A_4_20MA_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "elobau_424A_4_20MA_120deg_ANGLE_4_20MA", "signal": "elobau_424A_4_20MA_120deg_ANGLE_4_20MA", "interface": "CURRENT", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "94", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "CURRENT", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424R_0_5_4_5V_parallel_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "elobau_424R_0_5_4_5V_parallel_120deg_GND1", "signal": "elobau_424R_0_5_4_5V_parallel_120deg_GND1", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "60", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424R_0_5_4_5V_parallel_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "elobau_424R_0_5_4_5V_parallel_120deg_UB1", "signal": "elobau_424R_0_5_4_5V_parallel_120deg_UB1", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "16", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424R_0_5_4_5V_parallel_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT1", "signal": "elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT1", "interface": "ANALOG", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "95", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "ANALOG", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424R_0_5_4_5V_parallel_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "elobau_424R_0_5_4_5V_parallel_120deg_GND2", "signal": "elobau_424R_0_5_4_5V_parallel_120deg_GND2", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "61", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424R_0_5_4_5V_parallel_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 5, "device_pin": "elobau_424R_0_5_4_5V_parallel_120deg_UB2", "signal": "elobau_424R_0_5_4_5V_parallel_120deg_UB2", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "17", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424R_0_5_4_5V_parallel_120deg", "device_type": "SENSOR", "device_connector": "", "device_cavity": 6, "device_pin": "elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT2", "signal": "elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT2", "interface": "ANALOG", "role": "OUTPUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "96", "ecu_pin_name": "VAL_INPUT", "ecu_role": "INPUT", "ecu_type": "ANALOG", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424C_360deg_CANopen", "device_type": "SENSOR", "device_connector": "", "device_cavity": 1, "device_pin": "elobau_424C_360deg_CANopen_SHIELD", "signal": "elobau_424C_360deg_CANopen_SHIELD", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "62", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424C_360deg_CANopen", "device_type": "SENSOR", "device_connector": "", "device_cavity": 2, "device_pin": "elobau_424C_360deg_CANopen_SUPPLY_9_32V", "signal": "elobau_424C_360deg_CANopen_SUPPLY_9_32V", "interface": "POWER", "role": "SUPPLY", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "18", "ecu_pin_name": "VAL_SUPPLY", "ecu_role": "SUPPLY", "ecu_type": "POWER", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424C_360deg_CANopen", "device_type": "SENSOR", "device_connector": "", "device_cavity": 3, "device_pin": "elobau_424C_360deg_CANopen_GND", "signal": "elobau_424C_360deg_CANopen_GND", "interface": "GROUND", "role": "GROUND", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "63", "ecu_pin_name": "VAL_GROUND", "ecu_role": "GROUND", "ecu_type": "GROUND", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424C_360deg_CANopen", "device_type": "SENSOR", "device_connector": "", "device_cavity": 4, "device_pin": "elobau_424C_360deg_CANopen_CAN_H", "signal": "elobau_424C_360deg_CANopen_CAN_H", "interface": "CAN", "role": "INOUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "207", "ecu_pin_name": "VAL_BUS", "ecu_role": "INOUT", "ecu_type": "CAN", "status": "MAPPED"}, {"system": "Example_System_with_selected_elobau_angle_sensors", "component": "", "device": "elobau_424C_360deg_CANopen", "device_type": "SENSOR", "device_connector": "", "device_cavity": 5, "device_pin": "elobau_424C_360deg_CANopen_CAN_L", "signal": "elobau_424C_360deg_CANopen_CAN_L", "interface": "CAN", "role": "INOUT", "ecu": "VALIDATION_IO_ECU", "variant": "VALIDATION", "ecu_connector": "T1", "ecu_pin": "208", "ecu_pin_name": "VAL_BUS", "ecu_role": "INOUT", "ecu_type": "CAN", "status": "MAPPED"}]};
+
+var PILL_CLASSES = {
+  ANALOG:'pill-ANALOG',DIGITAL:'pill-DIGITAL',CAN:'pill-CAN',PWM:'pill-PWM',
+  FREQ:'pill-FREQ',POWER:'pill-POWER',GROUND:'pill-GROUND',RESISTANCE:'pill-RESISTANCE',LIN:'pill-LIN'
+};
+function pillClass(type){var k=(type||'').toUpperCase().trim();return PILL_CLASSES[k]||'pill-default';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Active filters state
+var activeFilters={system:new Set(),iface:new Set(),ecu:new Set(),status:new Set()};
+var currentTab='flow';
+var tableSortAsc=true;
+var tableSortCol=-1;
+
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('view-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+function toggleFilter(el){
+  var type=el.dataset.filterType;
+  var val=el.dataset.filterVal;
+  if(activeFilters[type].has(val)){activeFilters[type].delete(val);el.classList.remove('active');}
+  else{activeFilters[type].add(val);el.classList.add('active');}
+  applyFilters();
+}
+
+function rowMatchesFilters(r){
+  if(activeFilters.system.size>0&&!activeFilters.system.has(r.system))return false;
+  if(activeFilters.iface.size>0&&!activeFilters.iface.has(r.interface))return false;
+  if(activeFilters.ecu.size>0&&!activeFilters.ecu.has(r.ecu))return false;
+  if(activeFilters.status.size>0&&!activeFilters.status.has(r.status))return false;
+  var q=(document.getElementById('global-search').value||'').toLowerCase();
+  if(q){
+    var haystack=(r.system+' '+r.signal+' '+r.interface+' '+r.ecu+' '+r.device+' '+r.status).toLowerCase();
+    if(haystack.indexOf(q)<0)return false;
+  }
+  return true;
+}
+
+function applyFilters(){
+  // Flow view
+  document.querySelectorAll('.flow-lane').forEach(function(el){
+    var idx=parseInt(el.dataset.rowIdx,10);
+    var r=DATA.rows[idx];
+    el.classList.toggle('hidden',!r||!rowMatchesFilters(r));
+  });
+  // Update system group visibility
+  document.querySelectorAll('.system-group').forEach(function(grp){
+    var any=false;
+    grp.querySelectorAll('.flow-lane').forEach(function(l){if(!l.classList.contains('hidden'))any=true;});
+    grp.style.display=any?'':'none';
+  });
+  // Table view
+  document.querySelectorAll('#table-body tr').forEach(function(tr){
+    var idx=parseInt(tr.dataset.rowIdx,10);
+    var r=DATA.rows[idx];
+    // Also apply table-search filter
+    var tq=(document.getElementById('table-search').value||'').toLowerCase();
+    var match=r&&rowMatchesFilters(r);
+    if(match&&tq){match=tr.innerText.toLowerCase().indexOf(tq)>-1;}
+    tr.classList.toggle('hidden',!match);
+  });
+  updateTableCount();
+}
+
+function filterTable(q){applyFilters();}
+
+function updateTableCount(){
+  var rows=document.querySelectorAll('#table-body tr');
+  var vis=[].filter.call(rows,function(r){return!r.classList.contains('hidden');}).length;
+  document.getElementById('table-row-count').textContent=vis+' / '+rows.length+' rows';
+}
+
+function exportCSV(){
+  var head=[].slice.call(document.querySelectorAll('#main-table thead th')).map(function(th){return'"'+th.innerText.replace(/"/g,'""')+'"';});
+  var dataRows=[].filter.call(document.querySelectorAll('#table-body tr'),function(r){return!r.classList.contains('hidden');});
+  var lines=[head.join(',')].concat(dataRows.map(function(r){
+    return [].slice.call(r.cells).map(function(c){return'"'+c.innerText.replace(/"/g,'""')+'"';}).join(',');
+  }));
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'}));
+  a.download='signal_flow.csv';a.click();
+}
+
+function buildFilterPills(groupId, filterType, values){
+  var grp=document.getElementById(groupId);
+  if(!grp)return;
+  grp.innerHTML='';
+  var sorted=[].concat(values).sort();
+  sorted.forEach(function(v){
+    if(!v)return;
+    var el=document.createElement('div');
+    el.className='filter-pill';
+    el.dataset.filterType=filterType;
+    el.dataset.filterVal=v;
+    el.textContent=v;
+    el.onclick=function(){toggleFilter(el);};
+    grp.appendChild(el);
+  });
+}
+
+function buildFlowView(){
+  var container=document.getElementById('flow-scroll');
+  container.innerHTML='';
+  // Group rows by system
+  var systems=[];
+  var systemMap={};
+  DATA.rows.forEach(function(r,idx){
+    var sys=r.system||'(no system)';
+    if(!systemMap[sys]){systemMap[sys]=[]; systems.push(sys);}
+    systemMap[sys].push({r:r,idx:idx});
+  });
+
+  systems.forEach(function(sys){
+    var grp=document.createElement('div');
+    grp.className='system-group';
+
+    // System header
+    var hdr=document.createElement('div');
+    hdr.className='system-header';
+    hdr.innerHTML='<div class="system-header-line"></div>'+
+      '<div class="system-badge">'+esc(sys)+'</div>'+
+      '<span class="system-count">'+systemMap[sys].length+' signal'+(systemMap[sys].length!==1?'s':'')+'</span>'+
+      '<div class="system-header-line"></div>';
+    grp.appendChild(hdr);
+
+    systemMap[sys].forEach(function(item){
+      var r=item.r; var idx=item.idx;
+      var mapped=r.status==='MAPPED';
+      var ifaceKey=(r.interface||'').toUpperCase().trim();
+      var pilledIface=r.interface?'<span class="pill '+pillClass(r.interface)+'">'+esc(r.interface)+'</span>':'<span style="color:var(--tm);font-size:10px">—</span>';
+
+      // Device segment
+      var devStr=esc(r.device||(r.component||''));
+      var devPin=esc(r.device_pin||'');
+      var devRole=esc(r.role||'');
+
+      // ECU segment
+      var ecuStr='';
+      if(mapped){
+        ecuStr='<div class="ecu-seg">'+
+          '<span class="seg-label">ECU</span>'+
+          '<span class="seg-val">'+esc(r.ecu||'')+'</span>'+
+          (r.ecu_connector||r.ecu_pin?'<span class="seg-sub">'+esc(r.ecu_connector||'')+(r.ecu_pin?' · '+esc(r.ecu_pin):'')+'</span>':'')
+          +'</div>';
+      } else {
+        ecuStr='<div class="ecu-empty">unrouted</div>';
+      }
+
+      var lane=document.createElement('div');
+      lane.className='flow-lane';
+      lane.dataset.rowIdx=idx;
+      lane.innerHTML=
+        '<div class="lane-seg" style="min-width:130px">'+
+          '<span class="seg-label">Device</span>'+
+          '<span class="seg-val">'+devStr+'</span>'+
+          (devPin?'<span class="seg-sub">'+devPin+'</span>':'')+
+          (devRole?'<span class="seg-sub" style="color:var(--tm)">'+devRole+'</span>':'')+
+        '</div>'+
+        '<div class="lane-signal">'+
+          '<span class="signal-name">'+esc(r.signal||'')+'</span>'+
+          '<span class="signal-iface">'+pilledIface+'</span>'+
+        '</div>'+
+        ecuStr+
+        '<div class="status-dot '+(mapped?'mapped':'unmapped')+'" title="'+(mapped?'MAPPED':'UNMAPPED')+'"></div>';
+      grp.appendChild(lane);
+    });
+    container.appendChild(grp);
+  });
+
+  if(DATA.rows.length===0){
+    container.innerHTML='<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>No signal flow data found.</p></div>';
+  }
+}
+
+function buildTableView(){
+  var cols=[
+    {key:'system',label:'System'},
+    {key:'component',label:'Component'},
+    {key:'device',label:'Device'},
+    {key:'device_pin',label:'Device Pin'},
+    {key:'signal',label:'Signal/Net'},
+    {key:'interface',label:'Interface'},
+    {key:'role',label:'Device Role'},
+    {key:'ecu',label:'ECU'},
+    {key:'ecu_connector',label:'ECU Connector'},
+    {key:'ecu_pin',label:'ECU Pin'},
+    {key:'ecu_role',label:'ECU Role'},
+    {key:'status',label:'Status'},
+  ];
+
+  var head=document.getElementById('table-head');
+  var tbody=document.getElementById('table-body');
+
+  head.innerHTML='<tr>'+cols.map(function(c,i){
+    return '<th onclick="sortTableBy('+i+')" data-col="'+i+'">'+esc(c.label)+'<span class="sort-indicator"></span></th>';
+  }).join('')+'</tr>';
+
+  tbody.innerHTML=DATA.rows.map(function(r,idx){
+    var cells=cols.map(function(c){
+      if(c.key==='interface'){
+        return '<td>'+(r.interface?'<span class="pill '+pillClass(r.interface)+'">'+esc(r.interface)+'</span>':'')+'</td>';
+      }
+      if(c.key==='status'){
+        var cls=r.status==='MAPPED'?'badge-mapped':'badge-unmapped';
+        return '<td><span class="'+cls+'">'+esc(r.status||'')+'</span></td>';
+      }
+      if(c.key==='signal'){return '<td class="mono" style="color:var(--tp);font-weight:600">'+esc(r[c.key]||'')+'</td>';}
+      if(c.key==='device_pin'||c.key==='ecu_pin'||c.key==='ecu_connector'){return '<td class="mono">'+esc(r[c.key]||'')+'</td>';}
+      return '<td>'+esc(r[c.key]||'')+'</td>';
+    }).join('');
+    return '<tr data-row-idx="'+idx+'">'+cells+'</tr>';
+  }).join('');
+
+  updateTableCount();
+}
+
+var _tblSortAsc=true;
+var _tblSortCol=-1;
+function sortTableBy(colIdx){
+  var asc=_tblSortCol===colIdx?!_tblSortAsc:true;
+  _tblSortAsc=asc;
+  _tblSortCol=colIdx;
+  var tbody=document.getElementById('table-body');
+  var rows=[].slice.call(tbody.querySelectorAll('tr'));
+  rows.sort(function(a,b){
+    var A=a.cells[colIdx]?a.cells[colIdx].innerText.trim():'';
+    var B=b.cells[colIdx]?b.cells[colIdx].innerText.trim():'';
+    var x=parseFloat(A),y=parseFloat(B);
+    if(!isNaN(x)&&!isNaN(y))return asc?x-y:y-x;
+    return asc?A.localeCompare(B):B.localeCompare(A);
+  });
+  rows.forEach(function(r){tbody.appendChild(r);});
+  document.querySelectorAll('#main-table th .sort-indicator').forEach(function(el){el.textContent='';el.style.opacity='.4';});
+  var th=document.querySelectorAll('#main-table th')[colIdx];
+  if(th){var ind=th.querySelector('.sort-indicator');if(ind){ind.textContent=asc?' ↑':' ↓';ind.style.opacity='1';}}
+}
+
+function init(){
+  var rows=DATA.rows;
+  // Compute KPIs
+  var systems=new Set(),signals=new Set(),ifaces=new Set(),ecus=new Set();
+  var mapped=0,unmapped=0;
+  rows.forEach(function(r){
+    if(r.system)systems.add(r.system);
+    if(r.signal)signals.add(r.signal);
+    if(r.interface)ifaces.add(r.interface);
+    if(r.ecu)ecus.add(r.ecu);
+    if(r.status==='MAPPED')mapped++;else unmapped++;
+  });
+  document.getElementById('kpi-sys').textContent=systems.size;
+  document.getElementById('kpi-sig').textContent=signals.size;
+  document.getElementById('kpi-iface').textContent=ifaces.size;
+  document.getElementById('kpi-ecu').textContent=ecus.size;
+  document.getElementById('kpi-mapped').textContent=mapped;
+  document.getElementById('kpi-unmapped').textContent=unmapped;
+
+  // Build filter pills
+  buildFilterPills('fg-system','system',[].concat([].slice.call(systems)));
+  buildFilterPills('fg-iface','iface',[].concat([].slice.call(ifaces)));
+  buildFilterPills('fg-ecu','ecu',[].concat([].slice.call(ecus)));
+
+  buildFlowView();
+  buildTableView();
+}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body></html>

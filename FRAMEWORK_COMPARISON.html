@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EE Architect Design vs System Composer vs SysML v2 — Detailed Comparison</title>
+<style>
+:root {
+  --dark-bg: #07111f;
+  --dark-surface1: #0f172a;
+  --dark-surface2: #131a2e;
+  --dark-surface3: #1a2240;
+  --dark-border0: #1e2848;
+  --dark-border1: #273250;
+  --dark-border2: #2d3a5c;
+  --text-primary: #e5edf9;
+  --text-secondary: #9aa8bd;
+  --text-dim: #5a6678;
+  --text-fade: #4a5668;
+  --accent-cyan: #2ee6ff;
+  --accent-purple: #b388ff;
+  --accent-green: #2ee6a0;
+  --accent-amber: #f5b74e;
+  --accent-red: #fb7185;
+  --col-ee: #2ee6a0;
+  --col-sc: #60a5fa;
+  --col-sysml: #b388ff;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #07111f 0%, #0b1220 45%, #060a12 100%);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 0;
+  line-height: 1.55;
+}
+
+.container { max-width: 1600px; margin: 0 auto; padding: 28px 24px 80px; }
+
+/* Header */
+.page-header {
+  border-bottom: 1px solid var(--dark-border1);
+  padding-bottom: 20px;
+  margin-bottom: 8px;
+}
+.eyebrow {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  font-weight: 800;
+}
+h1 {
+  font-size: 2.3rem;
+  margin: 8px 0 6px;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+h1 .g { background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.subtitle { color: var(--text-secondary); font-size: 1.05rem; margin: 0; max-width: 900px; }
+
+/* Legend chips for the 3 tools */
+.tool-legend { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 0; }
+.tool-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--tc); background: color-mix(in srgb, var(--tc) 10%, transparent);
+  font-weight: 800; font-size: 0.85rem; color: var(--tc);
+}
+.tool-chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--tc); }
+
+/* TOC */
+.toc {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin: 22px 0 6px;
+}
+.toc a {
+  font-size: 0.8rem; font-weight: 700; text-decoration: none;
+  color: var(--text-secondary);
+  padding: 6px 12px; border-radius: 8px;
+  background: var(--dark-surface2); border: 1px solid var(--dark-border1);
+  transition: all 0.15s;
+}
+.toc a:hover { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+
+h2 {
+  font-size: 1.45rem; margin: 40px 0 4px; letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .num {
+  font-size: 0.9rem; font-weight: 900; color: var(--accent-cyan);
+  background: rgba(46,230,255,0.1); border: 1px solid var(--accent-cyan);
+  width: 34px; height: 34px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.section-lead { color: var(--text-secondary); margin: 4px 0 16px; max-width: 1000px; }
+
+.section {
+  background: linear-gradient(135deg, rgba(15,23,42,0.7), rgba(13,21,36,0.6));
+  border: 1px solid var(--dark-border1);
+  border-radius: 16px;
+  padding: 8px 20px 20px;
+  margin: 12px 0;
+}
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 16px 0; border-radius: 12px; border: 1px solid var(--dark-border1); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; min-width: 720px; }
+thead th {
+  background: var(--dark-surface3);
+  text-align: left; padding: 12px 14px;
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-dim); font-weight: 800;
+  border-bottom: 1px solid var(--dark-border2);
+  position: sticky; top: 0;
+}
+thead th.ee { color: var(--col-ee); }
+thead th.sc { color: var(--col-sc); }
+thead th.sysml { color: var(--col-sysml); }
+tbody td {
+  padding: 11px 14px; border-bottom: 1px solid var(--dark-border0);
+  vertical-align: top; color: var(--text-secondary);
+}
+tbody tr:hover td { background: rgba(46,230,255,0.03); }
+tbody td:first-child { color: var(--text-primary); font-weight: 700; }
+tbody tr:last-child td { border-bottom: none; }
+.yes { color: var(--accent-green); font-weight: 800; }
+.no { color: var(--accent-red); font-weight: 800; }
+.warn { color: var(--accent-amber); font-weight: 800; }
+
+/* Effort badges */
+.badge {
+  display: inline-block; padding: 2px 9px; border-radius: 6px;
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em;
+}
+.b-low { background: rgba(46,230,160,0.14); color: var(--accent-green); border: 1px solid var(--accent-green); }
+.b-med { background: rgba(245,183,78,0.14); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+.b-high { background: rgba(251,113,133,0.14); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+/* Cards */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin: 16px 0; }
+.card {
+  border-radius: 14px; padding: 18px;
+  border: 1px solid var(--dark-border1);
+  background: var(--dark-surface2);
+  border-top: 3px solid var(--ct, var(--accent-cyan));
+}
+.card h3 { margin: 0 0 4px; font-size: 1.1rem; color: var(--ct, var(--accent-cyan)); }
+.card .tagline { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 12px; }
+.card ul { margin: 0; padding-left: 18px; }
+.card li { margin: 6px 0; color: var(--text-secondary); font-size: 0.88rem; }
+.card li strong { color: var(--text-primary); }
+
+/* Verdict callouts */
+.verdict {
+  display: grid; grid-template-columns: 150px 1fr; gap: 16px;
+  padding: 16px; border-radius: 12px; margin: 12px 0;
+  background: var(--dark-surface2); border: 1px solid var(--dark-border1);
+  border-left: 4px solid var(--vc, var(--accent-cyan));
+}
+.verdict .who { font-weight: 900; color: var(--vc); font-size: 1rem; }
+.verdict .why { color: var(--text-secondary); font-size: 0.9rem; }
+
+/* KPI tiles */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
+.kpi-tile {
+  background: var(--dark-surface3); border: 1px solid var(--dark-border1);
+  border-radius: 14px; padding: 16px; text-align: center; position: relative; overflow: hidden;
+}
+.kpi-tile::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); }
+.kpi-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); font-weight: 800; }
+.kpi-value { font-size: 30px; font-weight: 900; color: var(--accent-cyan); letter-spacing: -0.04em; margin-top: 4px; }
+.kpi-sub { font-size: 0.78rem; color: var(--text-fade); margin-top: 4px; }
+
+/* Workflow strip */
+.flow-strip { display: flex; gap: 6px; overflow-x: auto; padding: 6px 2px 12px; }
+.flow-step {
+  flex: 0 0 auto; min-width: 130px; max-width: 150px;
+  background: var(--dark-surface3); border: 1px solid var(--dark-border1);
+  border-radius: 10px; padding: 10px; position: relative;
+}
+.flow-step .n { font-size: 0.65rem; font-weight: 900; color: var(--accent-cyan); }
+.flow-step .t { font-size: 0.78rem; font-weight: 700; color: var(--text-primary); margin-top: 3px; line-height: 1.25; }
+.flow-step.hi { border-color: var(--accent-purple); background: rgba(179,136,255,0.08); }
+.flow-step.hi .n { color: var(--accent-purple); }
+
+.note {
+  margin: 14px 0; padding: 12px 16px; border-radius: 10px;
+  background: rgba(46,230,255,0.06); border: 1px solid rgba(46,230,255,0.25);
+  font-size: 0.9rem; color: var(--text-secondary);
+}
+.note strong { color: var(--accent-cyan); }
+.oneliner {
+  margin-top: 10px; padding: 16px 20px; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(179,136,255,0.1), rgba(46,230,255,0.08));
+  border: 1px solid var(--dark-border2);
+  font-size: 1.02rem; color: var(--text-primary);
+}
+.oneliner strong { color: var(--accent-purple); }
+
+footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--dark-border1); color: var(--text-fade); font-size: 0.82rem; }
+code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 0.85em; color: var(--accent-cyan); }
+
+@media(max-width: 720px) {
+  .verdict { grid-template-columns: 1fr; gap: 6px; }
+  h1 { font-size: 1.7rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header class="page-header">
+    <div class="eyebrow">Solution Architecture · Tooling Evaluation</div>
+    <h1><span class="g">E/E Architect Design</span> vs. System Composer vs. SysML v2</h1>
+    <p class="subtitle">A detailed, decision-oriented comparison across capabilities, tool integrations (Polarion, GitHub, CI), feature parity, implementation effort, and user training — framed around the E/E Composer workflow.</p>
+
+    <div class="tool-legend">
+      <span class="tool-chip" style="--tc: var(--col-ee)"><span class="dot"></span>EE Architect Design — your framework</span>
+      <span class="tool-chip" style="--tc: var(--col-sc)"><span class="dot"></span>MATLAB System Composer</span>
+      <span class="tool-chip" style="--tc: var(--col-sysml)"><span class="dot"></span>SysML v2 (OMG standard)</span>
+    </div>
+
+    <nav class="toc">
+      <a href="#glance">1 · At a Glance</a>
+      <a href="#concept">2 · Conceptual Differences</a>
+      <a href="#integrations">3 · Tool Integrations</a>
+      <a href="#features">4 · Feature Support</a>
+      <a href="#effort">5 · Replication Effort</a>
+      <a href="#training">6 · Training &amp; Adoption</a>
+      <a href="#fit">7 · When Each Fits</a>
+    </nav>
+  </header>
+
+  <!-- ══════════════ 1 · AT A GLANCE ══════════════ -->
+  <h2 id="glance"><span class="num">1</span> At a Glance</h2>
+  <p class="section-lead">The fundamental positioning: your framework is a <em>vertical, opinionated E/E solver + documentation generator</em>; the other two are <em>horizontal, general-purpose modeling platforms</em>.</p>
+  <div class="section">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th class="ee">EE Architect Design</th>
+            <th class="sc">System Composer</th>
+            <th class="sysml">SysML v2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Nature</td><td>Domain-specific E/E architecture tool</td><td>General-purpose MBSE authoring tool</td><td>General-purpose modeling language / standard</td></tr>
+          <tr><td>Domain focus</td><td>Automotive / ag E/E: ECUs, pins, buses, signals, harnesses</td><td>Any system (aero, auto, defense…)</td><td>Any system</td></tr>
+          <tr><td>Source of truth</td><td>JSON library — text, diff-friendly</td><td><code>.slx</code> binary model</td><td>Textual notation (KerML / SysML) + API</td></tr>
+          <tr><td>Engine / runtime</td><td>Compiled C11, zero external deps</td><td>MATLAB / Simulink runtime (licensed)</td><td>Language spec — needs a tool implementation</td></tr>
+          <tr><td>Primary output</td><td>Auto-generated HTML doc suite + JSON exports</td><td>Views &amp; reports inside MATLAB</td><td>Tool-dependent</td></tr>
+          <tr><td>Cost model</td><td>Free, self-contained</td><td>Commercial per-seat license</td><td>Open standard (tool pricing varies)</td></tr>
+          <tr><td>Best superpower</td><td>Auto pin-mapping + 44-report doc pipeline</td><td>Behavioral simulation link to Simulink</td><td>Standardized, portable interchange</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-tile"><div class="kpi-label">Verification rules</div><div class="kpi-value">21</div><div class="kpi-sub">V1–V13 · B1–B8, compiled</div></div>
+      <div class="kpi-tile"><div class="kpi-label">Sizing rules</div><div class="kpi-value">R1–R6</div><div class="kpi-sub">7-step estimation</div></div>
+      <div class="kpi-tile"><div class="kpi-label">Doc generators</div><div class="kpi-value">44</div><div class="kpi-sub">HTML, single-command</div></div>
+      <div class="kpi-tile"><div class="kpi-label">External deps</div><div class="kpi-value">0</div><div class="kpi-sub">C11 + Python only</div></div>
+      <div class="kpi-tile"><div class="kpi-label">License cost</div><div class="kpi-value">$0</div><div class="kpi-sub">no seat / server</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 2 · CONCEPTUAL DIFFERENCES ══════════════ -->
+  <h2 id="concept"><span class="num">2</span> Key Conceptual Differences</h2>
+  <p class="section-lead">Six dimensions that most affect day-to-day E/E architecture work.</p>
+  <div class="section">
+    <div class="card-grid">
+      <div class="card" style="--ct: var(--col-ee)">
+        <h3>Specialized vs. General</h3>
+        <div class="tagline">Domain semantics</div>
+        <ul>
+          <li><strong>Yours:</strong> natively knows ECUs, pin roles (IN/OUT/SUPPLY/GND), interfaces (CAN/LIN/PWM/ANALOG/SENT/FlexRay), harnesses, safety classes.</li>
+          <li><strong>Others:</strong> domain-agnostic — you re-create those semantics via profiles / stereotypes.</li>
+        </ul>
+      </div>
+      <div class="card" style="--ct: var(--accent-cyan)">
+        <h3>Auto-mapping vs. Manual</h3>
+        <div class="tagline">Pin allocation</div>
+        <ul>
+          <li><strong>Yours:</strong> engine auto-assigns signals to physical pins by interface, role, electrical need, safety class.</li>
+          <li><strong>Others:</strong> allocation is a manual modeling activity (allocation matrices / <code>allocate</code> relations).</li>
+        </ul>
+      </div>
+      <div class="card" style="--ct: var(--accent-amber)">
+        <h3>Verification</h3>
+        <div class="tagline">Rule engine</div>
+        <ul>
+          <li><strong>Yours:</strong> 21 fixed rules + R1–R6 sizing, compiled C, deterministic PASS/WARN/FAIL.</li>
+          <li><strong>Others:</strong> configurable checks, but you author each one (Model Advisor / constraints).</li>
+        </ul>
+      </div>
+      <div class="card" style="--ct: var(--accent-green)">
+        <h3>Data &amp; Versioning</h3>
+        <div class="tagline">Git-ability</div>
+        <ul>
+          <li><strong>Yours:</strong> JSON + C + git → clean diffs, merges, PRs, CI.</li>
+          <li><strong>System Composer:</strong> <code>.slx</code> binary — hard to diff/merge.</li>
+          <li><strong>SysML v2:</strong> textual syntax is git-friendly (its headline win).</li>
+        </ul>
+      </div>
+      <div class="card" style="--ct: var(--col-sysml)">
+        <h3>Standardization</h3>
+        <div class="tagline">Interoperability</div>
+        <ul>
+          <li><strong>SysML v2:</strong> OMG standard + REST API + portable interchange across tools.</li>
+          <li><strong>System Composer:</strong> partial / vendor formats.</li>
+          <li><strong>Yours:</strong> custom schema — full control, weaker ecosystem exchange.</li>
+        </ul>
+      </div>
+      <div class="card" style="--ct: var(--col-ee)">
+        <h3>Documentation</h3>
+        <div class="tagline">Deliverables</div>
+        <ul>
+          <li><strong>Yours:</strong> 44 generators auto-produce bus diagrams, signal dictionaries, IO matrices, DFDs, harness/wiring books from data — no manual editing.</li>
+          <li><strong>Others:</strong> report generation exists but needs setup / licensed add-ons.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 3 · TOOL INTEGRATIONS ══════════════ -->
+  <h2 id="integrations"><span class="num">3</span> Tool Integrations — Polarion, GitHub, CI</h2>
+  <p class="section-lead">Your workflow ends in <strong>Export Doc Package to Polarion</strong>. Here is how each option connects to the ALM / VCS / CI ecosystem.</p>
+  <div class="section">
+    <div class="flow-strip">
+      <div class="flow-step"><div class="n">01</div><div class="t">System / Object definition</div></div>
+      <div class="flow-step"><div class="n">02</div><div class="t">EE Object library</div></div>
+      <div class="flow-step"><div class="n">03</div><div class="t">Import / Export</div></div>
+      <div class="flow-step"><div class="n">04</div><div class="t">ECU IO needs reservation</div></div>
+      <div class="flow-step"><div class="n">05</div><div class="t">Zonal / Central repartition</div></div>
+      <div class="flow-step"><div class="n">06</div><div class="t">IO mapping strategy</div></div>
+      <div class="flow-step"><div class="n">07</div><div class="t">IO mapping system↔ECU</div></div>
+      <div class="flow-step"><div class="n">08</div><div class="t">Network topology</div></div>
+      <div class="flow-step"><div class="n">09</div><div class="t">Rules verification</div></div>
+      <div class="flow-step"><div class="n">10</div><div class="t">Save JSON architecture</div></div>
+      <div class="flow-step"><div class="n">11</div><div class="t">Generate doc</div></div>
+      <div class="flow-step hi"><div class="n">12</div><div class="t">Export doc package → Polarion</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Integration</th>
+            <th class="ee">EE Architect Design</th>
+            <th class="sc">System Composer</th>
+            <th class="sysml">SysML v2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Polarion (ALM / requirements)</td>
+            <td>Custom: export doc/JSON package → Polarion via ReqIF or REST. You own the field mapping. <span class="badge b-med">connector to build</span></td>
+            <td>Requirements Toolbox + Polarion connector — ReqIF round-trip, mature but licensed. <span class="badge b-low">buy &amp; configure</span></td>
+            <td>Standard ReqIF + v2 REST API; Polarion v2 support emerging. <span class="badge b-low">standards-based</span></td>
+          </tr>
+          <tr>
+            <td>GitHub / git</td>
+            <td class="yes">Native — JSON + C are text; diff, merge, PR, CI all work today.</td>
+            <td class="warn"><code>.slx</code> binary; needs SLX MergeTool; PR diffs unreadable without MATLAB.</td>
+            <td class="yes">Textual notation is git-friendly.</td>
+          </tr>
+          <tr>
+            <td>CI / CD pipelines</td>
+            <td class="yes">Trivial — headless C binary + Python, no license server; runs in any runner.</td>
+            <td class="warn">Needs MATLAB + license checkout on the runner; heavier.</td>
+            <td>Tool-dependent; API-driven pipelines possible.</td>
+          </tr>
+          <tr>
+            <td>CAN DBC / AUTOSAR ARXML</td>
+            <td>Custom import/export in the library layer.</td>
+            <td>Via add-on toolboxes.</td>
+            <td>Via tool plugins.</td>
+          </tr>
+          <tr>
+            <td>Doc / report export</td>
+            <td class="yes">Built-in 44-report HTML suite, single command.</td>
+            <td class="warn">Simulink Report Generator (licensed add-on).</td>
+            <td class="warn">Tool-dependent rendering.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><strong>Takeaway:</strong> for git + CI + zero-license automation, your framework already wins outright. For turnkey <em>Polarion round-trip traceability</em>, System Composer is buy-and-use, whereas yours needs a small connector you build once.</div>
+  </div>
+
+  <!-- ══════════════ 4 · FEATURE SUPPORT ══════════════ -->
+  <h2 id="features"><span class="num">4</span> Feature Support Matrix</h2>
+  <p class="section-lead"><span class="yes">✓ built-in</span> &nbsp;·&nbsp; <span class="warn">◐ possible with setup / add-on</span> &nbsp;·&nbsp; <span class="no">✗ not available / manual scripting</span></p>
+  <div class="section">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="ee">EE Architect Design</th>
+            <th class="sc">System Composer</th>
+            <th class="sysml">SysML v2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>ECU / pin / bus native semantics</td><td class="yes">✓ built-in</td><td class="warn">◐ via profiles</td><td class="warn">◐ via profiles</td></tr>
+          <tr><td>Auto pin-mapping solver</td><td class="yes">✓ core engine</td><td class="no">✗ manual / script</td><td class="no">✗ manual / script</td></tr>
+          <tr><td>21 verification rules</td><td class="yes">✓ compiled</td><td class="warn">◐ you author checks</td><td class="warn">◐ you author constraints</td></tr>
+          <tr><td>ECU sizing / estimation (R1–R6)</td><td class="yes">✓</td><td class="no">✗ script it</td><td class="no">✗</td></tr>
+          <tr><td>Zonal vs. central repartition</td><td class="yes">✓ workflow step</td><td class="warn">◐ model manually</td><td class="warn">◐ model manually</td></tr>
+          <tr><td>Auto HTML doc suite (44 gen.)</td><td class="yes">✓</td><td class="warn">◐ Report Generator (licensed)</td><td class="warn">◐ tool-dependent</td></tr>
+          <tr><td>Network topology / bus backbone</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td>Behavioral simulation</td><td class="no">✗</td><td class="yes">✓ Simulink link</td><td class="warn">◐ analysis semantics only</td></tr>
+          <tr><td>Standard interchange format</td><td class="no">✗ custom JSON</td><td class="warn">◐ partial</td><td class="yes">✓ OMG standard + REST</td></tr>
+          <tr><td>Multi-domain (beyond E/E)</td><td class="no">✗ E/E only</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td>Requirements traceability</td><td class="warn">◐ via export mapping</td><td class="yes">✓ Requirements Toolbox</td><td class="yes">✓ native relationships</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ 5 · REPLICATION EFFORT ══════════════ -->
+  <h2 id="effort"><span class="num">5</span> Effort to Replicate Your Framework in System Composer</h2>
+  <p class="section-lead">Rough engineering effort to reach parity with what your framework already produces today.</p>
+  <div class="section">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Approach in System Composer</th>
+            <th>Relative effort</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>ECU / pin / bus domain types</td><td>Author a stereotype profile</td><td><span class="badge b-low">Low–Med</span></td><td>Configuration, not code</td></tr>
+          <tr><td>Auto pin-mapping</td><td>Custom MATLAB script over model API</td><td><span class="badge b-high">High</span></td><td>No built-in solver — full algorithm</td></tr>
+          <tr><td>21 verification rules</td><td>Model Advisor custom checks</td><td><span class="badge b-med">Med–High</span></td><td>Each rule authored + tested</td></tr>
+          <tr><td>Sizing / estimation</td><td>Custom MATLAB analysis functions</td><td><span class="badge b-med">Medium</span></td><td>Re-implement R1–R6 logic</td></tr>
+          <tr><td>44-report doc suite</td><td>Simulink Report Generator templates</td><td><span class="badge b-high">High</span></td><td>Licensed add-on + template dev</td></tr>
+          <tr><td>Polarion traceability</td><td>Requirements Toolbox connector</td><td><span class="badge b-low">Low</span></td><td>Mostly configuration</td></tr>
+          <tr><td>CI automation</td><td>MATLAB CI + license setup</td><td><span class="badge b-med">Medium</span></td><td>License server on runners</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><strong>Net:</strong> the modeling parts are configuration, but the <em>auto-mapping solver</em> and <em>44-report doc pipeline</em> are the expensive, high-effort items — and they are precisely your framework's differentiators. Expect a multi-month project plus recurring per-seat license cost to match today's output.</div>
+  </div>
+
+  <!-- ══════════════ 6 · TRAINING & ADOPTION ══════════════ -->
+  <h2 id="training"><span class="num">6</span> Training &amp; Adoption</h2>
+  <p class="section-lead">Who needs to learn what — and how fast a new engineer becomes productive.</p>
+  <div class="section">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th class="ee">EE Architect Design</th>
+            <th class="sc">System Composer</th>
+            <th class="sysml">SysML v2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>User learning curve</td><td class="yes">Low — edit JSON, run one build command</td><td class="warn">Medium–High — MATLAB env, profiles, views, allocations</td><td class="no">High — language + methodology</td></tr>
+          <tr><td>Author / maintainer skills</td><td>C11 + Python (your team)</td><td>MATLAB scripting, Model Advisor, Report Gen</td><td>MBSE + KerML / SysML semantics</td></tr>
+          <tr><td>Onboard a new E/E engineer</td><td class="yes">Hours — learn the schema fields</td><td class="warn">Days–weeks + MathWorks courses</td><td class="no">Weeks + formal MBSE training</td></tr>
+          <tr><td>Vendor training available</td><td>Internal docs only</td><td class="yes">Extensive MathWorks courses &amp; support</td><td class="yes">OMG + tool-vendor courses</td></tr>
+          <tr><td>Bus-factor risk</td><td class="warn">Higher — bespoke, in-house knowledge</td><td class="yes">Lower — commercial support</td><td class="yes">Lower — standardized skillset</td></tr>
+          <tr><td>Community / hiring pool</td><td class="warn">Internal only</td><td>Large MATLAB community</td><td>Growing MBSE community</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><strong>Trade-off:</strong> your framework has the fastest onboarding and lowest day-to-day friction, but concentrates knowledge in-house. System Composer and SysML v2 cost more to learn but de-risk staffing through standard skills and vendor support.</div>
+  </div>
+
+  <!-- ══════════════ 7 · WHEN EACH FITS ══════════════ -->
+  <h2 id="fit"><span class="num">7</span> When Each Fits</h2>
+  <div class="section">
+    <div class="verdict" style="--vc: var(--col-ee)">
+      <div class="who">EE Architect Design</div>
+      <div class="why">Choose when speed, zero license cost, git/CI-native flow, automatic pin allocation, and turnkey E/E documentation matter most — accepting a custom schema and in-house maintenance.</div>
+    </div>
+    <div class="verdict" style="--vc: var(--col-sc)">
+      <div class="who">System Composer</div>
+      <div class="why">Choose when you need behavioral simulation, mature Polarion / requirements round-trip, and vendor support — accepting license cost, binary models, and building the E/E solver logic yourself.</div>
+    </div>
+    <div class="verdict" style="--vc: var(--col-sysml)">
+      <div class="who">SysML v2</div>
+      <div class="why">Choose when standardization, tool portability, multi-domain scope, and long-term interoperability outweigh a higher training investment and the lack of built-in E/E automation.</div>
+    </div>
+
+    <div class="oneliner">
+      <strong>One-liner:</strong> your framework is a <em>vertical, opinionated E/E solver + doc generator</em> that already delivers domain automation (mapping + documentation) which would take significant custom effort and licensing to reproduce in System Composer — while System Composer and SysML v2 are <em>horizontal, general-purpose modeling platforms</em> that model anything but solve or document nothing domain-specific out of the box.
+    </div>
+  </div>
+
+  <footer>
+    EE Architect Design — Tooling comparison · Generated 2026-07-10 · Dark-theme design system consistent with COMPONENTS_DEMO.html
+  </footer>
+
+</div>
+</body>
+</html>

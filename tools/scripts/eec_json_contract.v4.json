@@ -1,0 +1,488 @@
+{
+  "contract_name": "E/E Architect Design v4 JSON contract",
+  "contract_version": "4.0.0",
+  "description": "Configuration-only validation contract. Scripts load this file instead of hard-coding framework values.",
+  "schema_versions": {
+    "system": [
+      "eec-system-1.4",
+      "1.4",
+      "1.3",
+      "1.0"
+    ],
+    "sensor": [
+      "eec-sensor-1.0",
+      "1.0"
+    ],
+    "actuator": [
+      "eec-actuator-1.5",
+      "eec-actuator-1.0",
+      "1.5",
+      "1.0"
+    ],
+    "component": [
+      "eec-component-1.0",
+      "1.0"
+    ],
+    "ecu": [
+      "eec-ecu-1.0",
+      "1.0"
+    ]
+  },
+  "enums": {
+    "top_level_types": [
+      "system",
+      "component",
+      "sensor",
+      "actuator",
+      "ecu",
+      "bundle",
+      "signal_group",
+      "architecture"
+    ],
+    "device_types": [
+      "SENSOR",
+      "ACTUATOR"
+    ],
+    "roles": [
+      "INPUT",
+      "OUTPUT",
+      "INOUT",
+      "SUPPLY",
+      "GROUND",
+      "UNASSIGNED"
+    ],
+    "signal_types": [
+      "U1",
+      "U8",
+      "S8",
+      "U16",
+      "S16",
+      "U32",
+      "S32",
+      "U64",
+      "S64",
+      "F32",
+      "F64",
+      "UNSIGNED_1BIT",
+      "UNSIGNED_8BIT",
+      "SIGNED_8BIT",
+      "UNSIGNED_16BIT",
+      "SIGNED_16BIT",
+      "UNSIGNED_32BIT",
+      "SIGNED_32BIT",
+      "UNSIGNED_64BIT",
+      "SIGNED_64BIT",
+      "FLOAT_32BIT",
+      "FLOAT_64BIT"
+    ],
+    "interfaces": [
+      "DIGITAL",
+      "ANALOG",
+      "PWM",
+      "CAN",
+      "LIN",
+      "SENT",
+      "ETHERNET",
+      "RESISTANCE",
+      "FREQUENCY",
+      "CURRENT",
+      "FLEXRAY",
+      "POWER",
+      "GROUND",
+      "RESERVED",
+      "ANALOG_CURRENT",
+      "DSM",
+      "TEMPERATURE",
+      "PWM_HIGHSIDE",
+      "PWM_LOWSIDE",
+      "SWITCH_HIGHSIDE",
+      "SWITCH_HIGHSIDE_SMALL",
+      "LED_LOWSIDE",
+      "SUPPLY",
+      "IGNITION",
+      "SENSOR_SUPPLY"
+    ],
+    "units": [
+      "NONE",
+      "BOOLEAN",
+      "VOLT",
+      "AMPERE",
+      "HERTZ",
+      "PERCENT",
+      "RPM",
+      "CELSIUS",
+      "BAR",
+      "DEGREE",
+      "OHM",
+      "MILLIMETER"
+    ],
+    "priorities": [
+      "LOW",
+      "MEDIUM",
+      "HIGH",
+      "CRITICAL"
+    ],
+    "safety_classes": [
+      "QM",
+      "SAFETY_RELATED",
+      "AgPL_A",
+      "AgPL_B",
+      "AgPL_C",
+      "AgPL_D"
+    ],
+    "system_levels": [
+      "SL0",
+      "SL1",
+      "SL2",
+      "SL3",
+      "SL4"
+    ],
+    "connector_families": [
+      "DEUTSCH",
+      "DEUTSCH_DT04_2P",
+      "AMP_SUPERSEAL",
+      "AMP_JUNIOR_TIMER",
+      "MOLEX",
+      "TE_CONNECTIVITY",
+      "YAZAKI",
+      "JAE",
+      "AMPSEAL",
+      "CUSTOM",
+      "DIN_EN_175301_803",
+      "BINDER",
+      "M12",
+      "ISO_4400",
+      "KOSTAL"
+    ],
+    "connector_genders": [
+      "MALE",
+      "FEMALE",
+      "HYBRID",
+      "UNKNOWN"
+    ],
+    "ground_classes": [
+      "UNCLASSIFIED",
+      "POWER",
+      "LOGIC"
+    ],
+    "reset_states": [
+      "OFF",
+      "ON",
+      "HIGH_Z",
+      "FLOATING",
+      "LOW",
+      "HIGH"
+    ],
+    "drive_topologies": [
+      "HIGH_SIDE_GROUND_RETURN",
+      "HIGH_SIDE_LOW_SIDE",
+      "LOW_SIDE_SWITCHED",
+      "HIGH_SIDE_SWITCHED",
+      "NOT_APPLICABLE"
+    ]
+  },
+  "aliases": {
+    "interfaces": {
+      "BUS_CAN": "CAN",
+      "BUS_ETH": "ETHERNET",
+      "BUS_ETHERNET": "ETHERNET",
+      "BUS_FLEXRAY": "FLEXRAY",
+      "VOLTAGE": "ANALOG",
+      "ANALOG_VOLTAGE": "ANALOG"
+    },
+    "units": {
+      "DEG": "DEGREE",
+      "V": "VOLT",
+      "A": "AMPERE",
+      "HZ": "HERTZ",
+      "PCT": "PERCENT",
+      "%": "PERCENT",
+      "C": "CELSIUS",
+      "\u00b0C": "CELSIUS",
+      "OHMS": "OHM"
+    },
+    "roles": {
+      "POWER": "SUPPLY",
+      "VBAT": "SUPPLY",
+      "0V": "GROUND",
+      "GND": "GROUND"
+    },
+    "reset_states": {
+      "LOW": "OFF",
+      "HIGH": "ON",
+      "HI_Z": "HIGH_Z",
+      "HZ": "HIGH_Z"
+    }
+  },
+  "known_keys": {
+    "system": [
+      "type",
+      "schema_version",
+      "name",
+      "version",
+      "system_level",
+      "priority",
+      "safety",
+      "Ref-2X",
+      "part_number",
+      "location",
+      "take_rate",
+      "is_mandatory",
+      "auto_mapping_enabled",
+      "mapping_enabled",
+      "platforms",
+      "brands",
+      "description",
+      "manufacturer",
+      "notes",
+      "devices",
+      "components",
+      "metadata"
+    ],
+    "component": [
+      "type",
+      "schema_version",
+      "name",
+      "version",
+      "part_number",
+      "supplier_pn",
+      "manufacturer",
+      "Ref-2X",
+      "location",
+      "take_rate",
+      "priority",
+      "safety",
+      "is_mandatory",
+      "mapping_enabled",
+      "description",
+      "notes",
+      "sensors",
+      "actuators",
+      "devices",
+      "connectors",
+      "signals",
+      "pins",
+      "metadata"
+    ],
+    "device": [
+      "type",
+      "schema_version",
+      "name",
+      "device_type",
+      "version",
+      "priority",
+      "safety",
+      "part_number",
+      "supplier_pn",
+      "manufacturer",
+      "description",
+      "notes",
+      "owner_system",
+      "owner_architecture",
+      "location",
+      "take_rate",
+      "is_mandatory",
+      "mapping_enabled",
+      "drive_topology",
+      "signals",
+      "connectors",
+      "pins",
+      "metadata"
+    ],
+    "signal": [
+      "id",
+      "prefix",
+      "name",
+      "count",
+      "type",
+      "interface",
+      "interface_type",
+      "unit",
+      "role",
+      "priority",
+      "safety",
+      "part_number",
+      "electrical_requirement",
+      "min",
+      "max",
+      "min_value",
+      "max_value",
+      "resolution",
+      "scaling",
+      "digital_structure",
+      "description",
+      "notes",
+      "source",
+      "metadata"
+    ],
+    "connector": [
+      "id",
+      "name",
+      "part_number",
+      "family",
+      "gender",
+      "total_cavities",
+      "used_cavities",
+      "max_pin_number",
+      "sealed",
+      "color",
+      "mounting",
+      "ip_rating",
+      "rated_voltage",
+      "rated_current",
+      "temperature_min",
+      "temperature_max",
+      "obsolete",
+      "description",
+      "metadata"
+    ],
+    "pin": [
+      "id",
+      "number",
+      "pin_number",
+      "name",
+      "connector",
+      "cavity",
+      "role",
+      "interface",
+      "interface_type",
+      "type",
+      "electrical_requirement",
+      "signal",
+      "nominal_current",
+      "inrush_current",
+      "max_voltage",
+      "diagnostics_required",
+      "safety_relevant",
+      "ground_class",
+      "required_reset_state",
+      "required_sensor_supply",
+      "required_sensor_ground",
+      "required_supply_voltage",
+      "required_supply_voltage_min",
+      "required_supply_voltage_max",
+      "preferred_supply_voltage",
+      "current_max",
+      "current_max_a",
+      "voltage_nominal",
+      "voltage_min",
+      "voltage_max",
+      "diagnostic_flags",
+      "group",
+      "sw_config",
+      "electrical",
+      "device_pin_desc",
+      "functions",
+      "metadata",
+      "physical_number",
+      "electrical_capability"
+    ],
+    "ecu": [
+      "type",
+      "schema_version",
+      "name",
+      "version",
+      "part_number",
+      "variant",
+      "manufacturer",
+      "series",
+      "document",
+      "priority",
+      "safety",
+      "location",
+      "can_addresses",
+      "connectors",
+      "pins",
+      "metadata"
+    ]
+  },
+  "required_keys": {
+    "system": [
+      "type",
+      "name",
+      "priority",
+      "safety"
+    ],
+    "component": [
+      "name"
+    ],
+    "device": [
+      "name",
+      "device_type",
+      "signals"
+    ],
+    "signal": [
+      "prefix",
+      "count",
+      "type",
+      "interface",
+      "unit",
+      "role",
+      "min",
+      "max",
+      "resolution",
+      "scaling"
+    ],
+    "connector": [
+      "name",
+      "total_cavities",
+      "used_cavities",
+      "max_pin_number"
+    ],
+    "pin": [
+      "number",
+      "name",
+      "connector",
+      "cavity",
+      "role",
+      "interface_type",
+      "signal"
+    ],
+    "ecu": [
+      "type",
+      "name",
+      "pins"
+    ],
+    "ecu_pin": [
+      "connector",
+      "physical_number",
+      "name",
+      "role",
+      "type"
+    ]
+  },
+  "rules": {
+    "v4_explicit_pins_required": true,
+    "pin_signal_cavity_equality": true,
+    "pin_signal_reference_required": true,
+    "no_inout_except_bus_interfaces": true,
+    "default_allow_legacy_compact": false,
+    "bus_interfaces": [
+      "CAN",
+      "LIN",
+      "ETHERNET",
+      "FLEXRAY"
+    ],
+    "sensor_default_signal_role": "OUTPUT",
+    "actuator_default_signal_role": "INPUT"
+  },
+  "default_paths": {
+    "system_globs": [
+      "library/systems/**/*.json"
+    ],
+    "sensor_globs": [
+      "library/sensors/**/*.json"
+    ],
+    "actuator_globs": [
+      "library/actuators/**/*.json"
+    ],
+    "ecu_globs": [
+      "library/ecus/**/*.json"
+    ],
+    "library_globs": [
+      "library/**/*.json"
+    ],
+    "export_architecture": "generated_doc/exports/example_architecture.json",
+    "export_physical_architecture": "generated_doc/exports/example_physical_architecture.json"
+  }
+}

@@ -1,0 +1,17 @@
+body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial; margin: 16px; }
+header h1 { margin: 0 0 8px 0; }
+.muted { color: #666; font-size: 0.9em; }
+main { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
+section { background:#fafafa; border:1px solid #eee; padding:12px; border-radius:6px; }
+label { display:block; margin:6px 0; }
+input[type=text], input[type=number] { padding:6px; width:100%; box-sizing:border-box; }
+.controls { margin-top:8px; }
+button { padding:6px 10px; margin-right:6px; }
+#devices .device { border:1px dashed #ddd; padding:8px; margin-bottom:8px; }
+.pin { padding:6px; border:1px solid #eee; margin:6px 0; }
+#types-list { max-height: 480px; overflow:auto; }
+.enum-block { margin-bottom:10px; }
+.token { display:inline-block; padding:4px 6px; margin:2px; background:#eef; border-radius:4px; cursor:pointer; }
+.token:hover { background:#cfe; }
+#json-preview { max-height: 400px; overflow:auto; background:#111; color:#0f0; padding:8px; }
+.type-target:focus { outline: 2px solid #6cf; }

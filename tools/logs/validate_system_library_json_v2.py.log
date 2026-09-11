@@ -1,0 +1,624 @@
+
+[library\systems\EngineSystem.json]
+  type=system
+  systems=1 devices=3 ecus=0 signal_groups=9 expanded_signals=107 can_addresses=0
+  status=OK
+
+[library\systems\HydraulicSystem.json]
+  type=system
+  systems=1 devices=3 ecus=0 signal_groups=11 expanded_signals=87 can_addresses=0
+  status=OK
+
+[library\systems\LightingSystem.json]
+  type=system
+  systems=1 devices=3 ecus=0 signal_groups=10 expanded_signals=53 can_addresses=0
+  status=OK
+
+[library\sensors\AGCO_H236150070110_PressureSensor.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=0 expanded_signals=0 can_addresses=0
+  status=OK
+    warning: AGCO H236150070110 Pressure Transmitter.signals is empty
+    warning: library\sensors\AGCO_H236150070110_PressureSensor.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\sensors\AGCO_H236150070110_PressureSensor.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\sensors\AGCO_H236150070110_PressureSensor.json: top-level key 'technical_data' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\sensors\AGCO_H236150070110_PressureSensor.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\sensors\EngineBusInterface.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=12 can_addresses=0
+  status=OK
+
+[library\sensors\EngineSensors.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=4 expanded_signals=49 can_addresses=0
+  status=OK
+
+[library\sensors\HydBusInterface.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=12 can_addresses=0
+  status=OK
+
+[library\sensors\HydSensors.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=5 expanded_signals=45 can_addresses=0
+  status=OK
+
+[library\sensors\LightBusInterface.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=10 can_addresses=0
+  status=OK
+
+[library\sensors\LightSensors.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=5 expanded_signals=28 can_addresses=0
+  status=OK
+
+[library\sensors\PresSensor_V220PB3025040.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+
+[library\actuators\Coil12PG5_1_50_2345.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil12PG5_1_50_2345.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\Coil12PN01-3.2-75-3164.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil12PN01-3.2-75-3164.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\Coil12PN01-4.1-50-1836.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil12PN01-4.1-50-1836.json.connectors[0].family 'DEUTSCH_DT04_2P' is not a standard connector family
+    warning: library\actuators\Coil12PN01-4.1-50-1836.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\Coil24PG18_50_2345.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil24PG18_50_2345.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\Coil24PN01-17.6-50-1836.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil24PN01-17.6-50-1836.json.connectors[0].family 'AMP_JUNIOR_TIMER' is not a standard connector family
+    warning: library\actuators\Coil24PN01-17.6-50-1836.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\Coil24PN01-5.1-50-2345-S.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil24PN01-5.1-50-2345-S.json.connectors[0].family 'DEUTSCH_DT04_2P' is not a standard connector family
+    warning: library\actuators\Coil24PN01-5.1-50-2345-S.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\Coil24PN01-5.5-75-3164.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil24PN01-5.5-75-3164.json.connectors[0].family 'DEUTSCH_DT04_2P' is not a standard connector family
+    warning: library\actuators\Coil24PN01-5.5-75-3164.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\Coil24PU18_50_2345.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil24PU18_50_2345.json.connectors[0].family 'AMP_JUNIOR_TIMER' is not a standard connector family
+    warning: library\actuators\Coil24PU18_50_2345.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\Coil24PU19_2_50_2345.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\Coil24PU19_2_50_2345.json.connectors[0].family 'AMP_JUNIOR_TIMER' is not a standard connector family
+    warning: library\actuators\Coil24PU19_2_50_2345.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\HYDAC_PWS16Z-01.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\actuators\HYDAC_PWS16Z-01.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\actuators\HYDAC_PWS16Z-01.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\actuators\HYDAC_PWS16Z-01.json: top-level key 'technical_data' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\actuators\HydActuators.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=4 expanded_signals=30 can_addresses=0
+  status=OK
+
+[library\actuators\LightActuators.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=3 expanded_signals=15 can_addresses=0
+  status=OK
+
+[library\signals\test_analog_5ch.json]
+  type=signal_group
+  systems=0 devices=0 ecus=0 signal_groups=5 expanded_signals=5 can_addresses=0
+  status=OK
+
+[library\bundles\tractor_base.json]
+  type=bundle
+  systems=6 devices=68 ecus=5 signal_groups=221 expanded_signals=501 can_addresses=14
+  status=OK
+    warning: library\bundles\tractor_base.json.ecus[3]: 'variant' 'SRC14-34' is not a standard AEC size ['LARGE', 'MEDIUM', 'SMALL']; accepted for third-party ECUs
+    warning: library\bundles\tractor_base.json.ecus[4]: 'variant' 'RC5-6' is not a standard AEC size ['LARGE', 'MEDIUM', 'SMALL']; accepted for third-party ECUs
+    warning: AGCO H236150070110 Pressure Transmitter.signals is empty
+    warning: AGCO H236150070110 Pressure Transmitter.signals is empty
+    warning: HYDAC_Flow_16384.signals[0] uses INPUT role on a SENSOR device (expected OUTPUT for device-centric)
+    warning: HYDAC_Flow_16384.signals[1] uses INPUT role on a SENSOR device (expected OUTPUT for device-centric)
+    warning: HYDAC_Flow_16384.signals[2] uses INPUT role on a SENSOR device (expected OUTPUT for device-centric)
+    warning: HYDAC_Temp_16640.signals[0] uses INPUT role on a SENSOR device (expected OUTPUT for device-centric)
+    warning: HYDAC_Temp_16640.signals[1] uses INPUT role on a SENSOR device (expected OUTPUT for device-centric)
+
+[library\ecus\AEC_LARGE_3CAN.json]
+  type=ecu
+  systems=0 devices=0 ecus=1 signal_groups=0 expanded_signals=0 can_addresses=3 ecu_pins=202
+  status=OK
+
+[library\ecus\AEC_MEDIUM_1CAN.json]
+  type=ecu
+  systems=0 devices=0 ecus=1 signal_groups=0 expanded_signals=0 can_addresses=1 ecu_pins=170
+  status=OK
+
+[library\ecus\AEC_SMALL_2CAN.json]
+  type=ecu
+  systems=0 devices=0 ecus=1 signal_groups=0 expanded_signals=0 can_addresses=2 ecu_pins=122
+  status=OK
+
+[library\templates\actuator_buzzer_horn_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_buzzer_horn_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_buzzer_horn_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_buzzer_horn_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_buzzer_horn_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_buzzer_horn_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_buzzer_horn_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_buzzer_horn_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_buzzer_horn_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_can_smart_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_can_smart_template.json: top-level key 'can_interface' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_lamp_led_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_lamp_led_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_lamp_led_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_lamp_led_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_lamp_led_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_lamp_led_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_lamp_led_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_lamp_led_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_lamp_led_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_linear_electrohydraulic_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: LinearActuator_ElectroHydraulic.signals[1] uses OUTPUT role on an ACTUATOR device (expected INPUT for device-centric)
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_linear_electrohydraulic_template.json: top-level key 'hydraulic' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_motor_dc_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=2 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_motor_dc_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_motor_dc_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_motor_dc_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_motor_dc_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_motor_dc_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_motor_dc_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_motor_dc_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_motor_dc_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_relay_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_relay_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_relay_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_relay_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_relay_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_relay_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_relay_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_relay_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_relay_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_solenoid_onoff_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_onoff_template.json: top-level key 'hydraulic' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_solenoid_proportional_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_solenoid_proportional_template.json: top-level key 'hydraulic' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_stepper_motor_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=3 expanded_signals=3 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_stepper_motor_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_stepper_motor_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_stepper_motor_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_stepper_motor_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_stepper_motor_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_stepper_motor_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_stepper_motor_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_stepper_motor_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\actuator_template.json]
+  type=actuator
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\actuator_template.json: top-level key 'actuator_class' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_template.json: top-level key 'manufacturer' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_template.json: top-level key 'description' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_template.json: top-level key 'notes' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_template.json: top-level key 'physical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_template.json: top-level key 'electrical' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_template.json: top-level key 'cem' not found in struct 'EEC_Actuator_t'; importer may ignore it
+    warning: library\templates\actuator_template.json: top-level key 'connector' not found in struct 'EEC_Actuator_t'; importer may ignore it
+
+[library\templates\bundle_template.json]
+  type=bundle
+  systems=1 devices=2 ecus=1 signal_groups=2 expanded_signals=2 can_addresses=1
+  status=OK
+
+[library\templates\ecu_preset_template.json]
+  type=ecu
+  systems=0 devices=0 ecus=1 signal_groups=0 expanded_signals=0 can_addresses=1
+  status=OK
+
+[library\templates\inputdevice_joystick_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=3 expanded_signals=8 can_addresses=0
+  status=OK
+    warning: library\templates\inputdevice_joystick_template.json: top-level key 'device_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_joystick_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_joystick_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_joystick_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_joystick_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_joystick_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_joystick_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_joystick_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\inputdevice_keypad_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\inputdevice_keypad_template.json: top-level key 'device_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_keypad_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_keypad_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_keypad_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_keypad_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_keypad_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_keypad_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_keypad_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\inputdevice_pedal_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=2 expanded_signals=3 can_addresses=0
+  status=OK
+    warning: library\templates\inputdevice_pedal_template.json: top-level key 'device_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_pedal_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_pedal_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_pedal_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_pedal_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_pedal_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_pedal_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_pedal_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\inputdevice_rotary_encoder_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=3 expanded_signals=3 can_addresses=0
+  status=OK
+    warning: library\templates\inputdevice_rotary_encoder_template.json: top-level key 'device_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_rotary_encoder_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_rotary_encoder_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_rotary_encoder_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_rotary_encoder_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_rotary_encoder_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_rotary_encoder_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_rotary_encoder_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\inputdevice_sensor_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\inputdevice_sensor_template.json: top-level key 'device_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_sensor_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_sensor_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_sensor_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_sensor_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_sensor_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_sensor_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_sensor_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\inputdevice_switch_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\inputdevice_switch_template.json: top-level key 'device_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_switch_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_switch_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_switch_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_switch_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_switch_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_switch_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_switch_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\inputdevice_touchscreen_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\inputdevice_touchscreen_template.json: top-level key 'device_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_touchscreen_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_touchscreen_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_touchscreen_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_touchscreen_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_touchscreen_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_touchscreen_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\inputdevice_touchscreen_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_binary_switch_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_binary_switch_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_binary_switch_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_binary_switch_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_binary_switch_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_binary_switch_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_binary_switch_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_binary_switch_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_binary_switch_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_can_smart_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_can_smart_template.json: top-level key 'can_interface' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_current_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_current_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_current_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_current_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_current_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_current_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_current_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_current_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_current_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_flow_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_flow_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_flow_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_flow_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_flow_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_flow_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_flow_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_flow_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_flow_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_flow_template.json: top-level key 'hydraulic' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_level_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_level_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_level_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_level_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_level_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_level_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_level_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_level_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_level_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_level_template.json: top-level key 'hydraulic' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_position_magnetic_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_position_magnetic_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_magnetic_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_magnetic_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_magnetic_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_magnetic_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_magnetic_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_magnetic_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_magnetic_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_position_potentiometer_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_position_potentiometer_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_potentiometer_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_potentiometer_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_potentiometer_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_potentiometer_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_potentiometer_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_potentiometer_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_position_potentiometer_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_pressure_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_pressure_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pressure_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pressure_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pressure_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pressure_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pressure_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pressure_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pressure_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pressure_template.json: top-level key 'hydraulic' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_pwm_frequency_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_pwm_frequency_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pwm_frequency_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pwm_frequency_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pwm_frequency_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pwm_frequency_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pwm_frequency_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pwm_frequency_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_pwm_frequency_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_speed_hall_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_speed_hall_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_hall_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_hall_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_hall_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_hall_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_hall_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_hall_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_hall_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_speed_vrs_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_speed_vrs_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_vrs_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_vrs_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_vrs_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_vrs_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_vrs_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_vrs_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_speed_vrs_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_strain_force_torque_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_strain_force_torque_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_strain_force_torque_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_strain_force_torque_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_strain_force_torque_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_strain_force_torque_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_strain_force_torque_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_strain_force_torque_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_strain_force_torque_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_temperature_active_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_active_template.json: top-level key 'hydraulic' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_temperature_ntc_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_temperature_ntc_template.json: top-level key 'hydraulic' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\sensor_template.json]
+  type=sensor
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=1 can_addresses=0
+  status=OK
+    warning: library\templates\sensor_template.json: top-level key 'sensor_class' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_template.json: top-level key 'manufacturer' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_template.json: top-level key 'description' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_template.json: top-level key 'notes' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_template.json: top-level key 'physical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_template.json: top-level key 'electrical' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_template.json: top-level key 'cem' not found in struct 'EEC_Sensor_t'; importer may ignore it
+    warning: library\templates\sensor_template.json: top-level key 'connector' not found in struct 'EEC_Sensor_t'; importer may ignore it
+
+[library\templates\signal_group_template.json]
+  type=signal_group
+  systems=0 devices=0 ecus=0 signal_groups=1 expanded_signals=4 can_addresses=0
+  status=OK
+
+[library\templates\system_template.json]
+  type=system
+  systems=1 devices=3 ecus=0 signal_groups=3 expanded_signals=3 can_addresses=0
+  status=OK
+
+========================================================================
+  SUMMARY: 64 passed, 0 failed, 64 files, 0 error(s), 299 warning(s)
+  STATUS:  ALL FILES PASSED
+========================================================================

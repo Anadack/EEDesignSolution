@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EE_Composer — Complete Object Ownership Tree</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;background:#0d1117;color:#c9d1d9}
+body{min-height:100vh;padding:20px;overflow:auto}
+
+.header{text-align:center;margin-bottom:12px;position:sticky;top:0;z-index:10;background:#0d1117;padding:12px 0 8px;border-bottom:1px solid #21262d}
+.header h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,#58a6ff,#bc8cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .sub{font-size:.78rem;color:#8b949e;margin-top:2px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;color:#8b949e}
+.legend b{width:24px;height:3px;display:inline-block;border-radius:2px}
+
+#canvas{display:block;margin:0 auto}
+.tooltip{position:fixed;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px 16px;font-size:12px;color:#c9d1d9;max-width:420px;pointer-events:none;opacity:0;transition:opacity .12s;z-index:999;box-shadow:0 12px 32px rgba(0,0,0,.6);max-height:600px;overflow-y:auto}
+.tooltip.show{opacity:1}
+.tooltip h3{font-size:13px;margin-bottom:6px;font-weight:700}
+.tooltip .p{margin:1px 0;line-height:1.45;font-size:11px}
+.tooltip .scalar{color:#e6edf3}
+.tooltip .arr{color:#56d364}
+.tooltip .ref{color:#f97583}
+.tooltip .section{margin:6px 0 2px;color:#8b949e;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>EE_Composer &mdash; Complete Object Ownership Tree</h1>
+  <div class="sub">Framework object hierarchy with all fields &middot; hover any node for full property list &middot; v2025 Complete</div>
+  <div class="legend">
+    <span><b style="background:#58a6ff"></b> Ownership (parent &#x2192; child)</span>
+    <span><b style="background:#f97583;height:0;border-top:2px dashed #f97583"></b> Back-reference</span>
+    <span><b style="background:#56d364;height:0;border-top:2px dotted #56d364"></b> Signal connection</span>
+  </div>
+</div>
+<canvas id="canvas"></canvas>
+<div class="tooltip" id="tip"></div>
+
+<script>
+/* ====================================================================
+ *  EE_Composer — COMPLETE object model with all fields from headers
+ * ==================================================================== */
+var MODEL = [
+  /* ───────────────────────────── ARCHITECTURE LAYER ─────────────────────────── */
+  { id:'arch', p:null, type:'EEC_Architecture_t', short:'Architecture', c:'#1f6feb',
+    scalar:['id : uint32_t','name[128] : char','part_number[64] : char','priority : ObjectPriority','safety : SafetyClass','mode : ArchMode (CENTRAL|ZONAL)','obsolete : bool'],
+    arrays:['signals[ ] → Signal','systems[ ] → System','ecus[ ] → Ecu','buses[ ] → Bus','zones[ ] → Zone'],
+    refs:[], embed:['ids : EEC_IdContext_t'] },
+
+  { id:'idctx', p:'arch', type:'EEC_IdContext_t', short:'IdContext', c:'#636e7b',
+    scalar:['next_architecture_id : uint32_t','next_signal_id : uint32_t','next_system_id : uint32_t','next_component_id : uint32_t','next_device_id : uint32_t','next_device_pin_id : uint32_t','next_ecu_id : uint32_t','next_ecu_pin_id : uint32_t','next_bus_id : uint32_t','next_connector_id : uint32_t','next_swc_id : uint32_t','next_message_id : uint32_t'],
+    arrays:[], refs:[], embed:[] },
+
+  /* ───────────────────────────── SIGNAL ───────────────────────────── */
+  { id:'signal', p:'arch', type:'EEC_Signal_t', short:'Signal', c:'#8957e5',
+    scalar:['id : uint32_t','name[64] : char','part_number[64] : char','priority : ObjectPriority','safety : SafetyClass','type : SignalType','interface_type : SignalInterface','unit : SignalUnit','min_value : float','max_value : float','resolution : float','scaling : float','is_mapped : bool','obsolete : bool','digital_structure : DigitalStructure'],
+    arrays:[],
+    refs:['owner_architecture : Architecture*','← DevicePin (from sensor/actuator)','← EcuPin.connected_signal','← MessageSignal (contained in CAN frame)','producer_swc : Swc* (if software variable)'],
+    embed:[] },
+
+  /* ───────────────────────────── SYSTEM ───────────────────────────── */
+  { id:'system', p:'arch', type:'EEC_System_t', short:'System', c:'#d29922',
+    scalar:['id : uint32_t','variant_id : uint8_t','name[64] : char','part_number[64] : char','ref_2x[26] : char','take_rate : float','is_mandatory : bool','auto_mapping_enabled : bool','system_level : SystemLevel','priority : ObjectPriority','safety : SafetyClass','location[64] : char','obsolete : bool'],
+    arrays:['components[ ] → Component','swcs[ ] → SWC','platforms[N][32] : char','brands[N] : Brand'],
+    refs:['owner_architecture : Architecture*','zone : Zone* (assigned zone, ZONAL mode)'],
+    embed:['platform_count : uint32_t','brand_count : uint32_t','component_count : uint32_t','component_capacity : uint32_t','swc_count : uint32_t','swc_capacity : uint32_t'] },
+
+  /* ───────────────────────────── COMPONENT ───────────────────────────── */
+  { id:'component', p:'system', type:'EEC_Component_t', short:'Component', c:'#e3b341',
+    scalar:['id : uint32_t','variant_id : uint8_t','name[64] : char','part_number[64] : char','supplier_pn[64] : char','ref_2x[26] : char','description[128] : char','supplier[64] : char','location[64] : char','take_rate : float','is_mandatory : bool','weight_kg : float','cost_eur : float','priority : ObjectPriority','safety : SafetyClass','obsolete : bool'],
+    arrays:['sensors[ ] → Sensor','actuators[ ] → Actuator'],
+    refs:['owner_system : System*','owner_architecture : Architecture*'],
+    embed:['sensor_count : uint32_t','sensor_capacity : uint32_t','actuator_count : uint32_t','actuator_capacity : uint32_t'] },
+
+  /* ───────────────────────────── SENSOR ───────────────────────────── */
+  { id:'sensor', p:'component', type:'EEC_Sensor_t', short:'Sensor', c:'#3fb950',
+    scalar:['id : uint32_t','variant_id : uint8_t','name[64] : char','part_number[64] : char','supplier_pn[64] : char','priority : ObjectPriority','safety : SafetyClass','obsolete : bool','is_mandatory : bool','mapping_enabled : bool'],
+    arrays:['pins[ ] → DevicePin','connectors[ ] → Connector'],
+    refs:['owner_system : System*','owner_architecture : Architecture*'],
+    embed:['pin_count : uint32_t','pin_capacity : uint32_t','connector_count : uint32_t','connector_capacity : uint32_t'] },
+
+  /* ───────────────────────────── ACTUATOR ───────────────────────────── */
+  { id:'actuator', p:'component', type:'EEC_Actuator_t', short:'Actuator', c:'#da3633',
+    scalar:['id : uint32_t','variant_id : uint8_t','name[64] : char','part_number[64] : char','supplier_pn[64] : char','priority : ObjectPriority','safety : SafetyClass','obsolete : bool','is_mandatory : bool','mapping_enabled : bool'],
+    arrays:['pins[ ] → DevicePin','connectors[ ] → Connector'],
+    refs:['owner_system : System*','owner_architecture : Architecture*'],
+    embed:['pin_count : uint32_t','pin_capacity : uint32_t','connector_count : uint32_t','connector_capacity : uint32_t'] },
+
+  /* ───────────────────────────── DEVICE PIN ───────────────────────────── */
+  { id:'device_pin', p:'sensor', type:'EEC_DevicePin_t', short:'DevicePin', c:'#388bfd',
+    scalar:['id : uint32_t','number : uint32_t','role : PinRole','interface_type : PinInterface','electrical_requirement : uint32_t','name[64] : char','nominal_current : float (A)','inrush_current : float (A)','max_voltage : float (V)','diagnostics_required : uint32_t (bitmask)','safety_relevant : bool','ground_class : GroundClass','required_reset_state : ResetState','required_sensor_supply : SensorSupplyType','required_sensor_ground : SensorGroundType','required_supply_voltage : float (V)','obsolete : bool'],
+    arrays:[],
+    refs:['signal : Signal*'],
+    embed:[] },
+
+  { id:'act_device_pin', p:'actuator', type:'EEC_DevicePin_t', short:'DevicePin', c:'#388bfd',
+    scalar:['id : uint32_t','number : uint32_t','role : PinRole','interface_type : PinInterface','electrical_requirement : uint32_t','name[64] : char','nominal_current : float (A)','inrush_current : float (A)','max_voltage : float (V)','diagnostics_required : uint32_t (bitmask)','safety_relevant : bool','ground_class : GroundClass','required_reset_state : ResetState','required_sensor_supply : SensorSupplyType','required_sensor_ground : SensorGroundType','required_supply_voltage : float (V)','obsolete : bool'],
+    arrays:[],
+    refs:['signal : Signal*'],
+    embed:[] },
+
+  /* ───────────────────────────── CONNECTOR (Device) ───────────────────────────── */
+  { id:'sensor_connector', p:'sensor', type:'EEC_Connector_t', short:'Connector', c:'#4caf50',
+    scalar:['id : uint32_t','name[32] : char','part_number[64] : char','family : ConnectorFamily','gender : ConnectorGender','total_cavities : uint8_t','used_cavities : uint8_t','max_pin_number : uint32_t','sealed : bool','color[16] : char','mounting[32] : char','rated_voltage : float (V)','rated_current : float (A)','ip_rating[8] : char','temperature_min : float (°C)','temperature_max : float (°C)','obsolete : bool'],
+    arrays:[], refs:[], embed:[] },
+
+  { id:'actuator_connector', p:'actuator', type:'EEC_Connector_t', short:'Connector', c:'#4caf50',
+    scalar:['id : uint32_t','name[32] : char','part_number[64] : char','family : ConnectorFamily','gender : ConnectorGender','total_cavities : uint8_t','used_cavities : uint8_t','max_pin_number : uint32_t','sealed : bool','color[16] : char','mounting[32] : char','rated_voltage : float (V)','rated_current : float (A)','ip_rating[8] : char','temperature_min : float (°C)','temperature_max : float (°C)','obsolete : bool'],
+    arrays:[], refs:[], embed:[] },
+
+  /* ───────────────────────────── ECU ───────────────────────────── */
+  { id:'ecu', p:'arch', type:'EEC_Ecu_t', short:'ECU', c:'#f97583',
+    scalar:['id : uint32_t','variant_id : uint8_t','name[64] : char','part_number[64] : char','variant[16] : char (SMALL|MED|LARGE)','priority : ObjectPriority','safety : SafetyClass','location[64] : char','can_addresses[10] : uint8_t','can_address_count : uint8_t','obsolete : bool'],
+    arrays:['pins[ ] → EcuPin','connectors[ ] → Connector','hosted_swcs[ ] → SWC (derived)'],
+    refs:['owner_architecture : Architecture*'],
+    embed:['pin_count : uint32_t','pin_capacity : uint32_t','connector_count : uint32_t','connector_capacity : uint32_t','hosted_swc_count : uint32_t','hosted_swc_capacity : uint32_t'] },
+
+  /* ───────────────────────────── ECU PIN ───────────────────────────── */
+  { id:'ecu_pin', p:'ecu', type:'EEC_EcuPin_t', short:'EcuPin', c:'#db61a2',
+    scalar:['id : uint32_t','physical_number : uint32_t','connector_name[16] : char','name[64] : char','main_group[32] : char','electrical[160] : char','sw_config[160] : char','role : PinRole','interface_type : PinInterface','supported_capability_mask : uint32_t','diagnostic_flags : uint32_t (bitmask)','electrical_capability : uint32_t (bitmask)','is_occupied : bool','gnd_connect_count : uint32_t','device_pin_name[64] : char','device_pin_desc[128] : char','max_agpl : AgplLevel','current_max : float (A)','provided_sensor_supply : SensorSupplyType','provided_sensor_ground : SensorGroundType','provided_supply_voltage : float (V)','ground_class : GroundClass','reset_state : ResetState','obsolete : bool'],
+    arrays:['functions[ ] : char* (alternative functions)'],
+    refs:['connected_signal : Signal*'],
+    embed:['function_count : uint32_t','function_capacity : uint32_t'] },
+
+  /* ───────────────────────────── BUS NODE ───────────────────────────── */
+  { id:'bus_node', p:'bus', type:'EEC_BusNode_t', short:'BusNode', c:'#54aeff',
+    scalar:['port_index : uint8_t (1-based port)'],
+    arrays:[],
+    refs:['ecu : Ecu*'],
+    embed:[] },
+
+  /* ───────────────────────────── BUS ───────────────────────────── */
+  { id:'bus', p:'arch', type:'EEC_Bus_t', short:'Bus', c:'#79c0ff',
+    scalar:['id : uint32_t','name[64] : char','part_number[64] : char','ref_2x[26] : char','type : BusType','bitrate : uint32_t (bps)','priority : ObjectPriority','safety : SafetyClass','obsolete : bool'],
+    arrays:['nodes[ ] → BusNode','signals[ ] → Signal (routed)','messages[ ] → Message (derived)'],
+    refs:['owner_architecture : Architecture*'],
+    embed:['node_count : uint32_t','node_capacity : uint32_t','signal_count : uint32_t','signal_capacity : uint32_t','message_count : uint32_t','message_capacity : uint32_t'] },
+
+  /* ───────────────────────────── ZONE ───────────────────────────── */
+  { id:'zone', p:'arch', type:'EEC_Zone_t', short:'Zone', c:'#2ea043',
+    scalar:['id : uint32_t','name[64] : char'],
+    arrays:['ecus[ ] → Ecu (referenced, not owned)'],
+    refs:['owner_architecture : Architecture*','← System.zone (assigned systems)'],
+    embed:['ecu_count : uint32_t','ecu_capacity : uint32_t'] },
+
+  /* ───────────────────────────── ECU CONNECTOR ───────────────────────────── */
+  { id:'ecu_connector', p:'ecu', type:'EEC_Connector_t', short:'Connector', c:'#4caf50',
+    scalar:['id : uint32_t','name[32] : char','part_number[64] : char','family : ConnectorFamily','gender : ConnectorGender','total_cavities : uint8_t','used_cavities : uint8_t','max_pin_number : uint32_t','sealed : bool','color[16] : char','mounting[32] : char','rated_voltage : float (V)','rated_current : float (A)','ip_rating[8] : char','temperature_min : float (°C)','temperature_max : float (°C)','obsolete : bool'],
+    arrays:[], refs:[], embed:[] },
+
+  /* ═════════════════════════════════════════════════════════════════════════ */
+  /* ─────────────────────── SWC / CAN MESSAGE OBJECTS ───────────────────── */
+  /* System ─1..n─▶ SWC ─0..n─▶ Message ─1..n─▶ MessageTx (ECU port on a bus) */
+  /* ═════════════════════════════════════════════════════════════════════════ */
+
+  /* ───────────────────────────── SWC ───────────────────────────── */
+  { id:'swc', p:'system', type:'EEC_Swc_t', short:'SWC', c:'#bc8cff',
+    scalar:['id : uint32_t','name[64] : char','ref_2x[26] : char (own 2X, ≠ system 2X)','obsolete : bool'],
+    arrays:['messages[ ] → Message','variables[ ] → Signal (software vars)'],
+    refs:['owner_system : System*','owner_architecture : Architecture*','allocated_ecu : Ecu* (deployment)'],
+    embed:['message_count : uint32_t','message_capacity : uint32_t','variable_count : uint32_t','variable_capacity : uint32_t'] },
+
+  /* ───────────────────────────── CAN MESSAGE ───────────────────────────── */
+  { id:'message', p:'swc', type:'EEC_Message_t', short:'Message', c:'#ffab70',
+    scalar:['id : uint32_t','name[64] : char (DBC BO_)','frame_id : uint32_t','is_extended : bool','pgn : uint32_t','dlc : uint8_t','priority : ObjectPriority','safety : SafetyClass','obsolete : bool'],
+    arrays:['tx_ports[ ] → MessageTx','entries[ ] → MessageSignal'],
+    refs:['owner_swc : Swc*'],
+    embed:['tx_count : uint32_t','tx_capacity : uint32_t','entry_count : uint32_t','entry_capacity : uint32_t'] },
+
+  /* ───────────────────────────── MESSAGE TX (port on a bus) ───────────────────────────── */
+  { id:'message_tx', p:'message', type:'EEC_MessageTx_t', short:'MessageTx', c:'#56d4dd',
+    scalar:['port_index : uint8_t (1-based CAN channel)','cycle_time_ms : uint32_t (0 = event)'],
+    arrays:[],
+    refs:['bus : Bus*','ecu : Ecu* (== owner_swc.allocated_ecu)'],
+    embed:[] },
+
+  /* ───────────────────────────── MESSAGE SIGNAL (layout) ───────────────────────────── */
+  { id:'message_signal', p:'message', type:'EEC_MessageSignal_t', short:'MessageSignal', c:'#a5d6ff',
+    scalar:['start_bit : uint16_t','length : uint16_t','little_endian : bool (Intel|Motorola)','scale : float','offset : float','receiver_count : uint8_t'],
+    arrays:['receivers[16] → Ecu (Rx)'],
+    refs:['signal : Signal* (logical, referenced)'],
+    embed:[] },
+
+  /* ═════════════════════════════════════════════════════════════════════════ */
+  /* ────────────────────── ESTIMATION PIPELINE OBJECTS ──────────────────── */
+  /* ═════════════════════════════════════════════════════════════════════════ */
+
+  { id:'est_result', p:null, type:'EEC_EstimationResult_t', short:'EstimationResult', c:'#ff7b72',
+    scalar:['platform_name[128] : char','system_count : uint32_t','systems_found : uint32_t','systems_missing : uint32_t','arch_iface_count : uint32_t','arch_total_signals : uint32_t','proposed_count : uint32_t','proposition_notes[512] : char'],
+    arrays:['systems[N] → SystemIo','arch_io[N] → IoCount','capacities[N] → EcuCapacity','estimates[N] → EcuEstimate','proposed[N] → ProposedEcu'],
+    refs:[], embed:[] },
+
+  { id:'system_io', p:'est_result', type:'EEC_SystemIo_t', short:'SystemIo', c:'#ffa657',
+    scalar:['name[64] : char','ref_2x[64] : char','found_in_library : bool','iface_count : uint32_t','total_signals : uint32_t'],
+    arrays:['per_iface[N] → IoCount'],
+    refs:[], embed:[] },
+
+  { id:'io_count_system_iface', p:'system_io', type:'EEC_IoCount_t', short:'IoCount (per_iface)', c:'#d2a8ff',
+    scalar:['interface_type : SignalInterface','input_count : uint32_t','output_count : uint32_t','inout_count : uint32_t','total : uint32_t'],
+    arrays:[],
+    refs:[], embed:[] },
+
+  { id:'io_count_arch_io', p:'est_result', type:'EEC_IoCount_t', short:'IoCount (arch_io)', c:'#d2a8ff',
+    scalar:['interface_type : SignalInterface','input_count : uint32_t','output_count : uint32_t','inout_count : uint32_t','total : uint32_t'],
+    arrays:[],
+    refs:[], embed:[] },
+
+  { id:'ecu_capacity', p:'est_result', type:'EEC_EcuCapacity_t', short:'EcuCapacity', c:'#79c0ff',
+    scalar:['variant[16] : char (SMALL|MEDIUM|LARGE)','total_pins : uint32_t'],
+    arrays:['per_iface[N] : uint32_t'],
+    refs:[], embed:[] },
+
+  { id:'ecu_estimate', p:'est_result', type:'EEC_EcuEstimate_t', short:'EcuEstimate', c:'#7ee787',
+    scalar:['variant[16] : char (SMALL|MEDIUM|LARGE)','ecu_count : uint32_t','total_pins_available : uint32_t','total_pins_used : uint32_t','utilisation_pct : float (%)'],
+    arrays:[],
+    refs:[], embed:[] },
+
+  { id:'proposed_ecu', p:'est_result', type:'EEC_ProposedEcu_t', short:'ProposedEcu', c:'#ffd33d',
+    scalar:['variant[16] : char (SMALL|MEDIUM|LARGE)','assigned_systems[256] : char (comma-separated)','pins_used : uint32_t','pins_total : uint32_t','utilisation_pct : float (%)'],
+    arrays:[],
+    refs:[], embed:[] }
+];
+
+/* cross-reference arcs */
+var XREFS = [
+  { from:'device_pin', to:'signal', style:'connect' },
+  { from:'act_device_pin', to:'signal', style:'connect' },
+  { from:'ecu_pin',    to:'signal', style:'connect' },
+  { from:'bus_node',   to:'ecu',    style:'ref' },
+  { from:'bus',        to:'signal', style:'ref' }
+];
+
+/* ====================================================================
+ *  LAYOUT ENGINE
+ * ==================================================================== */
+var NW = 170, NH = 52, GX = 32, GY = 44, PAD = 30;
+var dpr = window.devicePixelRatio || 1;
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var tipEl = document.getElementById('tip');
+var byId = {};  MODEL.forEach(function(n){ byId[n.id] = n; });
+function kids(pid){ return MODEL.filter(function(n){ return n.p === pid; }); }
+
+function sw(id){
+  var ch = kids(id);
+  if(!ch.length) return NW;
+  var w = 0;
+  ch.forEach(function(c,i){ if(i) w += GX; w += sw(c.id); });
+  return Math.max(NW, w);
+}
+
+var pos = {};
+function lay(id, x, y){
+  var w = sw(id);
+  pos[id] = { x: x + w/2 - NW/2, y: y, w: NW, h: NH };
+  var cx = x;
+  kids(id).forEach(function(c){ lay(c.id, cx, y + NH + GY); cx += sw(c.id) + GX; });
+}
+lay('arch', PAD, PAD);
+lay('est_result', sw('arch') + PAD + GX * 3, PAD);
+
+var W = 0, H = 0;
+Object.keys(pos).forEach(function(k){ var p=pos[k]; W=Math.max(W,p.x+p.w); H=Math.max(H,p.y+p.h); });
+W += PAD*2; H += PAD*2;
+canvas.width = W * dpr; canvas.height = H * dpr;
+canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+ctx.scale(dpr, dpr);
+
+/* ====================================================================
+ *  DRAW HELPERS
+ * ==================================================================== */
+function hexRgba(hex, a){
+  var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+
+function drawVein(x1,y1,x2,y2,color,w,dash){
+  var my1=y1+(y2-y1)*.35, my2=y1+(y2-y1)*.65;
+  ctx.save();
+  ctx.strokeStyle=color; ctx.lineWidth=w;
+  if(dash) ctx.setLineDash(dash);
+  ctx.shadowColor=color; ctx.shadowBlur=8;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.bezierCurveTo(x1,my1, x2,my2, x2,y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawXref(fp,tp,style){
+  var x1=fp.x+fp.w, y1=fp.y+fp.h/2;
+  var x2=tp.x, y2=tp.y+tp.h/2;
+  var offx=Math.abs(y1-y2)*.3+40;
+  ctx.save();
+  ctx.lineWidth=1.5;
+  if(style==='connect'){ ctx.strokeStyle=hexRgba('#56d364',.45); ctx.setLineDash([3,4]); ctx.shadowColor='#56d364'; }
+  else{ ctx.strokeStyle=hexRgba('#f97583',.4); ctx.setLineDash([6,4]); ctx.shadowColor='#f97583'; }
+  ctx.shadowBlur=6;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.bezierCurveTo(x1+offx,y1, x2-offx,y2, x2,y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+/* ====================================================================
+ *  RENDER
+ * ==================================================================== */
+function render(hid){
+  ctx.clearRect(0,0,W,H);
+  /* bg gradient */
+  var bg=ctx.createRadialGradient(W/2,80,50,W/2,H/2,W);
+  bg.addColorStop(0,'#161b22'); bg.addColorStop(1,'#0d1117');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  /* ownership veins */
+  MODEL.forEach(function(n){
+    if(!n.p) return;
+    var pp=pos[n.p], cp=pos[n.id];
+    var dim=(hid && hid!==n.id && hid!==n.p)?.15:.55;
+    drawVein(pp.x+pp.w/2, pp.y+pp.h, cp.x+cp.w/2, cp.y, hexRgba(byId[n.p].c, dim), 2, null);
+  });
+
+  /* xref arcs */
+  XREFS.forEach(function(xr){
+    var fp=pos[xr.from], tp=pos[xr.to];
+    if(fp&&tp) drawXref(fp,tp,xr.style);
+  });
+
+  /* nodes */
+  MODEL.forEach(function(n){
+    var p=pos[n.id];
+    var isH=(hid===n.id);
+    var dim=(hid && !isH)?.45:1;
+
+    ctx.save();
+    if(isH){ ctx.shadowColor=n.c; ctx.shadowBlur=22; }
+    else{ ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=6; }
+
+    rr(p.x,p.y,p.w,p.h,8);
+    ctx.fillStyle=hexRgba(n.c, .12*dim); ctx.fill();
+    ctx.strokeStyle=hexRgba(n.c, .7*dim); ctx.lineWidth=isH?2.5:1.5; ctx.stroke();
+    ctx.restore();
+
+    /* title */
+    ctx.save();
+    ctx.font='bold 12px "Segoe UI",system-ui,sans-serif';
+    ctx.fillStyle=hexRgba('#ffffff', .95*dim);
+    ctx.fillText(n.short, p.x+10, p.y+20);
+
+    ctx.font='10px "Segoe UI",system-ui,sans-serif';
+    ctx.fillStyle=hexRgba('#8b949e', .8*dim);
+    ctx.fillText(n.type, p.x+10, p.y+36);
+
+    /* prop count badge */
+    var cnt=n.scalar.length+n.arrays.length+n.refs.length+n.embed.length;
+    var badge=cnt+' props';
+    var bw=ctx.measureText(badge).width+10;
+    rr(p.x+p.w-bw-6, p.y+6, bw, 16, 3);
+    ctx.fillStyle=hexRgba(n.c, .25*dim); ctx.fill();
+    ctx.fillStyle=hexRgba('#ffffff', .6*dim);
+    ctx.font='9px "Segoe UI",system-ui,sans-serif';
+    ctx.fillText(badge, p.x+p.w-bw-1, p.y+17);
+    ctx.restore();
+  });
+}
+render(null);
+
+/* ====================================================================
+ *  INTERACTION
+ * ==================================================================== */
+function hitTest(mx,my){
+  for(var i=0;i<MODEL.length;i++){
+    var p=pos[MODEL[i].id];
+    if(mx>=p.x && mx<=p.x+p.w && my>=p.y && my<=p.y+p.h) return MODEL[i];
+  }
+  return null;
+}
+
+var curH=null;
+canvas.addEventListener('mousemove', function(ev){
+  var rect=canvas.getBoundingClientRect();
+  var mx=ev.clientX-rect.left, my=ev.clientY-rect.top;
+  var hit=hitTest(mx,my);
+
+  if(hit!==curH){ curH=hit; render(hit?hit.id:null); }
+
+  if(hit){
+    var html='<h3 style="color:'+hit.c+'">'+hit.type+'</h3>';
+    if(hit.scalar.length){
+      html+='<div class="section">Scalar Properties</div>';
+      hit.scalar.forEach(function(s){ html+='<div class="p scalar">• '+s+'</div>'; });
+    }
+    if(hit.arrays.length){
+      html+='<div class="section">Owned Arrays (Children)</div>';
+      hit.arrays.forEach(function(s){ html+='<div class="p arr">⯈ '+s+'</div>'; });
+    }
+    if(hit.embed.length){
+      html+='<div class="section">Embedded / Count Fields</div>';
+      hit.embed.forEach(function(s){ html+='<div class="p" style="color:#79c0ff">◉ '+s+'</div>'; });
+    }
+    if(hit.refs.length){
+      html+='<div class="section">Back-References</div>';
+      hit.refs.forEach(function(s){ html+='<div class="p ref">⟵ '+s+'</div>'; });
+    }
+    tipEl.innerHTML=html;
+    tipEl.classList.add('show');
+    var tx=ev.clientX+16, ty=ev.clientY-10;
+    if(tx+420>window.innerWidth) tx=ev.clientX-430;
+    if(ty+tipEl.offsetHeight>window.innerHeight) ty=window.innerHeight-tipEl.offsetHeight-10;
+    tipEl.style.left=tx+'px'; tipEl.style.top=ty+'px';
+  } else {
+    tipEl.classList.remove('show');
+  }
+});
+
+canvas.addEventListener('mouseleave', function(){
+  curH=null; render(null); tipEl.classList.remove('show');
+});
+</script>
+</body>
+</html>

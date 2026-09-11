@@ -1,0 +1,42 @@
+{
+  "schema_version": "eec-mapping-strict-1.0",
+  "type": "actuator",
+  "name": "HYD_3050204_DIODE",
+  "device_type": "ACTUATOR",
+  "part_number": "3050204",
+  "supplier_pn": "Coil 24DK01-32-1329",
+  "manufacturer": "HYDAC",
+  "priority": "MEDIUM",
+  "safety": "QM",
+  "description": "HYDAC diode coil 3050204.",
+  "notes": "Exact part number. Base row needs manual review before mapping.",
+  "mapping_status": "CATALOG_EXACT_REVIEW_REQUIRED",
+  "source": {
+    "pdf": "PRD_DOC_PRO_5207-00001__SEN__AIN__V7.pdf",
+    "page": 10,
+    "part_number": "3050204"
+  },
+  "connectors": [
+    {
+      "part_number": "KOSTAL_M27x1",
+      "family": "CUSTOM",
+      "gender": "MALE",
+      "total_cavities": 2,
+      "ip_rating": "IP65/IP67",
+      "mounting": "radial",
+      "name": "X1",
+      "used_cavities": 2,
+      "max_pin_number": 2,
+      "sealed": true,
+      "color": "black",
+      "rated_voltage": 0,
+      "rated_current": 0,
+      "temperature_min": -30,
+      "temperature_max": 60
+    }
+  ],
+  "pins": [],
+  "signals": [],
+  "suppressor_diode": "P4KE68CA",
+  "blocking_voltage_v": 68
+}

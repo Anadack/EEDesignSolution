@@ -1,0 +1,16 @@
+======================================================================
+  Push Requirements ÔåÆ Polarion LiveDoc
+  Source:   Requierement.txt
+  Target:   AGCOProductsPortfolio / EE_Composer_Framework / CEA3_EE_Architecture_Common_design_rules
+======================================================================
+
+[1/3] Parsing Requierement.txt...
+       Found 20 sections, 145 requirements.
+[2/3] Building Polarion HTML...
+       Generated 86744 characters of HTML.
+       Local copy saved: exports\CEA3_EE_Architecture_Common_design_rules.html
+[3/3] Pushing to Polarion...
+       Document found. Revision/ETag: *
+       Ô£à Document updated successfully!
+
+  View: https://alm.agcocorp.com/polarion/#/project/AGCOProductsPortfolio/wiki/EE_Composer_Framework/CEA3_EE_Architecture_Common_design_rules

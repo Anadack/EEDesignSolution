@@ -1,0 +1,8 @@
+{
+  "server_url": "https://your-polarion.example.com/polarion",
+  "rest_api_base": "/rest/v1",
+  "project_id": "YOUR_PROJECT",
+  "wiki_space": "EE_Composer_Framework",
+  "wiki_design_rules_page": "CEA3_EE_Architecture_Common_design_rules",
+  "export_dir": "generated_doc/exports"
+}

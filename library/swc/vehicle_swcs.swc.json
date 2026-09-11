@@ -1,0 +1,106 @@
+{
+  "schema": "eec-swc-1.0",
+  "description": "Additional test SWCs exercising: multiple SWCs hosted on one ECU, several senders on one bus, and a multi-bus (broadcast) message. Bit layout and DLC are auto-derived from each signal type.",
+  "swcs": [
+    {
+      "name": "Transmission_SWC",
+      "ref_2x": "2XSWC000002",
+      "system": "Transmission_Control_Software",
+      "allocated_ecu": "AEC_TRANSMISSION_01",
+      "variables": [
+        { "name": "Current_Gear",           "type": "U8",  "interface": "CAN", "unit": "NONE",    "min": 0,    "max": 24,   "resolution": 1,    "scaling": 1 },
+        { "name": "Transmission_Oil_Temp",  "type": "S16", "interface": "CAN", "unit": "CELSIUS", "min": -40,  "max": 150,  "resolution": 0.1,  "scaling": 0.1 },
+        { "name": "Ground_Speed",           "type": "U16", "interface": "CAN", "unit": "HERTZ",   "min": 0,    "max": 6000, "resolution": 0.01, "scaling": 0.01 }
+      ],
+      "messages": [
+        {
+          "name": "TransmissionStatus",
+          "frame_id": 217056512,
+          "extended": true,
+          "tx": [ { "bus": "Powertrain_Engine_Bus", "port": 2, "cycle_ms": 50 } ],
+          "signals": [ "Current_Gear", "Transmission_Oil_Temp", "Ground_Speed" ]
+        }
+      ]
+    },
+    {
+      "name": "Engine_Diag_SWC",
+      "ref_2x": "2XSWC000003",
+      "system": "Engine_Diagnostic_Software",
+      "allocated_ecu": "AEC_ENGINE_01",
+      "variables": [
+        { "name": "Active_DTC_Count", "type": "U8", "interface": "CAN", "unit": "NONE",    "min": 0, "max": 255, "resolution": 1, "scaling": 1 },
+        { "name": "MIL_Status",       "type": "U1", "interface": "CAN", "unit": "BOOLEAN", "min": 0, "max": 1,   "resolution": 1, "scaling": 1 }
+      ],
+      "messages": [
+        {
+          "name": "EngineDiagnostics",
+          "frame_id": 419351040,
+          "extended": true,
+          "tx": [ { "bus": "Diagnostic_OBD_Bus", "port": 3, "cycle_ms": 1000 } ],
+          "signals": [ "Active_DTC_Count", "MIL_Status" ]
+        }
+      ]
+    },
+    {
+      "name": "Hitch_SWC",
+      "ref_2x": "2XSWC000004",
+      "system": "Rear_Hitch_Control_Software",
+      "allocated_ecu": "AEC_REAR_HITCH_01",
+      "variables": [
+        { "name": "Hitch_Position", "type": "U16", "interface": "CAN", "unit": "PERCENT", "min": 0, "max": 100,   "resolution": 0.01, "scaling": 0.01 },
+        { "name": "Draft_Force",    "type": "U16", "interface": "CAN", "unit": "NONE",    "min": 0, "max": 65535, "resolution": 1,    "scaling": 1 },
+        { "name": "Hitch_State",    "type": "U8",  "interface": "CAN", "unit": "NONE",    "min": 0, "max": 7,     "resolution": 1,    "scaling": 1 }
+      ],
+      "messages": [
+        {
+          "name": "HitchStatus",
+          "frame_id": 217120000,
+          "extended": true,
+          "tx": [ { "bus": "ISOBUS", "port": 2, "cycle_ms": 100 } ],
+          "signals": [ "Hitch_Position", "Draft_Force", "Hitch_State" ]
+        }
+      ]
+    },
+    {
+      "name": "Cabin_SWC",
+      "ref_2x": "2XSWC000005",
+      "system": "Cabin_Display_Software",
+      "allocated_ecu": "AEC_CABIN_01",
+      "variables": [
+        { "name": "Display_Vehicle_Speed", "type": "U16", "interface": "CAN", "unit": "HERTZ", "min": 0, "max": 6000, "resolution": 0.01, "scaling": 0.01 },
+        { "name": "Cluster_Warning_Flags", "type": "U8",  "interface": "CAN", "unit": "NONE",  "min": 0, "max": 255,  "resolution": 1,    "scaling": 1 }
+      ],
+      "messages": [
+        {
+          "name": "CabinBroadcast",
+          "frame_id": 217055744,
+          "extended": true,
+          "tx": [
+            { "bus": "Tractor_Bus",       "port": 1, "cycle_ms": 100 },
+            { "bus": "Diagnostic_OBD_Bus", "port": 2, "cycle_ms": 100 }
+          ],
+          "signals": [ "Display_Vehicle_Speed", "Cluster_Warning_Flags" ]
+        }
+      ]
+    },
+    {
+      "name": "Brake_SWC",
+      "ref_2x": "2XSWC000006",
+      "system": "BRAKE_SYSTEM",
+      "allocated_ecu": "AEC_TRANSMISSION_01",
+      "variables": [
+        { "name": "Brake_Pressure",  "type": "U16", "interface": "CAN", "unit": "BAR",     "min": 0, "max": 250, "resolution": 0.01, "scaling": 0.01 },
+        { "name": "Brake_Applied",   "type": "U1",  "interface": "CAN", "unit": "BOOLEAN", "min": 0, "max": 1,   "resolution": 1,    "scaling": 1 }
+      ],
+      "messages": [
+        {
+          "name": "BrakeStatus",
+          "frame_id": 217056768,
+          "extended": true,
+          "tx": [ { "bus": "Powertrain_Engine_Bus", "port": 2, "cycle_ms": 20 } ],
+          "signals": [ "Brake_Pressure", "Brake_Applied" ]
+        }
+      ]
+    }
+  ]
+}

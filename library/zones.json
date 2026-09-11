@@ -1,0 +1,28 @@
+{
+  "mode": "ZONAL",
+  "zones": [
+    {
+      "name": "Cabin",
+      "ecus": ["AEC_CABIN_01", "AEC_DISPLAY_01"],
+      "systems": ["Cabin_HVAC_and_Comfort_System"]
+    },
+    {
+      "name": "Powertrain",
+      "ecus": ["AEC_ENGINE_01", "AEC_TRANSMISSION_01"],
+      "systems": [
+        "BRAKE_SYSTEM",
+        "Example_HYDAC_Coil_Topologies_System",
+        "Example_System_with_Bosch_Rexroth_Coil_Actuators"
+      ]
+    },
+    {
+      "name": "Rear",
+      "ecus": ["AEC_REAR_HITCH_01", "AEC_TRAILER_01"],
+      "systems": [
+        "Rear_Hydraulic_Hitch_System",
+        "HYDAC_Selected_Sensor_Examples",
+        "Example_System_with_selected_elobau_angle_sensors"
+      ]
+    }
+  ]
+}

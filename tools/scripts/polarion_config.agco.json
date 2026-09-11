@@ -1,0 +1,32 @@
+{
+    "server_url": "https://alm.agcocorp.com/polarion",
+    "project_id": "AGCOProductsPortfolio",
+    "wiki_space": "EE_Composer_Framework",
+    "wiki_design_rules_page": "CEA3_EE_Architecture_Common_design_rules",
+    "auth_method": "pat",
+    "rest_api_base": "/rest/v1",
+    "work_item_type": "requirement",
+    "query_filter": "type:requirement",
+    "local_requirements_file": "Requierements/requirements.md",
+    "local_solution_file": "Requierements/solution_architect_requirements_to_system_teams.md",
+    "export_dir": "generated_doc/exports",
+    "field_mapping": {
+        "id": "id",
+        "title": "title",
+        "description": "description.value",
+        "status": "status.id",
+        "priority": "priority.id",
+        "type": "type.id",
+        "severity": "severity.id",
+        "custom_fields": {
+            "fr_id": "customFields.fr_id",
+            "sr_id": "customFields.sr_id"
+        }
+    },
+    "sync_options": {
+        "conflict_resolution": "polarion_wins",
+        "create_missing_in_polarion": true,
+        "update_existing": true,
+        "dry_run": false
+    }
+}

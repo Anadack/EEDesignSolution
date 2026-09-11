@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>E/E Architect Design · Mapping Rules Documentation</title>
+<style>
+:root{
+  --bg:#0b0f17;--surface:#111827;--surface2:#172033;--card:#101724;--text:#e8edf7;--muted:#93a1b6;--weak:#5f6b7d;--line:rgba(255,255,255,.10);
+  --accent:#3b82f6;--accent2:#38bdf8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--violet:#a78bfa;--green:#34d399;
+  --radius:18px;--shadow:0 22px 70px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 10% 0%,rgba(59,130,246,.20),transparent 28%),radial-gradient(circle at 90% 0%,rgba(167,139,250,.16),transparent 28%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.62}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace} a{color:#93c5fd;text-decoration:none} a:hover{text-decoration:underline}
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh}
+aside{position:sticky;top:0;height:100vh;background:rgba(17,24,39,.88);backdrop-filter:blur(16px);border-right:1px solid var(--line);padding:22px 18px;overflow:auto}
+.logo{display:flex;gap:12px;align-items:center;margin-bottom:20px} .logo-mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#1d4ed8);display:grid;place-items:center;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset} .logo-mark svg{width:20px;height:20px;stroke:white;fill:none;stroke-width:1.8}
+.logo-title{font-weight:800;letter-spacing:.04em;font-size:12px;text-transform:uppercase} .logo-sub{font-size:11px;color:var(--weak)}
+.search{width:100%;border:1px solid var(--line);background:rgba(15,23,42,.9);color:var(--text);border-radius:12px;padding:10px 12px;margin:4px 0 16px;outline:none} .search:focus{border-color:var(--accent)}
+.nav-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--weak);font-weight:800;margin:18px 0 8px} nav{display:grid;gap:5px} nav a{display:block;color:#cbd5e1;border:1px solid transparent;border-radius:11px;padding:9px 11px;font-size:12.5px} nav a:hover,nav a.active{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.32);text-decoration:none;color:#bfdbfe}
+.source-pill{display:block;margin-top:18px;border:1px solid var(--line);background:rgba(15,23,42,.72);border-radius:14px;padding:12px;color:var(--muted);font-size:11px}
+main{padding:28px;overflow:hidden} .title-card{border:1px solid var(--line);background:linear-gradient(180deg,rgba(17,24,39,.92),rgba(15,23,42,.82));box-shadow:var(--shadow);border-radius:24px;padding:28px;margin-bottom:20px}
+h1{font-size:34px;line-height:1.08;margin:0 0 10px;letter-spacing:-.055em} .lead{font-size:15px;color:#b8c5d8;max-width:1100px;margin:0} .meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px} .meta{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:999px;padding:6px 10px;color:#dce8fa;font-size:11px;font-weight:700}
+.doc-section{border:1px solid var(--line);background:rgba(17,24,39,.82);border-radius:22px;padding:24px;margin-bottom:18px;box-shadow:0 12px 40px rgba(0,0,0,.20)} .section-kicker{color:var(--accent2);font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:800;margin-bottom:6px} h2{font-size:24px;letter-spacing:-.035em;margin:0 0 18px} h3{margin:0 0 10px;font-size:15px} p{color:#c8d3e4;margin:0 0 14px} .small{font-size:12px;color:var(--muted)}
+.hero-grid,.grid.two,.example-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px} .grid.two{grid-template-columns:1fr 1fr} @media(max-width:1100px){.app{grid-template-columns:1fr} aside{position:relative;height:auto} .hero-grid,.grid.two,.example-grid{grid-template-columns:1fr}}
+.hero-card,.card2,.example{border:1px solid var(--line);background:rgba(15,23,42,.72);border-radius:18px;padding:17px} .hero-card{min-height:166px} .hero-card.ok{border-color:rgba(34,197,94,.26)} .hero-card.warn{border-color:rgba(245,158,11,.30)} .hero-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--weak);font-weight:900;margin-bottom:10px}
+.flow{display:grid;grid-template-columns:1fr 45px 1fr 45px 1fr;gap:10px;align-items:stretch;margin-top:16px} .flow-col{border:1px solid var(--line);background:#0d1421;border-radius:18px;padding:15px;display:grid;gap:7px} .flow-col h4{margin:0 0 5px;font-size:13px} .flow-col span{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:6px 9px;color:#cbd5e1;font-size:12px} .flow-arrow{display:grid;place-items:center;color:var(--accent2);font-size:28px;font-weight:900}
+@media(max-width:900px){.flow{grid-template-columns:1fr} .flow-arrow{transform:rotate(90deg)}}
+.note,.rule-card{border:1px solid var(--line);border-left:4px solid var(--accent);background:rgba(59,130,246,.08);border-radius:14px;padding:13px 14px;margin-top:14px;color:#ccdbed} .note.warn{border-left-color:var(--warn);background:rgba(245,158,11,.08)} .note.info{border-left-color:var(--accent2)}
+table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px;border:1px solid var(--line);background:rgba(15,23,42,.52);margin:12px 0} th,td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.07);text-align:left;vertical-align:top} th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#aab7c9;background:rgba(255,255,255,.04)} td{color:#d7e1ef} tr:last-child td{border-bottom:0}
+.status{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em} .status.ok{background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.25)} .status.warn{background:rgba(245,158,11,.14);color:#fcd34d;border:1px solid rgba(245,158,11,.25)} .status.bad{background:rgba(239,68,68,.14);color:#fca5a5;border:1px solid rgba(239,68,68,.25)}
+.code{background:#070b12;border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:14px;overflow:auto;color:#d6e7ff;font-size:12px;line-height:1.55;margin:10px 0 14px} .chips{display:flex;gap:7px;flex-wrap:wrap;padding:0;list-style:none;margin:6px 0 0} .chips li{border:1px solid var(--line);background:rgba(255,255,255,.05);border-radius:999px;padding:5px 8px;font-size:11px;color:#cbd5e1}
+.decision,.algorithm,.score-grid,.glossary{display:grid;gap:9px} .decision{grid-template-columns:repeat(3,1fr);margin-top:14px} .decision div,.algorithm div,.score-grid div,.glossary div{border:1px solid var(--line);background:rgba(15,23,42,.72);border-radius:14px;padding:13px} .decision strong,.score-grid strong,.glossary strong{display:block;color:#f8fafc} .decision span,.score-grid span,.glossary span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.score-grid{grid-template-columns:repeat(2,minmax(0,1fr))} .algorithm div{position:relative;padding-left:42px} .algorithm div::before{content:"";position:absolute;left:16px;top:18px;width:10px;height:10px;background:var(--accent);border-radius:50%;box-shadow:0 0 0 4px rgba(59,130,246,.13)}
+.trace{border:1px solid rgba(34,197,94,.18);background:rgba(34,197,94,.08);border-radius:12px;padding:11px 13px;color:#dfffee;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;margin:8px 0} .trace span{color:#86efac;font-weight:900} .trace.warn{border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.08)} .trace.warn span{color:#fcd34d} .trace.bad{border-color:rgba(239,68,68,.22);background:rgba(239,68,68,.08)} .trace.bad span{color:#fca5a5}
+.example.ok{border-color:rgba(34,197,94,.24)} .example.warn{border-color:rgba(245,158,11,.26)} .example.bad{border-color:rgba(239,68,68,.26)}
+.footer{padding:22px;color:var(--muted);font-size:12px;text-align:center}
+mark{background:rgba(56,189,248,.18);color:#c8f8ff;border-radius:4px;padding:0 2px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="logo"><div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M4 12h4m8 0h4M8 12a4 4 0 0 1 8 0M8 12a4 4 0 0 0 8 0M12 3v4m0 10v4" stroke-linecap="round"/></svg></div><div><div class="logo-title">E/E Architect Design</div><div class="logo-sub">Mapping rules documentation</div></div></div>
+  <input id="search" class="search" placeholder="Rechercher règle, fonction, warning…" />
+  <div class="nav-title">Sections</div>
+  <nav id="nav"><a href="#overview" data-target="overview">Vue d’ensemble du mapping</a>
+<a href="#role-rules" data-target="role-rules">Règle fondamentale : rôle logique ↔ rôle ECU</a>
+<a href="#capability-rules" data-target="capability-rules">Compatibilité interface et capacité ECU</a>
+
+<a href="#electrical-bitmasks" data-target="electrical-bitmasks">Electrical capability / requirement</a>
+<a href="#roles-reference" data-target="roles-reference">Valeurs possibles des rôles</a>
+<a href="#pullup-pulldown" data-target="pullup-pulldown">Pull-up / pull-down</a>
+<a href="#signal-fields" data-target="signal-fields">Champs signal et prefix mapping</a>
+<a href="#functions" data-target="functions">Fonctions de mapping disponibles</a>
+<a href="#target-ecu" data-target="target-ecu">Choisir vers quel ECU mapper un ou plusieurs systèmes</a>
+<a href="#relaxed" data-target="relaxed">Mode relaxed : premier pin compatible</a>
+<a href="#strict" data-target="strict">Mode strict : filtres + scoring</a>
+<a href="#single-ecu" data-target="single-ecu">Mapping vers un seul ECU : règles spécifiques</a>
+<a href="#automap-smart" data-target="automap-smart">AutoMapSmart : ordre de priorité des systèmes</a>
+<a href="#ok-warning-reject" data-target="ok-warning-reject">Quand le mapping est OK, warning ou rejeté</a>
+<a href="#verification" data-target="verification">Règles de vérification appliquées après mapping</a>
+<a href="#examples" data-target="examples">Exemples pratiques</a>
+<a href="#traces" data-target="traces">Comprendre les traces</a>
+<a href="#recommendations" data-target="recommendations">Recommandations d’amélioration framework</a>
+<a href="#glossary" data-target="glossary">Glossaire rapide</a></nav>
+  <a class="source-pill" href="source_audit.json"><strong>Source audit</strong><br/>Fonctions, lignes de référence et SHA-256 des fichiers analysés.</a>
+</aside>
+<main>
+  <div class="title-card">
+    <h1>Documentation complète des règles de mapping E/E Architect Design</h1>
+    <p class="lead">Référence visuelle pour comprendre comment les systèmes, capteurs, actionneurs, pins et signaux sont mappés sur les ECU, quels cas passent, quels cas sont rejetés, quels cas génèrent des warnings, et comment choisir un ECU cible.</p>
+    <div class="meta-row"><span class="meta">HTML standalone</span><span class="meta">Mapping relaxed + strict</span><span class="meta">Verification V1–V13 / B1–B8</span><span class="meta">Basé sur les fichiers C/H uploadés</span></div>
+  </div>
+  <div id="content"><section id="overview" class="doc-section"><div class="section-kicker">Comment le framework transforme les pins logiques des systèmes en allocations ECU.</div><h2>Vue d’ensemble du mapping</h2>
+<div class="hero-grid">
+  <div class="hero-card">
+    <div class="hero-label">Objectif</div>
+    <h3>Router chaque signal de système vers une pin ECU compatible</h3>
+    <p>Le mapping parcourt les composants d’un système, leurs capteurs, actionneurs, pins et signaux, puis cherche une ressource ECU libre et compatible.</p>
+  </div>
+  <div class="hero-card ok">
+    <div class="hero-label">Sortie attendue</div>
+    <h3>Signal mappé + ECU pin occupé</h3>
+    <p>Quand le mapping réussit, <code>pin.connected_signal</code> pointe vers le signal, <code>signal.is_mapped = true</code>, et la pin est marqué occupé.</p>
+  </div>
+  <div class="hero-card warn">
+    <div class="hero-label">Cas particulier</div>
+    <h3>GROUND peut recevoir plusieurs connexions</h3>
+    <p>Les pins ground sont marqués occupés mais restent acceptables pour d’autres connexions afin de supporter une topologie étoile.</p>
+  </div>
+</div>
+
+<div class="flow">
+  <div class="flow-col input"><h4>System JSON / C model</h4><span>components</span><span>sensors</span><span>actuators</span><span>device pins</span><span>signals</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-col process"><h4>Mapping engine</h4><span>role compatibility</span><span>interface capability</span><span>free pin check</span><span>electrical flags</span><span>strict policy scoring</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-col output"><h4>ECU / ECU allocation</h4><span>connector / pin</span><span>occupied status</span><span>trace line</span><span>verification report</span></div>
+</div>
+
+<div class="note info"><strong>Sources analysées :</strong> <code>EEC_connect.h</code>, <code>EEC_connect.c</code>, <code>EEC_architecture.c</code>, <code>EEC_verify.c</code>, <code>EEC_types.h</code>. Voir <a href="source_audit.json">source_audit.json</a> pour les empreintes SHA-256 et les lignes de référence.</div>
+</section>
+<section id="role-rules" class="doc-section"><div class="section-kicker">La compatibilité de rôle est la première barrière de mapping.</div><h2>Règle fondamentale : rôle logique ↔ rôle ECU</h2>
+<p>Le framework considère la pin du device comme une <strong>vue logique côté système</strong>, et la pin ECU comme une <strong>ressource physique côté contrôleur</strong>. La relation est volontairement inversée pour les capteurs et actionneurs.</p>
+<table>
+<thead><tr><th>Pin logique système</th><th>Interprétation</th><th>Pin ECU attendu</th><th>Résultat</th></tr></thead>
+<tbody>
+<tr><td><code>OUTPUT</code></td><td>Un capteur produit une information</td><td><code>INPUT</code></td><td><span class="status ok">OK</span></td></tr>
+<tr><td><code>INPUT</code></td><td>Un actionneur reçoit une commande</td><td><code>OUTPUT</code></td><td><span class="status ok">OK</span></td></tr>
+<tr><td><code>INOUT</code></td><td>Bus bidirectionnel, typiquement CAN/LIN/ETH</td><td><code>INOUT</code></td><td><span class="status ok">OK</span></td></tr>
+<tr><td><code>SUPPLY</code></td><td>Alimentation device</td><td><code>SUPPLY</code></td><td><span class="status ok">OK</span></td></tr>
+<tr><td><code>GROUND</code></td><td>Retour masse</td><td><code>GROUND</code></td><td><span class="status ok">OK</span></td></tr>
+<tr><td><code>UNASSIGNED</code></td><td>NC/DNC ou pin catalogue non mappable</td><td>Tout rôle</td><td><span class="status warn">Toléré</span></td></tr>
+<tr><td>Autre combinaison</td><td>Incohérence de direction</td><td>—</td><td><span class="status bad">Rejeté</span></td></tr>
+</tbody>
+</table>
+<div class="rule-card"><strong>Localisation code :</strong> <code>EEC_connect.c:72-93</code> et règle miroir dans <code>EEC_verify.c:74-94</code>.</div>
+</section>
+<section id="capability-rules" class="doc-section"><div class="section-kicker">Un rôle compatible ne suffit pas : la pin ECU doit aussi supporter l’interface du signal.</div><h2>Compatibilité interface et capacité ECU</h2>
+<p>Après la vérification du rôle, le framework convertit l’interface du signal en masque de capacité ECU puis vérifie que la pin physique expose cette capacité.</p>
+<div class="grid two">
+  <div class="card2"><h3>Exemples d’interfaces signal</h3><ul class="chips"><li>DIGITAL</li><li>ANALOG</li><li>PWM</li><li>CAN</li><li>LIN</li><li>SENT</li><li>ETHERNET</li><li>RESISTANCE</li><li>FREQUENCY</li><li>CURRENT</li><li>POWER</li><li>GROUND</li></ul></div>
+  <div class="card2"><h3>Conditions générales</h3><ol><li>Le signal existe.</li><li>La pin ECU existe.</li><li>La pin ECU n’est pas occupé, sauf ground.</li><li>Le masque interface du signal est non nul.</li><li>La pin ECU supporte cette capacité.</li></ol></div>
+</div>
+<div class="decision">
+  <div><strong>Pin occupé ?</strong><span>Oui, et pas GROUND → rejet</span></div>
+  <div><strong>Interface compatible ?</strong><span>Non → rejet</span></div>
+  <div><strong>GROUND occupé ?</strong><span>Accepté, multi-connexion étoile</span></div>
+</div>
+<div class="rule-card"><strong>Localisation code :</strong> <code>EEC_architecture.c:791-803</code> pour <code>EEC_Ecu_IsPinCompatible()</code>, puis <code>EEC_architecture.c:805-825</code> pour <code>EEC_Ecu_ConnectSignalToPin()</code>.</div>
+</section>
+
+<section id="electrical-bitmasks" class="doc-section"><div class="section-kicker">Les deux champs utilisent le même bitmask mais n’ont pas le même sens.</div><h2>Electrical capability / electrical requirement</h2>
+<p><code>electrical_capability</code> décrit ce que <strong>la pin ECU physique sait fournir ou mesurer</strong>. <code>electrical_requirement</code> décrit ce que <strong>la pin logique du device exige</strong> pour être correctement connectée. Le principe de compatibilité est : toutes les exigences bloquantes du device doivent être couvertes par les capacités de la pin ECU candidate.</p>
+<div class="note info"><strong>Règle mentale :</strong> <code>electrical_requirement &amp; ~electrical_capability</code> doit être égal à zéro pour un matching totalement propre. Si des bits manquent, le mapping strict rejette ou signale l’incompatibilité ; la vérification peut aussi produire un warning selon la criticité et le type de bit manquant.</div>
+<table>
+<thead><tr><th>Bit</th><th>Valeur décimale</th><th>Nom JSON / C</th><th>Signification</th><th>Exemple d’usage</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td><code>0</code></td><td><code>NONE</code></td><td>Aucune contrainte électrique spécifique.</td><td>Signal logique sans exigence de driver particulier.</td></tr>
+<tr><td><code>1&lt;&lt;0</code></td><td><code>1</code></td><td><code>PULLUP</code> / <code>EEC_ELEC_PULLUP</code></td><td>La pin ECU peut activer une résistance interne vers une tension de référence.</td><td>Entrée digitale, SENT, fréquence, capteur open-drain.</td></tr>
+<tr><td><code>1&lt;&lt;1</code></td><td><code>2</code></td><td><code>PULLDOWN</code> / <code>EEC_ELEC_PULLDOWN</code></td><td>La pin ECU peut activer une résistance interne vers la masse.</td><td>Entrée digitale qui doit rester à 0 quand le capteur est ouvert.</td></tr>
+<tr><td><code>1&lt;&lt;2</code></td><td><code>4</code></td><td><code>HIGH_SIDE</code> / <code>EEC_ELEC_HIGH_SIDE</code></td><td>La pin ECU sait sourcer le courant vers la charge.</td><td>Commande bobine, valve, lampe côté +VBAT.</td></tr>
+<tr><td><code>1&lt;&lt;3</code></td><td><code>8</code></td><td><code>LOW_SIDE</code> / <code>EEC_ELEC_LOW_SIDE</code></td><td>La pin ECU sait sinker le courant vers la masse.</td><td>Retour commandé de bobine, driver low-side.</td></tr>
+<tr><td><code>1&lt;&lt;4</code></td><td><code>16</code></td><td><code>PUSH_PULL</code> / <code>EEC_ELEC_PUSH_PULL</code></td><td>Sortie active dans les deux états, capable de forcer haut et bas.</td><td>Sortie digitale robuste ou PWM push-pull.</td></tr>
+<tr><td><code>1&lt;&lt;5</code></td><td><code>32</code></td><td><code>CURRENT_SENSE</code> / <code>EEC_ELEC_CURRENT_SENSE</code></td><td>La pin ECU sait mesurer un courant ou dispose d’une mesure de courant.</td><td>Entrée 4–20 mA, diagnostic de courant bobine.</td></tr>
+<tr><td><code>1&lt;&lt;6</code></td><td><code>64</code></td><td><code>VOLTAGE_IN</code> / <code>EEC_ELEC_VOLTAGE_IN</code></td><td>Entrée haute impédance pour mesure de tension.</td><td>Analog input 0–5 V, 0–10 V, digital input voltage.</td></tr>
+<tr><td><code>1&lt;&lt;7</code></td><td><code>128</code></td><td><code>DIFFERENTIAL</code> / <code>EEC_ELEC_DIFFERENTIAL</code></td><td>Interface différentielle.</td><td>CAN, Ethernet, FlexRay.</td></tr>
+</tbody></table>
+<div class="grid two">
+  <div class="card2"><h3>Exemples de combinaisons</h3><table><tbody><tr><td><code>5</code></td><td><code>PULLUP + HIGH_SIDE</code></td></tr><tr><td><code>20</code></td><td><code>HIGH_SIDE + PUSH_PULL</code></td></tr><tr><td><code>65</code></td><td><code>PULLUP + VOLTAGE_IN</code></td></tr><tr><td><code>96</code></td><td><code>CURRENT_SENSE + VOLTAGE_IN</code></td></tr><tr><td><code>128</code></td><td><code>DIFFERENTIAL</code></td></tr></tbody></table></div>
+  <div class="card2"><h3>Différence capability vs requirement</h3><p><code>electrical_capability=68</code> sur une pin ECU signifie que cette pin fournit <code>HIGH_SIDE + VOLTAGE_IN</code>. <code>electrical_requirement=4</code> sur une pin device signifie que le device exige seulement <code>HIGH_SIDE</code>. Le mapping est OK car <code>4</code> est inclus dans <code>68</code>.</p></div>
+</div>
+</section>
+
+<section id="roles-reference" class="doc-section"><div class="section-kicker">Les rôles sont logiques côté device et physiques côté ECU.</div><h2>Valeurs possibles des rôles</h2>
+<table>
+<thead><tr><th>Role</th><th>Côté capteur / actionneur</th><th>Côté ECU</th><th>Mapping attendu</th></tr></thead>
+<tbody>
+<tr><td><code>INPUT</code></td><td>Le device reçoit une commande ou une alimentation logique.</td><td>La pin ECU lit un signal entrant.</td><td>Actuator <code>INPUT</code> → ECU <code>OUTPUT</code>. ECU <code>INPUT</code> reçoit généralement Sensor <code>OUTPUT</code>.</td></tr>
+<tr><td><code>OUTPUT</code></td><td>Le device produit un signal.</td><td>La pin ECU produit une sortie.</td><td>Sensor <code>OUTPUT</code> → ECU <code>INPUT</code>.</td></tr>
+<tr><td><code>INOUT</code></td><td>Bidirectionnel, principalement bus.</td><td>Pin bus bidirectionnelle.</td><td>CAN / LIN / Ethernet / diagnostic bus.</td></tr>
+<tr><td><code>SUPPLY</code></td><td>Le device doit recevoir une tension.</td><td>Pin ECU de supply ou rail sensor supply.</td><td><code>POWER</code> + <code>SUPPLY</code> → supply compatible.</td></tr>
+<tr><td><code>GROUND</code></td><td>Retour masse ou référence.</td><td>Pin ground ECU, power ground ou logic ground.</td><td><code>GROUND</code> → ground compatible, en respectant la classe de masse si disponible.</td></tr>
+<tr><td><code>UNASSIGNED</code></td><td>Pin NC, DNC, reserved ou catalogue.</td><td>Non réservée.</td><td>Ignorée pour le mapping, sauf si une politique explicite demande de la tracer.</td></tr>
+</tbody></table>
+<div class="note warn"><strong>Attention :</strong> il ne faut pas lire <code>INPUT</code> / <code>OUTPUT</code> sans préciser le côté. Une sortie capteur devient une entrée ECU ; une entrée actionneur devient une sortie ECU.</div>
+</section>
+
+<section id="pullup-pulldown" class="doc-section"><div class="section-kicker">Ces options définissent l’état électrique par défaut d’une entrée.</div><h2>Comment fonctionnent pull-up et pull-down</h2>
+<div class="grid two">
+  <div class="card2"><h3>Pull-up</h3><p>Une résistance interne tire le signal vers une tension haute. Si le capteur ou l’interrupteur est ouvert, la lecture reste à 1 ou à une tension connue. Si le capteur ferme vers la masse, l’entrée passe à 0.</p><pre class="code"><code>ECU +5V ─ resistor ─ input pin ─ switch/sensor ─ GND
+Open  → high
+Closed → low</code></pre></div>
+  <div class="card2"><h3>Pull-down</h3><p>Une résistance interne tire le signal vers la masse. Si le capteur est ouvert, la lecture reste à 0. Si le capteur force la ligne vers une tension haute, l’entrée passe à 1.</p><pre class="code"><code>VBAT/+5V ─ switch/sensor ─ input pin ─ resistor ─ GND
+Open  → low
+Closed → high</code></pre></div>
+</div>
+<p>Dans les JSON, <code>digital_structure</code> peut indiquer <code>PULLUP</code> ou <code>PULLDOWN</code>. Si le device exige réellement cette polarisation, le bit correspondant doit aussi apparaître dans <code>electrical_requirement</code>. La pin ECU candidate doit alors posséder le bit dans <code>electrical_capability</code>.</p>
+<table><thead><tr><th>Cas</th><th>Résultat attendu</th></tr></thead><tbody>
+<tr><td><code>digital_structure=PULLUP</code> + <code>electrical_requirement=1</code>, pin ECU capability contient <code>1</code></td><td><span class="status ok">OK</span></td></tr>
+<tr><td><code>digital_structure=PULLUP</code> + requirement <code>1</code>, capability ne contient pas <code>1</code></td><td><span class="status bad">Rejet strict</span> ou warning de vérification selon la fonction appelée.</td></tr>
+<tr><td><code>digital_structure=UNSPECIFIED</code>, requirement <code>0</code></td><td><span class="status ok">OK</span> si rôle et interface sont compatibles.</td></tr>
+</tbody></table>
+</section>
+
+<section id="signal-fields" class="doc-section"><div class="section-kicker">Chaque champ du signal participe soit au mapping, soit à la documentation, soit à la vérification.</div><h2>Champs signal et prefix mapping</h2>
+<p>Exemple corrigé pour un signal de supply capteur 5 V. Le suffixe <em>mapping</em> signifie que le champ est utilisé par le générateur ou par la logique d’import pour construire le signal et ses contraintes.</p>
+<table>
+<thead><tr><th>Champ</th><th>Exemple</th><th>Signification</th><th>Impact mapping</th></tr></thead>
+<tbody>
+<tr><td><code>prefix</code></td><td><code>SENSOR_SUPPLY_5V</code></td><td>Préfixe stable utilisé pour générer ou regrouper des noms de signaux.</td><td>Permet de conserver une clé stable quand plusieurs instances sont générées.</td></tr>
+<tr><td><code>name</code></td><td><code>SENSOR_SUPPLY_5V</code></td><td>Nom lisible et souvent unique du signal.</td><td>Utilisé comme référence pour relier pin, signal et export.</td></tr>
+<tr><td><code>count</code></td><td><code>1</code></td><td>Nombre d’instances du signal.</td><td><code>1</code> = signal unique ; <code>&gt;1</code> = expansion possible en plusieurs signaux.</td></tr>
+<tr><td><code>type</code> / payload type</td><td><code>U1</code></td><td>Type de payload ou représentation interne.</td><td>Documente le type de donnée ; utile pour export et validation.</td></tr>
+<tr><td><code>interface</code></td><td><code>POWER</code></td><td>Nature électrique ou protocolaire du signal.</td><td>Détermine la classe de pin attendue : ici supply/power.</td></tr>
+<tr><td><code>unit</code></td><td><code>VOLT</code></td><td>Unité physique.</td><td>Utilisée pour documentation, min/max, cohérence d’échelle.</td></tr>
+<tr><td><code>min</code></td><td><code>4.75</code></td><td>Valeur minimale en unité signal.</td><td>Peut servir à vérifier le domaine de supply attendu.</td></tr>
+<tr><td><code>max</code></td><td><code>5.25</code></td><td>Valeur maximale en unité signal.</td><td>Peut signaler un mauvais rail si la pin ECU est 12 V au lieu de 5 V.</td></tr>
+<tr><td><code>resolution</code></td><td><code>0.01</code></td><td>Pas de mesure ou résolution de la valeur.</td><td>Documentation et vérification qualité, pas toujours bloquant.</td></tr>
+<tr><td><code>scaling</code></td><td><code>1</code></td><td>Ratio de conversion.</td><td>Utilisé lors de l’export ou de la conversion de données.</td></tr>
+<tr><td><code>priority</code></td><td><code>MEDIUM</code></td><td>Importance relative.</td><td>Influence l’ordre de mapping Smart et le tri des systèmes/signaux.</td></tr>
+<tr><td><code>safety</code></td><td><code>QM</code></td><td>Niveau safety.</td><td>Peut imposer AgPL, diagnostics ou filtrage strict.</td></tr>
+<tr><td><code>part_number</code></td><td><code></code></td><td>Référence fournisseur si disponible.</td><td>Traçabilité, documentation, export.</td></tr>
+<tr><td><code>digital_structure</code></td><td><code>UNSPECIFIED</code></td><td>Structure logique digitale : <code>UNSPECIFIED</code>, <code>PULLUP</code>, <code>PULLDOWN</code>.</td><td>Doit être cohérent avec <code>electrical_requirement</code> si une polarisation est requise.</td></tr>
+<tr><td><code>electrical_requirement</code></td><td><code>0</code></td><td>Bitmask des capacités exigées côté ECU.</td><td><code>0</code> signifie aucune exigence spéciale ; le rôle/interface restent quand même vérifiés.</td></tr>
+<tr><td><code>role</code></td><td><code>SUPPLY</code></td><td>Rôle logique du signal.</td><td>Ici, mapping vers une pin ECU de supply compatible.</td></tr>
+<tr><td><code>description</code> / <code>notes</code></td><td><code></code></td><td>Texte d’explication.</td><td>Documentation et audit.</td></tr>
+<tr><td><code>mapped</code> / <code>is_mapped</code></td><td><code>false</code></td><td>État de mapping.</td><td>Passe à <code>true</code> quand une allocation ECU est trouvée.</td></tr>
+</tbody></table>
+<div class="example ok"><h3>Exemple SENSOR_SUPPLY_5V</h3><pre class="code"><code>{
+  "prefix": "SENSOR_SUPPLY_5V",
+  "name": "SENSOR_SUPPLY_5V",
+  "count": 1,
+  "type": "U1",
+  "interface": "POWER",
+  "unit": "VOLT",
+  "min": 4.75,
+  "max": 5.25,
+  "resolution": 0.01,
+  "scaling": 1,
+  "priority": "MEDIUM",
+  "safety": "QM",
+  "digital_structure": "UNSPECIFIED",
+  "electrical_requirement": 0,
+  "role": "SUPPLY",
+  "description": "5 V sensor supply reference",
+  "notes": "Reserve a compatible ECU sensor supply pin",
+  "is_mapped": false
+}</code></pre><p>Ce signal réserve une ressource de supply. Même avec <code>electrical_requirement=0</code>, le mapping doit respecter <code>interface=POWER</code> et <code>role=SUPPLY</code>. Le contrôle de tension 4.75–5.25 V doit être documenté et, si possible, vérifié contre les métadonnées de la pin ECU.</p></div>
+</section>
+<section id="functions" class="doc-section"><div class="section-kicker">Quand utiliser chaque fonction et quelles règles elle applique.</div><h2>Fonctions de mapping disponibles</h2>
+<table class="function-table">
+<thead><tr><th>Fonction</th><th>Niveau</th><th>Comportement</th><th>Quand l’utiliser</th><th>Retour</th></tr></thead>
+<tbody>
+<tr><td><code>EEC_System_MapToEcu(system, ecu, trace)</code></td><td>Système → 1 ECU</td><td>Force la recherche uniquement sur un ECU cible. Vérifie rôle, interface, pin libre, et exigences électriques de la pin device.</td><td>Quand tu veux mapper un système précis sur un ECU précis.</td><td>Nombre de signaux mappés, <code>-1</code> si entrée invalide.</td></tr>
+<tr><td><code>EEC_System_connect_to_ecus(system, ecus, count, trace)</code></td><td>Système → liste ECU</td><td>Mode relaxed : premier pin libre compatible trouvé dans l’ordre des ECU fournis.</td><td>Mapping simple, rapide, flexible, avec fallback naturel vers les ECU suivants.</td><td>Nombre de signaux mappés.</td></tr>
+<tr><td><code>EEC_System_connect_to_ecus_strict(system, ecus, count, policy, trace)</code></td><td>Système → liste ECU</td><td>Mode strict : filtre AgPL, connector, pin function, diagnostics ; puis score les candidats et prend le meilleur.</td><td>Mapping industriel avec exigences de connecteur, diagnostic, fonction de pin, co-localisation.</td><td>Nombre de signaux mappés ou <code>-1</code> si <code>require_all_signals</code> échoue.</td></tr>
+<tr><td><code>EEC_Architecture_AutoMapAll(arch, ecus, count, trace)</code></td><td>Architecture</td><td>Parcourt les systèmes dans l’ordre de l’architecture et mappe les signaux non mappés en relaxed.</td><td>Mapping global simple.</td><td>Total signaux mappés.</td></tr>
+<tr><td><code>EEC_Architecture_AutoMapSmart(arch, ecus, count, trace)</code></td><td>Architecture</td><td>Trie les systèmes par score : mandatory, take rate, priority, AgPL, SL, diversité interface, pin count ; puis mappe.</td><td>Mapping global recommandé quand plusieurs systèmes partagent les mêmes ECU.</td><td>Total signaux mappés.</td></tr>
+<tr><td><code>EEC_System_EnableAutoMapping(system, enable)</code></td><td>Système</td><td>Actuellement journalise seulement l’état demandé.</td><td>À ne pas considérer comme filtre robuste tant que le champ n’est pas stocké/testé par AutoMap.</td><td><code>void</code></td></tr>
+</tbody>
+</table>
+</section>
+<section id="target-ecu" class="doc-section"><div class="section-kicker">Oui : en contrôlant la liste d’ECU passée au mapping, et son ordre.</div><h2>Choisir vers quel ECU mapper un ou plusieurs systèmes</h2>
+<p>Le framework permet déjà de cibler un ECU, mais principalement <strong>par le code appelant</strong>. La liste <code>ecus[]</code> passée à la fonction est utilisée dans l’ordre fourni. Si tu passes un seul ECU, le système ne peut se mapper que sur ce ECU.</p>
+<div class="grid two">
+  <div class="card2">
+    <h3>Mapper un système sur un ECU précis</h3>
+    <pre class="code"><code>EEC_Ecu_t *rear_only[] = { rear_ecu };
+EEC_StrictConnectPolicy_t policy = { NULL, 0U, true, true, true };
+
+int mapped = EEC_System_connect_to_ecus_strict(
+    hydraulic_system,
+    rear_only,
+    1U,
+    &amp;policy,
+    trace
+);</code></pre>
+    <p class="small">Si aucune pin compatible n’existe sur <code>rear_ecu</code>, le système ne sera pas déplacé vers un autre ECU.</p>
+  </div>
+  <div class="card2">
+    <h3>Préférer un ECU, avec fallback</h3>
+    <pre class="code"><code>EEC_Ecu_t *preferred[] = { rear_ecu, central_ecu, cab_ecu };
+EEC_StrictConnectPolicy_t policy = { NULL, 0U, true, false, true };
+
+int mapped = EEC_System_connect_to_ecus_strict(
+    hydraulic_system,
+    preferred,
+    3U,
+    &amp;policy,
+    trace
+);</code></pre>
+    <p class="small">Le premier ECU trouvé avec une allocation réussie peut devenir préféré si <code>prefer_same_ecu</code> est actif.</p>
+  </div>
+</div>
+<div class="card2">
+<h3>Stratégie pratique par zones tracteur</h3>
+<pre class="code"><code>/* 1) Systèmes hydrauliques forcés sur Rear ECU */
+EEC_Ecu_t *rear_ecu_set[] = { rear_ecu };
+EEC_System_connect_to_ecus_strict(hydraulic, rear_ecu_set, 1U, &amp;hard_policy, trace);
+
+/* 2) Systèmes cabine préférés sur Cab ECU puis Central ECU */
+EEC_Ecu_t *cab_set[] = { cab_ecu, central_ecu };
+EEC_System_connect_to_ecus_strict(cab_hmi, cab_set, 2U, &amp;prefer_policy, trace);
+
+/* 3) Le reste en AutoMapSmart sur les ressources restantes */
+EEC_Ecu_t *remaining[] = { front_ecu, central_ecu, rear_ecu };
+EEC_Architecture_AutoMapSmart(arch, remaining, 3U, trace);</code></pre>
+</div>
+<div class="note warn"><strong>Limite actuelle :</strong> le modèle JSON ne contient pas encore une politique déclarative complète comme <code>target_ecus</code>, <code>preferred_ecus</code>, <code>forbidden_ecus</code>. C’est une amélioration recommandée pour industrialiser ce comportement.</div>
+</section>
+<section id="relaxed" class="doc-section"><div class="section-kicker">Simple, rapide, mais moins contraignant.</div><h2>Mode relaxed : premier pin compatible</h2>
+<p>Le mode relaxed parcourt les pins device non mappés, puis les ECU et leurs pins dans l’ordre fourni. Dès qu’il trouve une pin compatible, il connecte le signal et passe au signal suivant.</p>
+<div class="algorithm">
+  <div>1. Ignorer la pin si pas de signal ou signal déjà mappé.</div>
+  <div>2. Parcourir chaque ECU dans l’ordre fourni.</div>
+  <div>3. Parcourir chaque pin ECU.</div>
+  <div>4. Vérifier rôle logique ↔ rôle ECU.</div>
+  <div>5. Vérifier compatibilité interface/capacité.</div>
+  <div>6. Émettre un warning si AgPL requis supérieur au pin, mais continuer.</div>
+  <div>7. Connecter le premier pin accepté.</div>
+</div>
+<div class="trace"><span>[AUTO]</span> RearHitchPosition → REAR_ECU X2/14</div>
+<div class="trace warn"><span>[AUTO-WARN]</span> SafetyPressure requires AgPL D but REAR_ECU X1/9 supports C</div>
+<div class="note warn"><strong>Important :</strong> en relaxed, l’AgPL insuffisant produit un warning dans la trace, mais ne bloque pas forcément le mapping.</div>
+</section>
+<section id="strict" class="doc-section"><div class="section-kicker">Le mode strict sélectionne le meilleur candidat parmi les pins compatibles.</div><h2>Mode strict : filtres + scoring</h2>
+<div class="grid two">
+  <div class="card2"><h3>Filtres bloquants</h3><ul><li>Rôle incompatible.</li><li>Interface/capacité incompatible.</li><li>AgPL de la pin inférieur à l’AgPL requis.</li><li>Connecteur différent si <code>preferred_connector</code> est imposé.</li><li>Fonction de pin absente si <code>required_pin_function</code> est imposé.</li><li>Diagnostics manquants si <code>required_diagnostic_flags</code> est imposé.</li></ul></div>
+  <div class="card2"><h3>Scoring appliqué</h3><ul><li>+1000 si ECU préféré par <code>prefer_same_ecu</code>.</li><li>+300 connecteur préféré.</li><li>+200 fonction requise présente.</li><li>+100 signal critique, +60 haut, +30 moyen.</li><li>+50 safety-related, +40 si diagnostic disponible.</li><li>+80 si les exigences électriques sont pleinement satisfaites.</li><li>-25 par bit électrique manquant.</li><li>+10 si pin physique ≤ 16.</li></ul></div>
+</div>
+<div class="note info"><strong>Comportement de rejet :</strong> si aucune pin ne passe les filtres, le mapping du signal échoue. Si <code>require_all_signals=true</code>, la fonction stricte retourne <code>-1</code> dès qu’un signal obligatoire ne peut pas être connecté.</div>
+<div class="trace"><span>[STRICT]</span> RaiseValvePWM → REAR_ECU X4/8</div>
+<div class="trace bad"><span>[STRICT] FAIL</span> SteeringAngle_SENT</div>
+</section>
+<section id="single-ecu" class="doc-section"><div class="section-kicker">La fonction EEC_System_MapToEcu est la plus directe pour cibler un ECU.</div><h2>Mapping vers un seul ECU : règles spécifiques</h2>
+<p><code>EEC_System_MapToEcu()</code> vérifie d’abord que l’ECU possède des pins libres. Si aucune pin libre n’existe, la fonction retourne <code>0</code> avec un warning.</p>
+<table>
+<thead><tr><th>Condition</th><th>Décision</th><th>Trace / log typique</th></tr></thead>
+<tbody>
+<tr><td>Signal déjà mappé</td><td><span class="status warn">Skip</span></td><td><code>[MAP-SKIP] signal: already mapped</code></td></tr>
+<tr><td>Pin ECU occupé et non-ground</td><td><span class="status bad">Rejet candidat</span></td><td>Recherche un autre pin</td></tr>
+<tr><td>Rôle incompatible</td><td><span class="status bad">Rejet candidat</span></td><td>Recherche un autre pin</td></tr>
+<tr><td>Interface incompatible</td><td><span class="status bad">Rejet candidat</span></td><td>Recherche un autre pin</td></tr>
+<tr><td>Exigence électrique device non satisfaite</td><td><span class="status bad">Rejet candidat</span></td><td>Recherche un autre pin</td></tr>
+<tr><td>Connexion réussie</td><td><span class="status ok">OK</span></td><td><code>[MAP-OK] signal → ECU connector/pin</code></td></tr>
+<tr><td>Aucune pin compatible</td><td><span class="status bad">FAIL</span></td><td><code>[MAP-FAIL] signal: no compatible free pin</code></td></tr>
+</tbody>
+</table>
+</section>
+<section id="automap-smart" class="doc-section"><div class="section-kicker">Le SmartMap décide quel système mapper avant les autres.</div><h2>AutoMapSmart : ordre de priorité des systèmes</h2>
+<p><code>EEC_Architecture_AutoMapSmart()</code> ne réordonne pas les ECU, mais réordonne les systèmes. L’ordre des ECU reste celui fourni par l’appelant.</p>
+<div class="score-grid">
+  <div><strong>+20000</strong><span>Système mandatory</span></div>
+  <div><strong>+take_rate × 100</strong><span>Take rate véhicule</span></div>
+  <div><strong>+8000/+6000/+4000/+2000</strong><span>Priority CRITICAL/HIGH/MEDIUM/LOW</span></div>
+  <div><strong>+AgPL × 2500</strong><span>Sécurité requise</span></div>
+  <div><strong>+SL × 1500</strong><span>Niveau système SL4..SL1</span></div>
+  <div><strong>+diversité × 500</strong><span>Nombre de types d’interface distincts</span></div>
+  <div><strong>+pin_count × 2</strong><span>Systèmes volumineux mappés plus tôt</span></div>
+</div>
+<div class="note info"><strong>Usage recommandé :</strong> mapper manuellement les systèmes critiques/zone-spécifiques sur leurs ECU cibles, puis lancer <code>AutoMapSmart</code> pour le reste.</div>
+</section>
+<section id="ok-warning-reject" class="doc-section"><div class="section-kicker">Synthèse pratique des résultats possibles.</div><h2>Quand le mapping est OK, warning ou rejeté</h2>
+<table>
+<thead><tr><th>Cas</th><th>Résultat</th><th>Raison</th><th>Action recommandée</th></tr></thead>
+<tbody>
+<tr><td>Sensor OUTPUT analog → ECU INPUT analog libre</td><td><span class="status ok">OK</span></td><td>Rôle inversé et interface compatible.</td><td>Aucune.</td></tr>
+<tr><td>Actuator INPUT PWM + HIGH_SIDE → ECU OUTPUT PWM avec HIGH_SIDE</td><td><span class="status ok">OK</span></td><td>Rôle compatible, interface compatible, capability électrique présente.</td><td>Aucune.</td></tr>
+<tr><td>Signal safety sur pin AgPL trop faible en relaxed</td><td><span class="status warn">Warning</span></td><td>Le relaxed avertit mais peut continuer.</td><td>Utiliser strict ou augmenter le max_agpl de la pin.</td></tr>
+<tr><td>Exigence électrique manquante mais non pull-up/down dans vérification</td><td><span class="status warn">Warning</span></td><td>Le rapport signale l’écart ; certains bits sont non bloquants dans verify.</td><td>Corriger capability ou accepter avec justification d’ingénierie.</td></tr>
+<tr><td>Inrush current > 2 × current_max</td><td><span class="status warn">Warning</span></td><td>Risque transitoire au démarrage de charge.</td><td>Choisir pin plus robuste ou limiter inrush.</td></tr>
+<tr><td>Aucune pin libre compatible</td><td><span class="status bad">Rejet</span></td><td>Pas de ressource ECU disponible.</td><td>Changer ECU cible ou ajouter capacité.</td></tr>
+<tr><td>Rôle incompatible</td><td><span class="status bad">Rejet</span></td><td>Ex : device OUTPUT vers ECU OUTPUT.</td><td>Corriger role dans JSON/device pin ou pin ECU.</td></tr>
+<tr><td>Interface incompatible</td><td><span class="status bad">Rejet</span></td><td>Ex : SENT sur pin analog sans capability SENT.</td><td>Choisir pin/ECU avec interface correcte.</td></tr>
+<tr><td>Pull-up/pull-down requis manquant</td><td><span class="status bad">Erreur vérification</span></td><td>Vérification considère le pull resistor comme obligatoire.</td><td>Ajouter capability ou changer signal/pin.</td></tr>
+<tr><td>Diagnostic requis manquant</td><td><span class="status bad">Erreur vérification / rejet strict</span></td><td>Strict peut bloquer via <code>required_diagnostic_flags</code>, verify échoue si device demande des diagnostics.</td><td>Utiliser pin avec diagnostic approprié.</td></tr>
+<tr><td>Ground POWER mappé sur ground LOGIC</td><td><span class="status bad">Erreur vérification</span></td><td>Prévention du mélange de masses.</td><td>Séparer GND_POWER et GND_LOGIC.</td></tr>
+<tr><td>Signal safety-relevant sur pin sans diagnostics</td><td><span class="status bad">Erreur vérification</span></td><td>Violation de couverture diagnostic safety.</td><td>Choisir pin diagnostiqué.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="verification" class="doc-section"><div class="section-kicker">Le mapping peut réussir puis être invalidé par la vérification architecture.</div><h2>Règles de vérification appliquées après mapping</h2>
+<div class="grid two">
+  <div class="card2"><h3>V-rules : ECU + logical pins</h3><table><tbody>
+<tr><td>V1</td><td>Détection CAN address dupliquée globalement.</td></tr>
+<tr><td>V2</td><td>Pin occupé avec signal, signal sur pin occupé.</td></tr>
+<tr><td>V3</td><td>Unicité connector+physical_number sur chaque ECU.</td></tr>
+<tr><td>V4</td><td>Paires différentielles CAN/ETH adjacentes et même connecteur.</td></tr>
+<tr><td>V5</td><td>Tous les signaux logiques sont mappés.</td></tr>
+<tr><td>V6</td><td>Pas de signal affecté à plusieurs pins ECU.</td></tr>
+<tr><td>V7</td><td>Compatibilité de rôles device ↔ ECU.</td></tr>
+<tr><td>V8</td><td>Matching capability électrique.</td></tr>
+<tr><td>V9</td><td>Pull-up / pull-down requis.</td></tr>
+<tr><td>V10</td><td>Couverture diagnostics.</td></tr>
+<tr><td>V11</td><td>Nominal/inrush current vs current_max.</td></tr>
+<tr><td>V12</td><td>Pas de mélange GND_POWER/GND_LOGIC.</td></tr>
+<tr><td>V13</td><td>Safety signal sur pin avec diagnostics.</td></tr>
+</tbody></table></div>
+  <div class="card2"><h3>B-rules : Bus</h3><table><tbody>
+<tr><td>B1</td><td>Index de port valide pour capacité ECU.</td></tr>
+<tr><td>B2</td><td>Un même ECU+port n’est pas partagé par plusieurs bus.</td></tr>
+<tr><td>B3</td><td>Interface du signal compatible avec le type de bus.</td></tr>
+<tr><td>B4</td><td>Pas de doublon ECU+port sur le même bus.</td></tr>
+<tr><td>B5</td><td>CAN/ISOBUS ≤ 32 nodes : warning si dépassement.</td></tr>
+<tr><td>B6</td><td>Adresses CAN uniques sur le bus.</td></tr>
+<tr><td>B7</td><td>Les signaux bus sont affectés à un bus : warning sinon.</td></tr>
+<tr><td>B8</td><td>Bitrate > 0 si nodes connectés : warning sinon.</td></tr>
+</tbody></table></div>
+</div>
+<div class="note warn"><strong>Nuance :</strong> le résumé du code initialise un compteur warnings, mais plusieurs warnings sont imprimés directement sans incrémenter systématiquement ce compteur. Il faut donc lire le texte du rapport, pas seulement le nombre global de warnings.</div>
+</section>
+<section id="examples" class="doc-section"><div class="section-kicker">Cas typiques de systèmes tracteur et résultat attendu.</div><h2>Exemples pratiques</h2>
+<div class="example-grid">
+  <div class="example ok"><h3>Cas OK — capteur analogique</h3><p>Un capteur position produit une sortie analogique.</p><pre class="code"><code>Device pin: role=OUTPUT, interface=ANALOG
+ECU pin:    role=INPUT,  capability=ANALOG
+Result:     MAP OK → ECU ADC input</code></pre></div>
+  <div class="example ok"><h3>Cas OK — bobine high-side</h3><p>Une électrovanne reçoit une commande depuis ECU.</p><pre class="code"><code>Device pin: role=INPUT, interface=PWM,
+            electrical_requirement=HIGH_SIDE
+ECU pin:    role=OUTPUT, capability=PWM,
+            electrical_capability=HIGH_SIDE
+Result:     MAP OK → PWM_HS output</code></pre></div>
+  <div class="example warn"><h3>Warning — AgPL relaxed</h3><p>Le mapping relaxed avertit si la pin ne supporte pas le niveau safety requis.</p><pre class="code"><code>[AUTO-WARN] SteeringAngle requires AgPL D
+but FRONT_ECU X2/7 supports C
+[AUTO] SteeringAngle -&gt; FRONT_ECU X2/7</code></pre></div>
+  <div class="example bad"><h3>Rejet — SENT sur pin analog</h3><p>L’interface du signal ne correspond pas à la capacité de la pin.</p><pre class="code"><code>Device signal: interface=SENT
+ECU pin:       supported_capability=ANALOG
+Result:        no compatible free pin / FAIL</code></pre></div>
+  <div class="example bad"><h3>Erreur vérification — masse mélangée</h3><p>Un actionneur de puissance ne doit pas partager une masse logic/signal.</p><pre class="code"><code>Device pin ground_class=POWER
+ECU pin ground_class=LOGIC
+Verify: ERROR ground class mismatch</code></pre></div>
+  <div class="example bad"><h3>Erreur bus — pas de paire différentielle</h3><p>CAN/ETH doit avoir une paire adjacente de même interface sur le même connecteur.</p><pre class="code"><code>CAN_H mapped at X1/10
+No adjacent CAN pin at X1/9 or X1/11
+Verify: ERROR differential pairing issue</code></pre></div>
+</div>
+</section>
+<section id="traces" class="doc-section"><div class="section-kicker">Les lignes de trace permettent d’expliquer chaque décision de mapping.</div><h2>Comprendre les traces</h2>
+<table>
+<thead><tr><th>Trace</th><th>Signification</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>[AUTO] signal → ECU connector/pin</code></td><td>Mapping relaxed réussi.</td><td>OK.</td></tr>
+<tr><td><code>[AUTO-WARN] requires AgPL ...</code></td><td>Mapping relaxed accepté malgré un niveau AgPL insuffisant.</td><td>À revoir ; préférer strict pour safety.</td></tr>
+<tr><td><code>[STRICT] signal → ECU connector/pin</code></td><td>Mapping strict réussi après filtres et scoring.</td><td>OK.</td></tr>
+<tr><td><code>[STRICT] FAIL signal</code></td><td>Aucun candidat strict admissible.</td><td>Voir connecteur/fonction/diagnostics/AgPL/capacités.</td></tr>
+<tr><td><code>[MAP-OK] signal → ECU connector/pin</code></td><td>Mapping mono-ECU réussi.</td><td>OK.</td></tr>
+<tr><td><code>[MAP-FAIL] signal: no compatible free pin</code></td><td>Le ECU cible n’a pas de pin libre compatible.</td><td>Changer ECU cible, pinout ou contraintes.</td></tr>
+<tr><td><code>[SKIP] fully mapped</code></td><td>Le système ne contient plus de signal non mappé.</td><td>Normal lors d’un second passage AutoMap.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="recommendations" class="doc-section"><div class="section-kicker">Pour rendre le mapping ECU encore plus maîtrisable depuis les JSON.</div><h2>Recommandations d’amélioration framework</h2>
+<p>Le framework supporte déjà le ciblage par code. Pour industrialiser la configuration, il serait utile d’ajouter une politique déclarative dans les JSON système.</p>
+<pre class="code"><code>{
+  &quot;mapping_policy&quot;: {
+    &quot;mode&quot;: &quot;hard&quot;,
+    &quot;target_ecus&quot;: [&quot;REAR_ECU&quot;],
+    &quot;preferred_ecus&quot;: [&quot;REAR_ECU&quot;, &quot;CENTRAL_ECU&quot;],
+    &quot;forbidden_ecus&quot;: [&quot;CAB_ECU&quot;],
+    &quot;fallback_allowed&quot;: false,
+    &quot;co_locate_system&quot;: true,
+    &quot;require_all_signals&quot;: true
+  }
+}</code></pre>
+<table>
+<thead><tr><th>Mode proposé</th><th>Comportement</th></tr></thead>
+<tbody>
+<tr><td><code>hard</code></td><td>Le système doit être mappé uniquement sur <code>target_ecus</code>.</td></tr>
+<tr><td><code>prefer</code></td><td>Essayer d’abord <code>preferred_ecus</code>, fallback autorisé si demandé.</td></tr>
+<tr><td><code>exclude</code></td><td>Mapper partout sauf <code>forbidden_ecus</code>.</td></tr>
+<tr><td><code>free</code></td><td>Comportement AutoMapSmart actuel.</td></tr>
+</tbody>
+</table>
+<div class="note info"><strong>Impact :</strong> cette évolution permettrait à ton générateur JSON de piloter directement le choix des ECU sans écrire une logique spécifique dans <code>main.c</code>.</div>
+</section>
+<section id="glossary" class="doc-section"><div class="section-kicker">Les termes les plus importants pour lire les rapports de mapping.</div><h2>Glossaire rapide</h2>
+<div class="glossary">
+  <div><strong>Logical pin</strong><span>Pin du device côté système : capteur, actionneur, gateway.</span></div>
+  <div><strong>Physical ECU pin</strong><span>Pin réel disponible sur un ECU avec connecteur, numéro, rôle, capacités.</span></div>
+  <div><strong>Capability mask</strong><span>Masque déclarant les interfaces supportées par une pin ECU.</span></div>
+  <div><strong>Electrical requirement</strong><span>Bits exigés par la pin device : HIGH_SIDE, LOW_SIDE, PULLUP, etc.</span></div>
+  <div><strong>Diagnostic flags</strong><span>Capacités de diagnostic : open-load, short-to-ground, short-to-battery, overcurrent, etc.</span></div>
+  <div><strong>AgPL</strong><span>Niveau safety utilisé pour filtrer/scorer les pins en strict.</span></div>
+  <div><strong>Relaxed mapping</strong><span>Premier pin compatible disponible ; warning possible mais moins bloquant.</span></div>
+  <div><strong>Strict mapping</strong><span>Filtres plus durs + scoring ; recommandé pour le design review.</span></div>
+</div>
+</section></div>
+  <div class="footer">Generated for framework E/E Architect Design · 2026-06-16 07:08 UTC</div>
+</main>
+</div>
+<script>
+const links=[...document.querySelectorAll('nav a')];
+const sections=[...document.querySelectorAll('.doc-section')];
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ links.forEach(a=>a.classList.toggle('active', a.dataset.target===e.target.id)); } });
+},{rootMargin:'-20% 0px -70% 0px',threshold:0});
+sections.forEach(s=>observer.observe(s));
+const search=document.getElementById('search');
+search.addEventListener('input',()=>{
+  const q=search.value.trim().toLowerCase();
+  sections.forEach(s=>{
+    const hit=!q || s.innerText.toLowerCase().includes(q);
+    s.style.display=hit?'block':'none';
+  });
+  links.forEach(a=>{
+    const target=document.getElementById(a.dataset.target);
+    a.style.display=target && target.style.display!=='none'?'block':'none';
+  });
+});
+</script>
+</body>
+</html>

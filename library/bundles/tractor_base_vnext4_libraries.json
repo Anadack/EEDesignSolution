@@ -1,0 +1,1496 @@
+{
+  "type": "bundle",
+  "name": "EE_Architecture_vNext4_Library_Integration",
+  "part_number": "",
+  "version": "1.0",
+  "priority": "LOW",
+  "safety": "QM",
+  "ecus": [
+    {
+      "name": "AEC_LARGE_01",
+      "part_number": "",
+      "variant": "LARGE",
+      "priority": "LOW",
+      "safety": "QM",
+      "location": "",
+      "can_addresses": ["0x70", "0x71", "0x72"]
+    },
+    {
+      "name": "VALIDATION_IO_ECU",
+      "part_number": "",
+      "variant": "VALIDATION",
+      "priority": "LOW",
+      "safety": "QM",
+      "location": "",
+      "can_addresses": ["0x7D"]
+    }
+  ],
+  "systems": [
+    {
+      "name": "HYDAC_Selected_Sensor_Examples",
+      "part_number": "",
+      "system_level": "SL1",
+      "Ref-2X": "SYS-HYDAC-SENSOR-LIB",
+      "priority": "MEDIUM",
+      "safety": "QM",
+      "location": "",
+      "take_rate": 0.0,
+      "is_mandatory": false,
+      "devices": [
+        {
+          "name": "HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady",
+          "part_number": "HAT 1200",
+          "device_type": "SENSOR",
+          "priority": "HIGH",
+          "safety": "AgPL_B",
+                  "signals": [
+          {
+            "prefix": "HAT1200_SUPPLY_9_36V",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 36.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HAT1200_0V",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HAT1200_Angle_4_20mA",
+            "count": 1,
+            "type": "F32",
+            "interface": "CURRENT",
+            "unit": "DEGREE",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 360.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_LOGICAL_USED_PINS", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 3, "used_cavities": 3, "max_pin_number": 3, "sealed": true, "ip_rating": "IP67/IP", "color": "black", "mounting": "M12x1 logical used pins", "rated_voltage": 36.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_HAT3800_Angle_CANopen_M12_5Pin",
+          "part_number": "HAT 3800",
+          "device_type": "SENSOR",
+          "priority": "HIGH",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "CAN_SHLD",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "CAN_VPLUS_9_36V",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 36.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "CAN_GND",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "CAN_H",
+            "count": 1,
+            "type": "U1",
+            "interface": "CAN",
+            "unit": "NONE",
+            "role": "INOUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "CAN_L",
+            "count": 1,
+            "type": "U1",
+            "interface": "CAN",
+            "unit": "NONE",
+            "role": "INOUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 5, "used_cavities": 5, "max_pin_number": 5, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "M12x1 5-pole", "rated_voltage": 36.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_HDA4300_Pressure_40bar_A_4_20mA_2Wire",
+          "part_number": "HDA4300",
+          "device_type": "SENSOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "HDA4300_LOOP_SUPPLY_PLUS",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 8.000, "max": 30.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HDA4300_Pressure_4_20mA",
+            "count": 1,
+            "type": "F32",
+            "interface": "CURRENT",
+            "unit": "BAR",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 40.000,
+            "resolution": 0.010, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_LOGICAL_2WIRE_LOOP", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 2, "used_cavities": 2, "max_pin_number": 2, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "logical 2-conductor current loo", "rated_voltage": 30.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_HDA4300_Pressure_40bar_B_0_10V_3Wire",
+          "part_number": "HDA4300",
+          "device_type": "SENSOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "HDA4300_SUPPLY_24V",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 12.000, "max": 30.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HDA4300_0V",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HDA4300_Pressure_0_10V",
+            "count": 1,
+            "type": "F32",
+            "interface": "ANALOG",
+            "unit": "BAR",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 40.000,
+            "resolution": 0.010, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_LOGICAL_3PIN", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 3, "used_cavities": 3, "max_pin_number": 3, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "logical 3-conductor connector", "rated_voltage": 30.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_ETS4100_Temperature_A_4_20mA_2Wire_Probe_050",
+          "part_number": "ETS4100",
+          "device_type": "SENSOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "ETS4100_LOOP_SUPPLY_PLUS",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 8.000, "max": 32.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "ETS4100_Temperature_4_20mA",
+            "count": 1,
+            "type": "F32",
+            "interface": "CURRENT",
+            "unit": "CELSIUS",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": -25.000, "max": 100.000,
+            "resolution": 0.010, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_LOGICAL_2WIRE_LOOP", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 2, "used_cavities": 2, "max_pin_number": 2, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "logical 2-conductor current loo", "rated_voltage": 32.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_ETS4100_Temperature_B_0_10V_3Wire_Probe_050",
+          "part_number": "ETS4100",
+          "device_type": "SENSOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "ETS4100_SUPPLY_24V",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 12.000, "max": 32.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "ETS4100_0V",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "ETS4100_Temperature_0_10V",
+            "count": 1,
+            "type": "F32",
+            "interface": "ANALOG",
+            "unit": "CELSIUS",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": -25.000, "max": 100.000,
+            "resolution": 0.010, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_LOGICAL_3PIN", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 3, "used_cavities": 3, "max_pin_number": 3, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "logical 3-conductor connector", "rated_voltage": 32.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin",
+          "part_number": "EDS410",
+          "device_type": "SENSOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "EDS410_SUPPLY_PLUS",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 8.000, "max": 42.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "EDS410_OUT2_PNP",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "EDS410_0V",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "EDS410_OUT1_PNP",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 4, "used_cavities": 4, "max_pin_number": 4, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "M12x1 4-pole", "rated_voltage": 42.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin",
+          "part_number": "EDS810",
+          "device_type": "SENSOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "EDS810_SUPPLY_PLUS",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 8.000, "max": 36.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "EDS810_OUT2_PNP",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "EDS810_0V",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "EDS810_OUT1_PNP",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "OUTPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 4, "used_cavities": 4, "max_pin_number": 4, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "M12x1 4-pole", "rated_voltage": 36.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template",
+          "part_number": "HLT700",
+          "device_type": "SENSOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "HLT700_CAN_SHLD",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HLT700_CAN_VPLUS",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 36.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HLT700_CAN_GND",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HLT700_CAN_H",
+            "count": 1,
+            "type": "U1",
+            "interface": "CAN",
+            "unit": "NONE",
+            "role": "INOUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HLT700_CAN_L",
+            "count": 1,
+            "type": "U1",
+            "interface": "CAN",
+            "unit": "NONE",
+            "role": "INOUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 5, "used_cavities": 5, "max_pin_number": 5, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "M12/DT04 CAN template", "rated_voltage": 36.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template",
+          "part_number": "HIT1500",
+          "device_type": "SENSOR",
+          "priority": "MEDIUM",
+          "safety": "AgPL_B",
+                  "signals": [
+          {
+            "prefix": "HIT1500_CAN_SHLD",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HIT1500_CAN_VPLUS",
+            "count": 1,
+            "type": "U1",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "MEDIUM",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 36.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HIT1500_CAN_GND",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HIT1500_CAN_H",
+            "count": 1,
+            "type": "U1",
+            "interface": "CAN",
+            "unit": "NONE",
+            "role": "INOUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HIT1500_CAN_L",
+            "count": 1,
+            "type": "U1",
+            "interface": "CAN",
+            "unit": "NONE",
+            "role": "INOUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 5, "used_cavities": 5, "max_pin_number": 5, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "M12/DT04 CAN template", "rated_voltage": 36.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Example_HYDAC_Coil_Topologies_System",
+      "part_number": "EX-HYDAC-COIL-TOPO",
+      "system_level": "SL2",
+      "Ref-2X": "EX-HYD-COIL-TOPO",
+      "priority": "HIGH",
+      "safety": "QM",
+      "location": "",
+      "take_rate": 0.0,
+      "is_mandatory": false,
+      "devices": [
+        {
+          "name": "HYDAC_PROP_12PG_5_6_32_1329_PN4059964_HS_LS",
+          "part_number": "4059964",
+          "device_type": "ACTUATOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "HYDAC_4059964_CoilCommand_HS",
+            "count": 1,
+            "type": "U1",
+            "interface": "PWM",
+            "unit": "PERCENT",
+            "role": "INPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "4059964",
+            "electrical_requirement": 4,
+            "min": 0.000, "max": 100.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "HYDAC_4059964_CoilReturn_LS",
+            "count": 1,
+            "type": "U1",
+            "interface": "PWM",
+            "unit": "PERCENT",
+            "role": "INPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "4059964",
+            "electrical_requirement": 8,
+            "min": 0.000, "max": 100.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 3, "used_cavities": 2, "max_pin_number": 3, "sealed": true, "ip_rating": "IP65", "color": "black", "mounting": "radial", "rated_voltage": 32.0, "rated_current": 5.0, "temperature_min": -30.0, "temperature_max": 60.0 }
+          ]
+        },
+        {
+          "name": "HYDAC_DIR_12DG_32_1329_UL_V0_PN2610160_HS_GND",
+          "part_number": "2610160",
+          "device_type": "ACTUATOR",
+          "priority": "MEDIUM",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "HYDAC_2610160_CoilCommand_HS",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "INPUT",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "2610160",
+            "electrical_requirement": 4,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "PULLUP"
+          },
+          {
+            "prefix": "HYDAC_2610160_POWER_GND",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "MEDIUM",
+            "safety": "QM",
+            "part_number": "2610160",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 0.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 3, "used_cavities": 2, "max_pin_number": 3, "sealed": true, "ip_rating": "IP65", "color": "black", "mounting": "radial", "rated_voltage": 32.0, "rated_current": 5.0, "temperature_min": -30.0, "temperature_max": 60.0 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Example_System_with_Bosch_Rexroth_Coil_Actuators",
+      "part_number": "RE18325-90-example",
+      "system_level": "SL2",
+      "Ref-2X": "BOSCH-REXROTH-COIL-EXAMPL",
+      "priority": "HIGH",
+      "safety": "QM",
+      "location": "",
+      "take_rate": 0.0,
+      "is_mandatory": false,
+      "devices": [
+        {
+          "name": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN",
+          "part_number": "OD0236403POB00",
+          "device_type": "ACTUATOR",
+          "priority": "HIGH",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "DirCoilCmd_HS",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "INPUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 4,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "PULLUP"
+          },
+          {
+            "prefix": "POWER_GND",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "403P", "family": "CUSTOM", "gender": "MALE", "total_cavities": 2, "used_cavities": 2, "max_pin_number": 2, "sealed": true, "ip_rating": "IP65/IP", "color": "black", "mounting": "METRIPAK", "rated_voltage": 60.0, "rated_current": 3.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SIDE",
+          "part_number": "OD0236403POB00",
+          "device_type": "ACTUATOR",
+          "priority": "HIGH",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "DirCoilCmd_HS",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "INPUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 4,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "PULLUP"
+          },
+          {
+            "prefix": "DirCoilReturn_LS",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "INPUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 8,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "PULLUP"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "403P", "family": "CUSTOM", "gender": "MALE", "total_cavities": 2, "used_cavities": 2, "max_pin_number": 2, "sealed": true, "ip_rating": "IP65/IP", "color": "black", "mounting": "METRIPAK", "rated_voltage": 60.0, "rated_current": 3.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN",
+          "part_number": "37-C4-R11,500",
+          "device_type": "ACTUATOR",
+          "priority": "HIGH",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "PropCoilCurrentCmd_HS",
+            "count": 1,
+            "type": "F32",
+            "interface": "PWM",
+            "unit": "AMPERE",
+            "role": "INPUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 4,
+            "min": 0.000, "max": 0.800,
+            "resolution": 0.010, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "POWER_GND",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "C4", "family": "TE_CONNECTIVITY", "gender": "MALE", "total_cavities": 2, "used_cavities": 2, "max_pin_number": 2, "sealed": true, "ip_rating": "IP66/IP", "color": "black", "mounting": "AMP JUNIOR TIMER", "rated_voltage": 60.0, "rated_current": 3.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        },
+        {
+          "name": "Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_LOW_S",
+          "part_number": "37-C4-R11,500",
+          "device_type": "ACTUATOR",
+          "priority": "HIGH",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "PropCoilCurrentCmd_HS",
+            "count": 1,
+            "type": "F32",
+            "interface": "PWM",
+            "unit": "AMPERE",
+            "role": "INPUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 4,
+            "min": 0.000, "max": 0.800,
+            "resolution": 0.010, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "PropCoilReturn_LS",
+            "count": 1,
+            "type": "F32",
+            "interface": "PWM",
+            "unit": "AMPERE",
+            "role": "INPUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 8,
+            "min": 0.000, "max": 0.800,
+            "resolution": 0.010, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1", "part_number": "C4", "family": "TE_CONNECTIVITY", "gender": "MALE", "total_cavities": 2, "used_cavities": 2, "max_pin_number": 2, "sealed": true, "ip_rating": "IP66/IP", "color": "black", "mounting": "AMP JUNIOR TIMER", "rated_voltage": 60.0, "rated_current": 3.0, "temperature_min": -40.0, "temperature_max": 125.0 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Example_System_with_selected_elobau_angle_sensors",
+      "part_number": "",
+      "system_level": "SL1",
+      "Ref-2X": "ELOBAU-ANGLE-SENSOR-CATAL",
+      "priority": "MEDIUM",
+      "safety": "QM",
+      "location": "",
+      "take_rate": 0.0,
+      "is_mandatory": false,
+      "devices": [
+        {
+          "name": "elobau_424SD11D_DH_120deg",
+          "part_number": "424SD",
+          "device_type": "SENSOR",
+          "priority": "HIGH",
+          "safety": "AgPL_B",
+                  "signals": [
+          {
+            "prefix": "elobau_424SD11D_DH_120deg_GND1",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD11D_DH_120deg_UB1",
+            "count": 1,
+            "type": "U16",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 32.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD11D_DH_120deg_ANGLE_4_20MA_OUT1",
+            "count": 1,
+            "type": "F32",
+            "interface": "CURRENT",
+            "unit": "DEGREE",
+            "role": "OUTPUT",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 120.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD11D_DH_120deg_GND2",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD11D_DH_120deg_UB2",
+            "count": 1,
+            "type": "U16",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 32.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD11D_DH_120deg_SWITCH_OUT2_HIGH_SIDE",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "OUTPUT",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 4,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_DEUTSCH_DT06_6S", "part_number": "", "family": "DEUTSCH", "gender": "MALE", "total_cavities": 6, "used_cavities": 6, "max_pin_number": 6, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "Deutsch DT06-6S male, 6 pin", "rated_voltage": 32.0, "rated_current": 1.5, "temperature_min": -40.0, "temperature_max": 85.0 }
+          ]
+        },
+        {
+          "name": "elobau_424SD16D_DS_120deg",
+          "part_number": "424SD",
+          "device_type": "SENSOR",
+          "priority": "HIGH",
+          "safety": "AgPL_B",
+                  "signals": [
+          {
+            "prefix": "elobau_424SD16D_DS_120deg_GND1",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD16D_DS_120deg_UB1",
+            "count": 1,
+            "type": "U16",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 4.500, "max": 5.500,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD16D_DS_120deg_ANGLE_0_5_4_5V_RATIOMETRIC_OUT1",
+            "count": 1,
+            "type": "F32",
+            "interface": "ANALOG",
+            "unit": "DEGREE",
+            "role": "OUTPUT",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 120.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD16D_DS_120deg_GND2",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD16D_DS_120deg_UB2",
+            "count": 1,
+            "type": "U16",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 4.500, "max": 5.500,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424SD16D_DS_120deg_SWITCH_OUT2_PUSH_PULL",
+            "count": 1,
+            "type": "U1",
+            "interface": "DIGITAL",
+            "unit": "BOOLEAN",
+            "role": "OUTPUT",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 12,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_DEUTSCH_DT06_6S", "part_number": "", "family": "DEUTSCH", "gender": "MALE", "total_cavities": 6, "used_cavities": 6, "max_pin_number": 6, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "Deutsch DT06-6S male, 6 pin", "rated_voltage": 5.5, "rated_current": 1.5, "temperature_min": -40.0, "temperature_max": 85.0 }
+          ]
+        },
+        {
+          "name": "elobau_424A_4_20MA_120deg",
+          "part_number": "424A",
+          "device_type": "SENSOR",
+          "priority": "HIGH",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "elobau_424A_4_20MA_120deg_SUPPLY",
+            "count": 1,
+            "type": "U16",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 32.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424A_4_20MA_120deg_GND",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424A_4_20MA_120deg_ANGLE_4_20MA",
+            "count": 1,
+            "type": "F32",
+            "interface": "CURRENT",
+            "unit": "DEGREE",
+            "role": "OUTPUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 120.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_LOGICAL_3PIN", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 3, "used_cavities": 3, "max_pin_number": 3, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "logical used pins", "rated_voltage": 32.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 85.0 }
+          ]
+        },
+        {
+          "name": "elobau_424R_0_5_4_5V_parallel_120deg",
+          "part_number": "424R",
+          "device_type": "SENSOR",
+          "priority": "HIGH",
+          "safety": "AgPL_B",
+                  "signals": [
+          {
+            "prefix": "elobau_424R_0_5_4_5V_parallel_120deg_GND1",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424R_0_5_4_5V_parallel_120deg_UB1",
+            "count": 1,
+            "type": "U16",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 32.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT1",
+            "count": 1,
+            "type": "F32",
+            "interface": "ANALOG",
+            "unit": "DEGREE",
+            "role": "OUTPUT",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 120.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424R_0_5_4_5V_parallel_120deg_GND2",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424R_0_5_4_5V_parallel_120deg_UB2",
+            "count": 1,
+            "type": "U16",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 32.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT2",
+            "count": 1,
+            "type": "F32",
+            "interface": "ANALOG",
+            "unit": "DEGREE",
+            "role": "OUTPUT",
+            "priority": "HIGH",
+            "safety": "AgPL_B",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 120.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_DEUTSCH_DT04_6P", "part_number": "", "family": "DEUTSCH", "gender": "MALE", "total_cavities": 6, "used_cavities": 6, "max_pin_number": 6, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "DEUTSCH_DT04_6P", "rated_voltage": 32.0, "rated_current": 1.5, "temperature_min": -40.0, "temperature_max": 85.0 }
+          ]
+        },
+        {
+          "name": "elobau_424C_360deg_CANopen",
+          "part_number": "424C",
+          "device_type": "SENSOR",
+          "priority": "HIGH",
+          "safety": "QM",
+                  "signals": [
+          {
+            "prefix": "elobau_424C_360deg_CANopen_SHIELD",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424C_360deg_CANopen_SUPPLY_9_32V",
+            "count": 1,
+            "type": "U16",
+            "interface": "POWER",
+            "unit": "VOLT",
+            "role": "SUPPLY",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 9.000, "max": 32.000,
+            "resolution": 0.100, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424C_360deg_CANopen_GND",
+            "count": 1,
+            "type": "U1",
+            "interface": "GROUND",
+            "unit": "NONE",
+            "role": "GROUND",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 0.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424C_360deg_CANopen_CAN_H",
+            "count": 1,
+            "type": "U1",
+            "interface": "CAN",
+            "unit": "NONE",
+            "role": "INOUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          },
+          {
+            "prefix": "elobau_424C_360deg_CANopen_CAN_L",
+            "count": 1,
+            "type": "U1",
+            "interface": "CAN",
+            "unit": "NONE",
+            "role": "INOUT",
+            "priority": "HIGH",
+            "safety": "QM",
+            "part_number": "",
+            "electrical_requirement": 0,
+            "min": 0.000, "max": 1.000,
+            "resolution": 1.000, "scaling": 1.000,
+            "digital_structure": "UNSPECIFIED"
+          }
+        ],
+                    "connectors": [
+            { "name": "X1_CAN_5PIN", "part_number": "", "family": "CUSTOM", "gender": "MALE", "total_cavities": 5, "used_cavities": 5, "max_pin_number": 5, "sealed": true, "ip_rating": "IP67", "color": "black", "mounting": "5-pin CAN mapping-ready connect", "rated_voltage": 32.0, "rated_current": 1.0, "temperature_min": -40.0, "temperature_max": 85.0 }
+          ]
+        }
+      ]
+    }
+  ],
+  "buses": [
+    {
+      "name": "Vehicle_CAN",
+      "part_number": "",
+      "type": "CAN",
+      "Ref-2X": "",
+      "bitrate": 500000,
+      "priority": "HIGH",
+      "safety": "AgPL_A",
+      "nodes": [
+        { "ecu": "AEC_LARGE_01", "port_index": 1 }
+      ],
+      "signals": []
+    },
+    {
+      "name": "Diag_CAN",
+      "part_number": "",
+      "type": "CAN",
+      "Ref-2X": "",
+      "bitrate": 250000,
+      "priority": "MEDIUM",
+      "safety": "QM",
+      "nodes": [
+        { "ecu": "AEC_LARGE_01", "port_index": 2 }
+      ],
+      "signals": []
+    },
+    {
+      "name": "ISOBUS",
+      "part_number": "",
+      "type": "ISOBUS",
+      "Ref-2X": "",
+      "bitrate": 250000,
+      "priority": "MEDIUM",
+      "safety": "QM",
+      "nodes": [
+        { "ecu": "AEC_LARGE_01", "port_index": 3 }
+      ],
+      "signals": []
+    },
+    {
+      "name": "Vehicle_ETH",
+      "part_number": "",
+      "type": "ETHERNET",
+      "Ref-2X": "",
+      "bitrate": 100000000,
+      "priority": "MEDIUM",
+      "safety": "QM",
+      "nodes": [],
+      "signals": []
+    }
+  ]
+}

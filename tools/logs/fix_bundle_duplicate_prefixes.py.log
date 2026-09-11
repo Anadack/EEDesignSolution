@@ -1,0 +1,8 @@
+UPDATED library\bundles\tractor_base.json: 5 prefixes renamed
+  - device 'HYDAC_Flow_16384': HYDAC_Flow_16384 -> HYDAC_Flow_16384_2
+  - device 'HYDAC_Flow_16384': HYDAC_Flow_16384 -> HYDAC_Flow_16384_3
+  - device 'HYDAC_Temp_16640': HYDAC_Temp_16640 -> HYDAC_Temp_16640_2
+  - device 'HYDAC_Coil12_17152': HYDAC_Coil12_17152 -> HYDAC_Coil12_17152_2
+  - device 'HYDAC_Coil24_17408': HYDAC_Coil24_17408 -> HYDAC_Coil24_17408_2
+
+SUMMARY: scanned=1 files, changed=1 files, total_renames=5

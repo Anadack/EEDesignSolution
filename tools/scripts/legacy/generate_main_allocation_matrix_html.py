@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""Build + run demo, then generate the allocation matrix HTML."""
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+
+
+def find_base() -> Path:
+    script_dir = Path(__file__).resolve().parent
+    if (script_dir.parent / "src").exists() and (script_dir.parent / "tools").exists():
+        return script_dir.parent
+    return script_dir
+
+
+def run_command(command: list[str], cwd: Path, label: str) -> None:
+    print(f"[STEP] {label}")
+    print(" ".join(command))
+    subprocess.run(command, cwd=cwd, check=True)
+
+
+def build_demo(base: Path, compiler: str, app_name: str) -> Path:
+    src_dir = base / "src"
+    sources = sorted(src_dir.glob("*.c"))
+    if not sources:
+        raise FileNotFoundError("No C source files found in src/")
+    app_path = base / app_name
+    command = [
+        compiler, "-std=c11", "-Wall", "-Wextra", "-pedantic", "-O2", "-Iinc",
+        *[str(path.relative_to(base)) for path in sources],
+        "-o", str(app_path.relative_to(base)),
+    ]
+    run_command(command, base, "Build demo executable")
+    return app_path
+
+
+def run_demo(base: Path, app_path: Path) -> None:
+    run_command([str(app_path)], base, "Run demo executable to export architecture JSON")
+
+
+def run_html_generator(base: Path, python_executable: str, generator_script: Path) -> None:
+    run_command([python_executable, str(generator_script.relative_to(base))], base,
+                "Generate allocation matrix HTML")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Build demo, run it, generate allocation matrix HTML.")
+    parser.add_argument("--compiler", default="C:/mingw64/bin/gcc.exe")
+    parser.add_argument("--python", default=sys.executable)
+    parser.add_argument("--app-name",
+                        default="app.exe" if sys.platform.startswith("win") else "app")
+    parser.add_argument("--skip-build", action="store_true")
+    parser.add_argument("--skip-run", action="store_true")
+    args = parser.parse_args()
+
+    base = find_base()
+    generator_script = base / "tools" / "generate_architecture_allocation_matrix_html.py"
+    json_path = base / "exports" / "example_architecture.json"
+    html_path = base / "exports" / "architecture_allocation_matrix.html"
+    app_path = base / args.app_name
+
+    if not generator_script.exists():
+        raise FileNotFoundError(f"Missing generator script: {generator_script}")
+
+    if not args.skip_build:
+        app_path = build_demo(base, args.compiler, args.app_name)
+    elif not app_path.exists():
+        raise FileNotFoundError(f"Missing executable: {app_path}")
+
+    if not args.skip_run:
+        run_demo(base, app_path)
+    elif not json_path.exists():
+        raise FileNotFoundError(f"Missing exported JSON: {json_path}")
+
+    run_html_generator(base, args.python, generator_script)
+
+    print(f"[OK] JSON: {json_path}")
+    print(f"[OK] HTML: {html_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

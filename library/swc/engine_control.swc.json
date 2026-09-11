@@ -1,0 +1,26 @@
+{
+  "schema": "eec-swc-1.0",
+  "description": "Data-driven SWC / CAN definitions. Edit this file to change the CAN topology; bit layout and DLC are auto-derived from each signal's type. Systems are created if missing; ECUs and buses are resolved by name.",
+  "swcs": [
+    {
+      "name": "Engine_SWC",
+      "ref_2x": "2XSWC000001",
+      "system": "Engine_Control_Software",
+      "allocated_ecu": "AEC_ENGINE_01",
+      "variables": [
+        { "name": "Engine_Torque_Estimate", "type": "U16", "interface": "CAN", "unit": "PERCENT", "min": 0, "max": 100, "resolution": 0.01, "scaling": 0.01 },
+        { "name": "Engine_State",           "type": "U8",  "interface": "CAN", "unit": "NONE",    "min": 0, "max": 15,  "resolution": 1,    "scaling": 1 },
+        { "name": "Oil_Health_Flag",        "type": "U1",  "interface": "CAN", "unit": "BOOLEAN", "min": 0, "max": 1,   "resolution": 1,    "scaling": 1 }
+      ],
+      "messages": [
+        {
+          "name": "EngineStatus",
+          "frame_id": 217056256,
+          "extended": true,
+          "tx": [ { "bus": "Powertrain_Engine_Bus", "port": 2, "cycle_ms": 100 } ],
+          "signals": [ "Engine_Torque_Estimate", "Engine_State", "Oil_Health_Flag" ]
+        }
+      ]
+    }
+  ]
+}

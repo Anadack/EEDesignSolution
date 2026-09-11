@@ -1,0 +1,12 @@
+[library_ecu_pinout] Discovering templates à
+  Found templates: LARGE, MEDIUM, SMALL
+
+[library_ecu_pinout] Processing 6 ECU file(s) à
+  [1] AEC_LARGE_01                     variant=LARGE           202 pins  [template:LARGE]
+  [2] AEC_MEDIUM_01                    variant=MEDIUM          170 pins  [template:MEDIUM]
+  [3] AEC_SMALL_01                     variant=SMALL           122 pins  [template:SMALL]
+  [4] MD1CC878                         variant=MD1CC878         65 pins  [json-only]
+  [5] RC5-6                            variant=RC5-6            80 pins  [json-only]
+  [6] SRC14-34                         variant=SRC14-34        151 pins  [json-only]
+
+[OK] C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\exports\library_ecu_pinouts.html  (6 ECU(s), 790 total pins)

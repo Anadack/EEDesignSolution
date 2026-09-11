@@ -1,0 +1,54 @@
+{
+  "architecture_json_candidates": [
+    "generated_doc/exports/exported_architecture.json",
+    "generated_doc/exports/example_architecture.json",
+    "generated_doc/exports/architecture.json",
+    "example_architecture.json"
+  ],
+  "physical_architecture_json_candidates": [
+    "generated_doc/exports/exported_physical_architecture.json",
+    "generated_doc/exports/example_physical_architecture.json",
+    "generated_doc/exports/physical_architecture.json",
+    "example_physical_architecture.json"
+  ],
+  "default_output_dir": "generated_doc/architecture_html",
+  "bus_interfaces": [
+    "CAN",
+    "LIN",
+    "ETHERNET",
+    "FLEXRAY",
+    "ISOBUS"
+  ],
+  "excluded_bus_interfaces": [
+    "POWER",
+    "GROUND",
+    "RESERVED",
+    "SENSOR_SUPPLY",
+    "SUPPLY",
+    "IGNITION"
+  ],
+  "electrical_flags": {
+    "1": "PULLUP",
+    "2": "PULLDOWN",
+    "4": "HIGH_SIDE",
+    "8": "LOW_SIDE",
+    "16": "PUSH_PULL",
+    "32": "CURRENT_SENSE",
+    "64": "VOLTAGE_IN",
+    "128": "DIFFERENTIAL"
+  },
+  "diagnostic_flags": {
+    "1": "OPEN_LOAD",
+    "2": "SHORT_GND",
+    "4": "SHORT_BAT",
+    "8": "RANGE_CHECK",
+    "16": "OVERCURRENT",
+    "32": "THERMAL",
+    "64": "LINE_BREAK",
+    "128": "PLAUSIBILITY"
+  },
+  "html": {
+    "project_title": "E/E Architect Design",
+    "accent": "#2ee6ff"
+  }
+}

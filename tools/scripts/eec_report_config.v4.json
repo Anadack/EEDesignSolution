@@ -1,0 +1,105 @@
+{
+  "schema_version": "eec-report-config-1.0",
+  "architecture_json_candidates": [
+    "generated_doc/exports/example_architecture.json",
+    "generated_doc/exports/example_physical_architecture.json",
+    "examples/example_architecture.json",
+    "examples/example_physical_architecture.json"
+  ],
+  "physical_architecture_json_candidates": [
+    "generated_doc/exports/example_physical_architecture.json",
+    "generated_doc/exports/example_architecture.json",
+    "examples/example_physical_architecture.json",
+    "examples/example_architecture.json"
+  ],
+  "estimation_json_candidates": [
+    "generated_doc/exports/estimation_result.json",
+    "estimation_result.json"
+  ],
+  "library_ecu_globs": [
+    "library/ecus/*.json"
+  ],
+  "default_output_dir": "generated_doc/exports",
+  "default_executable": {
+    "windows": "app.exe",
+    "posix": "app"
+  },
+  "default_compiler_env": "CC",
+  "default_python_env": "PYTHON",
+  "excluded_bus_interfaces": [
+    "POWER",
+    "GROUND",
+    "RESERVED",
+    "SUPPLY",
+    "SENSOR_SUPPLY",
+    "IGNITION"
+  ],
+  "bus_interfaces": [
+    "CAN",
+    "LIN",
+    "ETHERNET",
+    "FLEXRAY",
+    "ISOBUS"
+  ],
+  "electrical_flags": {
+    "1": "PULLUP",
+    "2": "PULLDOWN",
+    "4": "HIGH_SIDE",
+    "8": "LOW_SIDE",
+    "16": "PUSH_PULL",
+    "32": "CURRENT_SENSE",
+    "64": "VOLTAGE_IN",
+    "128": "DIFFERENTIAL"
+  },
+  "diagnostic_flags": {
+    "1": "OPEN_LOAD",
+    "2": "SHORT_GND",
+    "4": "SHORT_BAT",
+    "8": "RANGE_CHECK",
+    "16": "OVERCURRENT",
+    "32": "THERMAL_WARNING",
+    "64": "LINE_BREAK",
+    "128": "PLAUSIBILITY"
+  },
+  "role_compatibility_device_to_ecu": {
+    "INPUT": [
+      "OUTPUT"
+    ],
+    "OUTPUT": [
+      "INPUT"
+    ],
+    "INOUT": [
+      "INOUT"
+    ],
+    "SUPPLY": [
+      "SUPPLY"
+    ],
+    "GROUND": [
+      "GROUND"
+    ],
+    "UNASSIGNED": [
+      "INPUT",
+      "OUTPUT",
+      "INOUT",
+      "SUPPLY",
+      "GROUND"
+    ]
+  },
+  "output_files": {
+    "allocation_matrix": "architecture_allocation_matrix.html",
+    "bus_backbone": "architecture_bus_backbone.html",
+    "bus_diagram": "architecture_bus_diagram.html",
+    "pinout": "architecture_pinouts_stacked.html",
+    "ecu_pinouts_stacked": "ecu_pinouts_stacked.html",
+    "signal_flow": "architecture_signal_flow.html",
+    "signal_flow_v2": "architecture_signal_flow_v2.html",
+    "topology": "architecture_topology.html",
+    "tree": "architecture_tree.html",
+    "wiring": "architecture_wiring_diagram.html",
+    "estimation": "architecture_estimation.html",
+    "library_ecu_pinouts": "library_ecu_pinouts.html",
+    "logical_architecture": "logical_architecture.html",
+    "verify_exports": "export_verification.json"
+  },
+  "default_output_dir_architecture_html": "generated_doc/architecture_html"
+}

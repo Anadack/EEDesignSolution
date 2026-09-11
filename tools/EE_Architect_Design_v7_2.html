@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EE Architect Design v7.2 — C-Framework Aligned</title>
+<style>
+/* ─── Design Tokens ─────────────────────────────────────────────────────── */
+:root {
+  --left: 320px;
+  --right: 460px;
+  --bottom: 190px;
+
+  --bg:       #070b12;
+  --surface0: #0b1018;
+  --surface1: #0f1622;
+  --surface2: #151e2e;
+  --surface3: #1d2939;
+  --surface4: #273548;
+
+  --border0:  #1a2436;
+  --border1:  #233149;
+  --border2:  #2d3e5c;
+
+  --text:     #cfdaea;
+  --text-dim: #6c83a2;
+  --text-fade:#46566e;
+
+  --cyan:     #2ee6ff;
+  --cyan-dim: #0a4456;
+  --cyan-soft:#00343f;
+
+  --green:    #2ee6a0;
+  --green-bg: #03211a;
+  --amber:    #ffb43d;
+  --amber-bg: #221700;
+  --red:      #ff5a78;
+  --red-bg:   #240010;
+  --purple:   #b388ff;
+  --purple-bg:#170d2d;
+  --teal:     #19d6c0;
+  --teal-bg:  #00221d;
+  --blue:     #5aa6ff;
+  --blue-bg:  #061d3a;
+
+  --font-ui:   'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --xs: 11px; --sm: 12px; --base: 13px; --md: 14px; --lg: 17px; --xl: 21px;
+  --radius: 9px;
+  --shadow: 0 8px 30px rgba(0,0,0,.45);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  height: 100%; margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--base);
+  overflow: hidden;
+}
+button, input, select, textarea { font: inherit; }
+::selection { background: var(--cyan-dim); color: #fff; }
+
+/* scrollbars */
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--surface4); background-clip: padding-box; }
+
+/* ─── App shell ─────────────────────────────────────────────────────────── */
+.app { height: 100%; display: grid; grid-template-rows: 54px 1fr var(--bottom); }
+.app.term-collapsed { grid-template-rows: 54px 1fr 34px; }
+.app.term-collapsed .terminal { grid-template-rows: 0 34px 0; }
+.app.term-collapsed .term-resize, .app.term-collapsed .term-body { display: none; }
+
+/* ─── Top bar ───────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(180deg, var(--surface1), var(--surface0));
+  border-bottom: 1px solid var(--border1);
+  padding: 0 16px; overflow: hidden;
+}
+.brand { display: flex; align-items: center; gap: 11px; margin-right: 6px; flex-shrink: 0; }
+.brand-mark {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--cyan-dim), var(--surface3));
+  border: 1px solid var(--border2);
+  display: grid; place-items: center; color: var(--cyan);
+  box-shadow: inset 0 0 12px rgba(46,230,255,.12);
+}
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-name { font-size: var(--md); font-weight: 700; letter-spacing: .02em; color: #fff; white-space: nowrap; }
+.brand-sub { font-size: var(--xs); color: var(--text-dim); letter-spacing: .04em; white-space: nowrap; }
+
+.tb-divider { width: 1px; height: 26px; background: var(--border1); margin: 0 4px; flex-shrink: 0; }
+.tb-group { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.spacer { flex: 1; }
+
+.status {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: var(--xs); font-weight: 700; letter-spacing: .07em;
+  padding: 5px 11px; border-radius: 7px;
+  border: 1px solid var(--border1); background: var(--surface2); white-space: nowrap;
+}
+.status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); }
+.status.ok  { background: var(--green-bg); color: var(--green); border-color: #0a4a36; }
+.status.ok::before  { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status.bad { background: var(--red-bg); color: var(--red); border-color: #4a0a1c; }
+.status.bad::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+/* ─── Buttons ───────────────────────────────────────────────────────────── */
+button {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border2); background: var(--surface3);
+  color: var(--text); border-radius: 7px; padding: 6px 11px;
+  cursor: pointer; font-size: var(--sm); font-weight: 500;
+  transition: all 110ms ease; white-space: nowrap;
+}
+button:hover:not(:disabled) { background: var(--surface4); border-color: var(--cyan-dim); color: #fff; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: .32; cursor: not-allowed; }
+button.small { font-size: var(--xs); padding: 4px 8px; border-radius: 6px; }
+button.primary { background: var(--cyan-soft); border-color: var(--cyan-dim); color: var(--cyan); }
+button.primary:hover:not(:disabled) { background: var(--cyan-dim); color: #fff; }
+button.success { background: var(--green-bg); border-color: #0a4a36; color: var(--green); }
+button.success:hover:not(:disabled) { background: #074030; color: #fff; }
+button.danger  { background: var(--red-bg); border-color: #4a0a1c; color: var(--red); }
+button.danger:hover:not(:disabled) { background: #3a0818; color: #fff; }
+button.warn    { background: var(--amber-bg); border-color: #4a3300; color: var(--amber); }
+button.warn:hover:not(:disabled) { background: #3a2900; color: #fff; }
+button.lib     { background: var(--teal-bg); border-color: #0a4a40; color: var(--teal); }
+button.lib:hover:not(:disabled) { background: #07403a; color: #fff; }
+button.ghost   { background: transparent; border-color: transparent; color: var(--text-dim); }
+button.ghost:hover:not(:disabled) { background: var(--surface3); color: var(--text); }
+
+/* ─── Form controls ─────────────────────────────────────────────────────── */
+input, select, textarea {
+  width: 100%; background: var(--surface0); color: var(--text);
+  border: 1px solid var(--border1); border-radius: 7px; padding: 7px 9px;
+  font-size: var(--sm); transition: border-color 110ms, background 110ms;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--cyan); background: var(--surface1);
+  box-shadow: 0 0 0 3px rgba(46,230,255,.08);
+}
+textarea { resize: vertical; min-height: 60px; }
+select { cursor: pointer; }
+label {
+  display: block; color: var(--text-dim); font-size: var(--xs);
+  font-weight: 600; letter-spacing: .04em; margin: 11px 0 4px;
+}
+
+/* ─── Main 3-pane ───────────────────────────────────────────────────────── */
+.main {
+  min-height: 0; display: grid;
+  grid-template-columns: var(--left) 5px minmax(540px, 1fr) 5px var(--right);
+  padding: 9px; gap: 0;
+}
+.main.json-hidden { grid-template-columns: var(--left) 5px 1fr 0 0; }
+.main.json-hidden .right, .main.json-hidden #resizeRight { display: none; }
+
+.panel {
+  min-height: 0; background: var(--surface1);
+  border: 1px solid var(--border0); border-radius: var(--radius);
+  margin: 0 5px; display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 11px 13px; border-bottom: 1px solid var(--border0); flex-shrink: 0;
+}
+.panel-head h2 {
+  font-size: var(--xs); font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-dim); margin: 0;
+  display: flex; align-items: center; gap: 7px;
+}
+.panel-head h2 svg { color: var(--cyan); }
+
+/* ─── Resizers ──────────────────────────────────────────────────────────── */
+.resizer { cursor: col-resize; position: relative; }
+.resizer::after {
+  content: ''; position: absolute; left: 1px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 40px; background: var(--border1); border-radius: 99px;
+}
+.resizer:hover::after { background: var(--cyan-dim); }
+
+/* ─── Navigator (left) ──────────────────────────────────────────────────── */
+.nav-tabs { display: flex; gap: 4px; padding: 9px 11px 0; flex-shrink: 0; }
+.nav-tab {
+  flex: 1; text-align: center; cursor: pointer;
+  font-size: var(--xs); font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; padding: 7px 8px; border-radius: 7px;
+  color: var(--text-dim); background: var(--surface0);
+  border: 1px solid var(--border0); transition: all 110ms;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--cyan); background: var(--surface2); border-color: var(--cyan-dim); }
+.nav-toolbar { display: flex; gap: 5px; align-items: center; padding: 9px 11px; flex-wrap: wrap; flex-shrink: 0; }
+.nav-pane { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.tree {
+  overflow: auto; min-height: 0; flex: 1;
+  padding: 4px 7px 10px; background: var(--surface0);
+  border-top: 1px solid var(--border0);
+}
+
+/* tree nodes */
+.tnode {
+  display: flex; align-items: center; gap: 6px; height: 29px;
+  padding-right: 5px; border-radius: 6px; cursor: pointer; user-select: none;
+}
+.tnode:hover { background: var(--surface3); }
+.tnode.active { background: var(--surface3); box-shadow: inset 2.5px 0 0 var(--cyan); }
+.tw { width: 13px; flex: 0 0 auto; text-align: center; color: var(--text-dim); font-size: 9px; }
+.tw:hover { color: var(--cyan); }
+.tdot { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
+.dot-system    { background: var(--blue); }
+.dot-component { background: var(--purple); }
+.dot-sensor    { background: var(--teal); }
+.dot-actuator  { background: var(--amber); }
+.dot-pin       { background: #8aa0bd; }
+.dot-connector { background: #c4cdd9; }
+.dot-signal    { background: var(--cyan); }
+.dot-unknown   { background: var(--text-fade); }
+.tname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--sm); }
+.tmeta { font-size: 10px; color: var(--text-fade); flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.trow-actions { display: none; gap: 2px; flex: 0 0 auto; }
+.tnode:hover .trow-actions { display: flex; }
+.trow-actions button { padding: 1px 6px; font-size: 11px; line-height: 1.5; }
+.t-add { color: var(--green) !important; }
+
+/* library tree (reuses .item from before) */
+.item { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; cursor: pointer; min-width: 0; transition: background 80ms; }
+.item:hover { background: var(--surface3); }
+.item.active { background: var(--surface3); box-shadow: inset 2.5px 0 0 var(--cyan); }
+.item .twisty { width: 13px; text-align: center; color: var(--cyan); flex: 0 0 auto; font-size: 10px; }
+.item .folder-name { font-weight: 600; color: var(--text); font-size: var(--sm); }
+.item .object-name { color: var(--text); font-size: var(--sm); }
+.item .path-hint { color: var(--text-fade); font-size: 10px; margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 110px; }
+.lib-meta { display: flex; gap: 4px; flex-wrap: wrap; padding: 0 11px 8px; flex-shrink: 0; }
+
+/* ─── Badges / pills / chips ────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; font-size: 10px; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; padding: 2px 6px;
+  border-radius: 4px; border: 1px solid; flex-shrink: 0;
+}
+.badge-system    { background: var(--blue-bg); color: var(--blue); border-color: #134270; }
+.badge-component { background: var(--purple-bg); color: var(--purple); border-color: #3a1f66; }
+.badge-sensor    { background: var(--teal-bg); color: var(--teal); border-color: #0a4a40; }
+.badge-actuator  { background: var(--amber-bg); color: var(--amber); border-color: #4a3300; }
+.badge-pin, .badge-connector, .badge-signal { background: var(--surface2); color: var(--text); border-color: var(--border1); }
+.badge-unknown   { background: var(--surface2); color: var(--text-dim); border-color: var(--border0); }
+.badge.map { background: var(--amber-bg); color: var(--amber); border-color: #4a3300; }
+.badge.req { background: var(--purple-bg); color: var(--purple); border-color: #3a1f66; }
+
+.pill {
+  display: inline-flex; align-items: center; font-size: 10px; font-weight: 600;
+  letter-spacing: .03em; padding: 3px 8px; border-radius: 99px;
+  background: var(--surface3); border: 1px solid var(--border1); color: var(--text-dim); white-space: nowrap;
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 10px;
+  padding: 3px 8px; border-radius: 99px; background: var(--surface2);
+  border: 1px solid var(--border1); color: var(--text-dim);
+}
+
+/* ─── Workspace (center) ────────────────────────────────────────────────── */
+.workspace { display: grid; grid-template-rows: auto 1fr; gap: 9px; min-height: 0; padding: 11px; }
+
+/* breadcrumb */
+.breadcrumb {
+  display: flex; align-items: center; flex-wrap: nowrap; overflow: hidden;
+  background: var(--surface0); border: 1px solid var(--border0);
+  border-radius: 8px; padding: 0 6px; height: 36px; flex-shrink: 0;
+}
+.crumb {
+  font-size: var(--xs); font-weight: 600; letter-spacing: .03em;
+  color: var(--text-fade); padding: 0 9px; height: 100%;
+  display: flex; align-items: center; transition: color 80ms; white-space: nowrap;
+}
+.crumb.active { color: var(--cyan); }
+.crumb-sep { color: var(--border2); font-size: var(--sm); }
+.path-text { margin-left: auto; font-size: var(--xs); color: var(--text-dim); padding: 0 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* editor */
+.editor { min-height: 0; display: flex; flex-direction: column; background: var(--surface1); border: 1px solid var(--border0); border-radius: var(--radius); overflow: hidden; }
+.editor-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 13px; border-bottom: 1px solid var(--border0); flex-shrink: 0;
+}
+.editor-head h2 {
+  font-size: var(--xs); font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-dim); margin: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.editor-body { min-height: 0; overflow: auto; padding: 13px; flex: 1; }
+.toolbar { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+/* cards & sections */
+.card { background: var(--surface0); border: 1px solid var(--border0); border-radius: var(--radius); padding: 13px; margin-bottom: 11px; }
+.focus-card {
+  background: linear-gradient(155deg, var(--surface2), var(--surface0));
+  border: 1px solid var(--border1); border-radius: var(--radius);
+  padding: 15px; margin-bottom: 12px;
+}
+.dep-card { background: var(--surface0); border: 1px solid var(--border0); border-radius: 8px; padding: 11px; transition: border-color 110ms; }
+.dep-card:hover { border-color: var(--border2); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; }
+
+.editor-headline { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+.editor-headline h3 { margin: 0; font-size: var(--xl); font-weight: 800; color: #fff; letter-spacing: -.01em; }
+.editor-subtitle { color: var(--text-dim); margin-top: 4px; font-size: var(--sm); }
+
+.section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 16px 0 9px; }
+.section-title:first-child { margin-top: 0; }
+.section-title h3 {
+  font-size: var(--xs); font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-dim); margin: 0; display: flex; align-items: center; gap: 8px;
+}
+.section-title h3::before { content: ''; width: 3px; height: 14px; background: var(--cyan); border-radius: 2px; box-shadow: 0 0 8px var(--cyan-dim); }
+
+.summary-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 12px 0; }
+.kpi { background: var(--surface1); border: 1px solid var(--border0); border-radius: 8px; padding: 11px 8px; text-align: center; }
+.kpi b { display: block; font-size: var(--xl); font-weight: 800; color: var(--cyan); font-variant-numeric: tabular-nums; line-height: 1; }
+.kpi span { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; margin-top: 4px; display: block; }
+
+.dependency-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 8px; margin-top: 9px; }
+.dep-title { display: flex; align-items: center; gap: 6px; justify-content: space-between; margin-bottom: 8px; }
+.dep-title b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--sm); }
+.mini-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.quick-actions { display: flex; gap: 6px; flex-wrap: wrap; margin: 11px 0; }
+.card-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.editor-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(230px, .85fr); gap: 13px; min-width: 0; }
+.select-inline { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; align-items: end; margin: 7px 0; }
+
+.field-wrap { min-width: 0; }
+.proposal { font-size: var(--xs); color: var(--cyan); margin-top: 4px; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+.proposal button { font-size: 10px; padding: 2px 6px; border-radius: 5px; }
+.danger-link { background: var(--red-bg) !important; border-color: #4a0a1c !important; color: var(--red) !important; }
+
+.info-dot {
+  display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;
+  border-radius: 50%; border: 1px solid var(--border2); color: var(--text-dim);
+  background: var(--surface3); font-size: 9px; font-weight: 700; margin-left: 4px; cursor: help; vertical-align: middle;
+}
+.unit-tag { display: inline-block; margin-left: 4px; color: var(--text-fade); font-size: 10px; }
+.brand-select { min-height: 78px; }
+
+.empty {
+  padding: 26px 14px; text-align: center; color: var(--text-dim); font-size: var(--sm);
+  border: 1px dashed var(--border1); border-radius: 8px; margin: 6px 0;
+}
+
+/* ─── JSON panel (right) ────────────────────────────────────────────────── */
+.json-tabs { display: flex; gap: 2px; padding: 9px 13px 0; border-bottom: 1px solid var(--border0); flex-shrink: 0; }
+.tab {
+  font-size: var(--xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  padding: 7px 11px; border-radius: 6px 6px 0 0; cursor: pointer;
+  border: 1px solid transparent; border-bottom: none; color: var(--text-dim);
+  background: transparent; transition: all 90ms; margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); background: var(--surface2); }
+.tab.active { background: var(--surface2); border-color: var(--border0); border-bottom-color: var(--surface2); color: var(--cyan); }
+.json-body { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 11px 13px 13px; }
+.json-area {
+  font-family: var(--font-mono); font-size: var(--xs); background: var(--bg);
+  color: #7de0ff; border: 1px solid var(--border0); border-radius: 8px;
+  padding: 11px; white-space: pre; overflow: auto; flex: 1; min-height: 0; line-height: 1.6;
+}
+.json-edit { font-family: var(--font-mono); font-size: var(--xs); min-height: 160px; line-height: 1.6; }
+
+/* ─── Terminal ──────────────────────────────────────────────────────────── */
+.terminal { background: var(--bg); border-top: 1px solid var(--border0); display: grid; grid-template-rows: 6px 34px 1fr; }
+.term-resize { cursor: ns-resize; background: var(--surface0); border-bottom: 1px solid var(--border0); }
+.term-resize:hover { background: var(--surface2); }
+.term-head { display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid var(--border0); background: var(--surface0); }
+.term-head b { font-size: var(--xs); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); display: flex; align-items: center; gap: 7px; }
+.term-head b svg { color: var(--cyan); }
+.term-body { font-family: var(--font-mono); font-size: var(--xs); line-height: 1.55; overflow: auto; padding: 7px 15px; }
+.term-chevron { transition: transform 150ms; }
+.app.term-collapsed .term-chevron { transform: rotate(180deg); }
+
+/* log colors */
+.ok { color: var(--green); } .err { color: var(--red); } .warnlog, .warn { color: var(--amber); }
+.info { color: var(--blue); } .edit { color: #e3d98a; } .export { color: var(--purple); }
+
+.hidden { display: none !important; }
+.muted { color: var(--text-dim); }
+.file-input { display: none; }
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .main { grid-template-columns: 1fr; }
+  .left, .right, .resizer { display: none; }
+}
+@media (max-width: 760px) {
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .topbar { height: auto; flex-wrap: wrap; padding: 8px; }
+  .summary-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/><circle cx="12" cy="9" r="1.3"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">EE Architect Design</span>
+        <span class="brand-sub">v7.2 · C-Framework Aligned</span>
+      </div>
+    </div>
+
+    <div class="tb-divider"></div>
+
+    <div class="tb-group">
+      <button class="success" onclick="newSystem()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        New System
+      </button>
+      <button class="primary" onclick="byId('importJson').click()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import JSON
+      </button>
+      <button class="lib" onclick="byId('importLibrary').click()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Import Library
+      </button>
+    </div>
+
+    <div class="tb-divider"></div>
+
+    <div class="tb-group">
+      <button class="warn" onclick="validateModel(true)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Validate
+      </button>
+      <button class="ghost small" onclick="runButtonAudit()">Button audit</button>
+      <button class="ghost small" onclick="runContractSelfTest()">Contract self-test</button>
+    </div>
+
+    <div class="tb-divider"></div>
+
+    <div class="tb-group">
+      <button class="success" onclick="exportCJson()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export vNext
+      </button>
+      <button class="ghost small" onclick="exportLegacyCJson()">Export Legacy</button>
+      <button class="ghost small" onclick="downloadSelected()">Export Selected</button>
+    </div>
+
+    <span class="spacer"></span>
+    <button class="ghost small" id="jsonToggleBtn" onclick="toggleJson()" title="Toggle JSON panel">JSON ▸</button>
+    <span id="modelStatus" class="status bad">INVALID</span>
+
+    <input id="importJson" class="file-input" type="file" accept=".json,application/json" multiple onchange="importJsonFiles(event)">
+    <input id="importLibrary" class="file-input" type="file" accept=".json,application/json" multiple webkitdirectory onchange="importLibraryFiles(event)">
+  </header>
+
+  <!-- ── Main ──────────────────────────────────────────────────────────── -->
+  <main class="main" id="mainGrid">
+
+    <!-- Left: Navigator (Architecture + Library tabs) -->
+    <aside class="panel left">
+      <div class="nav-tabs">
+        <div id="navArchTab" class="nav-tab active" onclick="setNavTab('architecture')">Architecture</div>
+        <div id="navLibTab" class="nav-tab" onclick="setNavTab('library')">Library</div>
+      </div>
+
+      <!-- Architecture pane -->
+      <div id="archPane" class="nav-pane">
+        <div class="nav-toolbar">
+          <button class="success small" onclick="newSystem()">+ System</button>
+          <button class="ghost small" onclick="expandAllArch(true)">Expand all</button>
+          <button class="ghost small" onclick="expandAllArch(false)">Collapse</button>
+        </div>
+        <div id="archTree" class="tree"></div>
+      </div>
+
+      <!-- Library pane -->
+      <div id="libPane" class="nav-pane hidden">
+        <div class="nav-toolbar">
+          <input id="libraryFilter" placeholder="Filter library…" oninput="renderLibrary()">
+        </div>
+        <div id="libraryChips" class="lib-meta"></div>
+        <div class="nav-toolbar" style="padding-top:0">
+          <button class="lib small" onclick="addLibraryToCurrent()">Add to selected parent</button>
+          <button class="ghost small" onclick="openLibrarySystem()">Open system</button>
+          <button class="ghost small" onclick="renderAll()">Refresh</button>
+          <button class="ghost small" onclick="connectLibraryFolder()" title="Optional: connect a real folder so signals saved to the library are written to library/signals/ on disk">📁 Connect folder</button>
+        </div>
+        <div id="libraryView" class="tree"></div>
+      </div>
+    </aside>
+
+    <div class="resizer" id="resizeLeft"></div>
+
+    <!-- Center: Workspace -->
+    <section class="panel" style="background:transparent;border:none;box-shadow:none;padding:0;margin:0 5px">
+      <div class="workspace">
+        <div class="breadcrumb">
+          <span id="crumbSystem" class="crumb">System</span>
+          <span class="crumb-sep">›</span>
+          <span id="crumbComponent" class="crumb">Component</span>
+          <span class="crumb-sep">›</span>
+          <span id="crumbDevice" class="crumb">Sensor / Actuator</span>
+          <span class="crumb-sep">›</span>
+          <span id="crumbIo" class="crumb">Pin / Connector / Signal</span>
+          <span id="pathText" class="path-text muted"></span>
+        </div>
+
+        <div class="editor">
+          <div class="editor-head">
+            <h2 id="editorTitle">Editor</h2>
+            <div class="toolbar">
+              <button class="small" onclick="duplicateSelected()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Duplicate
+              </button>
+              <button class="danger small" onclick="deleteSelected()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Delete
+              </button>
+              <button class="primary small" onclick="applyJsonToSelected()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
+                Apply JSON
+              </button>
+            </div>
+          </div>
+          <div id="editorBody" class="editor-body"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="resizer" id="resizeRight"></div>
+
+    <!-- Right: JSON -->
+    <aside class="panel right">
+      <div class="panel-head">
+        <h2>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          JSON Inspector
+        </h2>
+        <div class="toolbar">
+          <button class="small" onclick="copyJson()">Copy</button>
+          <button class="small" onclick="downloadJsonView()">Download</button>
+          <button class="ghost small" onclick="toggleJson()">✕</button>
+        </div>
+      </div>
+      <div class="json-tabs">
+        <span id="tabObject" class="tab active" onclick="setJsonTab('object')">Object</span>
+        <span id="tabC" class="tab" onclick="setJsonTab('c')">vNext</span>
+        <span id="tabLegacy" class="tab" onclick="setJsonTab('legacy')">Legacy</span>
+        <span id="tabRaw" class="tab" onclick="setJsonTab('raw')">Raw edit</span>
+      </div>
+      <div class="json-body">
+        <pre id="jsonView" class="json-area"></pre>
+        <textarea id="jsonEdit" class="json-area json-edit hidden" spellcheck="false"></textarea>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ── Terminal ───────────────────────────────────────────────────────── -->
+  <section class="terminal">
+    <div id="resizeBottom" class="term-resize"></div>
+    <div class="term-head">
+      <b>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Console
+      </b>
+      <div class="toolbar">
+        <span id="problemCount" class="pill">0 problems</span>
+        <button class="ghost small" onclick="clearLogs()">Clear</button>
+        <button class="ghost small" onclick="toggleTerminal()" title="Collapse console">
+          <svg class="term-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="terminal" class="term-body"></div>
+  </section>
+
+</div>
+
+<script>
+'use strict';
+const ENUMS={priority:['LOW','MEDIUM','HIGH','CRITICAL'],safety:['QM','ASIL_A','ASIL_B','ASIL_C','ASIL_D'],system_level:['SL0','SL1','SL2','SL3','SL4'],signalType:['U1','U8','S8','U16','S16','U32','S32','U64','S64','F32','F64'],pin_role:['INPUT','OUTPUT','INOUT','SUPPLY','GROUND','UNASSIGNED'],iface:['DIGITAL','ANALOG','PWM','CAN','LIN','SENT','ETHERNET','RESISTANCE','FREQUENCY','CURRENT','FLEXRAY','POWER','GROUND'],unit:['NONE','BOOLEAN','VOLT','AMPERE','HERTZ','PERCENT','RPM','CELSIUS','BAR','DEGREE'],digital:['UNSPECIFIED','FLOATING','PULLUP','PULLDOWN'],family:['DEUTSCH','AMP_SUPERSEAL','MOLEX','TE_CONNECTIVITY','YAZAKI','JAE','AMPSEAL','CUSTOM'],gender:['MALE','FEMALE','HYBRID'],ground:['UNCLASSIFIED','POWER','LOGIC'],reset:['OFF','ON','HIGH_Z'],supply:['UNKNOWN','OUT_SUP_ANA_5V_01','OUT_SUP_ANA_8V5_10V_01','OUT_SUP_ANA_8V5_10V_02','VBAT','SENSOR_SUPPLY'],sensorGround:['UNKNOWN','OUT_SUP_ANA_8V5_10V_01_GND','OUT_SUP_ANA_5V_01_GND','OUT_SUP_ANA_8V5_10V_02_GND','BATT_GND','SENSOR_GND'],locations:['CHASSIS','CABIN','CAB','FRONT','REAR','TRAILER','ROOF','ENGINE_BAY','UNDER_HOOD','HYDRAULIC_BLOCK','AXLE','LEFT_SIDE','RIGHT_SIDE','INTERIOR','EXTERIOR','IMPLEMENT','ISOBUS','PTO','BATTERY_BOX','DASHBOARD','SEAT_BASE','FENDER','WHEEL_ARCH','CUSTOM'],brands:['MF','FT','VT'],ecuRole:['MANDATORY','OPTIONAL'],drive_topology:['HIGH_SIDE_GROUND_RETURN','HIGH_SIDE_LOW_SIDE'],sensorTemplate:['PRESSURE_ANALOG_3PIN','ON_OFF_SWITCH_2PIN','ANALOG_SENSOR_3PIN','CURRENT_SENSOR_3PIN','FREQUENCY_SENSOR_3PIN','RESISTANCE_SENSOR_2PIN'],actuatorTemplate:['DV_ON_OFF_HS_GND','DV_ON_OFF_HS_LS','PV_PROPORTIONAL_HS_GND','PV_PROPORTIONAL_HS_LS']};
+function field(key,label,type='text',flag='',values=[]){return{key,label,type,flag,values}}
+function deviceFields(kind){return[field('name','Name','text','req'),field('device_type','Device type','enum','req',[kind]),field('part_number','Part number'),field('supplier_pn','Supplier PN'),field('is_mandatory','Mandatory','bool','req'),field('mapping_enabled','Mapping enabled','bool','req'),field('priority','Priority','enum','req',ENUMS.priority),field('safety','Safety','enum','req',ENUMS.safety),field('manufacturer','Manufacturer'),field('description','Description','textarea'),field('notes','Notes','textarea'),field('owner_system','Owner system'),field('owner_architecture','Owner architecture')]}
+const SCHEMA={system:[field('type','Type'),field('schema_version','Schema version'),field('name','Name','text','req'),field('version','Version'),field('Ref-2X','Ref-2X'),field('system_level','System level','enum','req',ENUMS.system_level),field('priority','Priority','enum','req',ENUMS.priority),field('safety','Safety','enum','req',ENUMS.safety),field('part_number','Part number'),field('location','Location','enum','',ENUMS.locations),field('take_rate','Take rate','number'),field('is_mandatory','Mandatory','bool'),field('auto_mapping_enabled','Auto mapping enabled','bool','req'),field('platforms','Platforms','csv'),field('brands','Brands','brands','',ENUMS.brands),field('description','Description','textarea'),field('manufacturer','Manufacturer'),field('notes','Notes','textarea')],component:[field('type','Type'),field('name','Name','text','req'),field('Ref-2X','Ref-2X'),field('part_number','Part number'),field('supplier_pn','Supplier PN'),field('priority','Priority','enum','req',ENUMS.priority),field('safety','Safety','enum','req',ENUMS.safety),field('location','Location','enum','',ENUMS.locations),field('take_rate','Take rate','number'),field('is_mandatory','Mandatory','bool'),field('mapping_enabled','Mapping enabled','bool','req'),field('weight_kg','Weight kg','number'),field('cost_eur','Cost EUR','number'),field('supplier','Supplier'),field('manufacturer','Manufacturer'),field('description','Description','textarea'),field('notes','Notes','textarea')],sensor:deviceFields('SENSOR'),actuator:[...deviceFields('ACTUATOR'),field('drive_topology','Drive topology','enum','map',ENUMS.drive_topology)],connector:[field('name','Name','text','req'),field('part_number','Part number'),field('family','Family','enum','req',ENUMS.family),field('gender','Gender','enum','req',ENUMS.gender),field('total_cavities','Total cavities','number','req'),field('used_cavities','Used cavities','number','req'),field('max_pin_number','Max pin number','number','req'),field('sealed','Sealed','bool'),field('color','Color'),field('mounting','Mounting'),field('ip_rating','IP rating'),field('rated_voltage','Rated voltage','number'),field('rated_current','Rated current','number'),field('temperature_min','Temperature min','number'),field('temperature_max','Temperature max','number')],pin:[field('number','Number','number','map'),field('name','Name','text','map'),field('role','Role','enum','map',ENUMS.pin_role),field('interface_type','Interface type','enum','map',ENUMS.iface),field('electrical_requirement','Electrical requirement','number','map'),field('signal','Signal','signalRef','map'),field('nominal_current','Nominal current','number','map'),field('inrush_current','Inrush current','number','map'),field('max_voltage','Max voltage','number','map'),field('diagnostics_required','Diagnostics required','number','map'),field('safety_relevant','Safety relevant','bool','map'),field('ground_class','Ground class','enum','map',ENUMS.ground),field('required_reset_state','Required reset state','enum','map',ENUMS.reset),field('required_sensor_supply','Required sensor supply','enum','map',ENUMS.supply),field('required_sensor_ground','Required sensor ground','enum','map',ENUMS.sensorGround),field('required_supply_voltage','Required supply voltage','number','map'),field('required_supply_voltage_min','Required supply min','number','map'),field('required_supply_voltage_max','Required supply max','number','map'),field('preferred_supply_voltage','Preferred supply voltage','number','map')],signal:[field('prefix','Prefix','text','map'),field('name','Name'),field('count','Count','number','map'),field('type','Payload type','enum','map',ENUMS.signalType),field('interface','Interface','enum','map',ENUMS.iface),field('unit','Unit','enum','map',ENUMS.unit),field('min','Min','number','map'),field('max','Max','number','map'),field('resolution','Resolution','number','map'),field('scaling','Scaling','number','map'),field('priority','Priority','enum','map',ENUMS.priority),field('safety','Safety','enum','map',ENUMS.safety),field('part_number','Part number'),field('digital_structure','Digital structure','enum','map',ENUMS.digital),field('electrical_requirement','Electrical requirement','number','map'),field('role','Role','enum','map',ENUMS.pin_role),field('description','Description','textarea'),field('notes','Notes','textarea'),field('is_mapped','Mapped','bool')]};
+const EEC_SCHEMA_VERSION='eec-system-1.4';
+const state={arch:{name:'EE_Architecture',schema_version:EEC_SCHEMA_VERSION,systems:[]},sel:{type:'none'},library:[],libraryDirHandle:null,selectedLibraryId:null,libraryExpanded:{'library':true},archExpanded:{},navTab:'architecture',jsonVisible:true,termCollapsed:false,jsonTab:'object',logs:[],problems:[],warnings:[]};
+const byId=id=>document.getElementById(id); const arr=x=>Array.isArray(x)?x:[]; const clone=o=>JSON.parse(JSON.stringify(o||{})); const uid=p=>p+'_'+((globalThis.crypto&&crypto.randomUUID)?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36)); const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function log(msg,level='info'){state.logs.push({msg,level,time:new Date().toLocaleTimeString()});renderLogs()} function clearLogs(){state.logs=[];renderLogs()} function nameOf(o){return o?.name||o?.prefix||'(unnamed)'}
+// --- Signal naming convention engine: SYSTEM_Function_[POSITION_]TYPE (mirrors tools/new_v4_py/validate_signal_naming.py) ---
+const POSITION_BY_LOCATION={FRONT:'FR',REAR:'RE',LEFT_SIDE:'LE',RIGHT_SIDE:'RI'};
+const TYPE_BY_INTERFACE={CAN:'CAN',LIN:'LIN',SENT:'SENT',ETHERNET:'ETH',FLEXRAY:'CAN'};
+const NAME_NOISE_WORDS=new Set(['sensor','actuator','switch','valve','template','pin','pins','signal','net','device']);
+function toSystemCode(name){const clean=(name||'').replace(/[^A-Za-z0-9]+/g,' ').trim();if(!clean)return'SYS';const words=clean.split(' ').filter(Boolean);if(words.length>1){const initials=words.map(w=>w.replace(/[0-9]/g,'')).filter(Boolean).map(w=>w[0]).join('').toUpperCase();if(initials.length>=2)return initials.slice(0,8)}const letters=clean.replace(/[0-9]/g,'').toUpperCase();return(letters.slice(0,6)||'SY').padEnd(2,'X').slice(0,8)}
+function wordsFromName(name){return(name||'').replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_\-]+/g,' ').replace(/[^A-Za-z0-9 ]+/g,' ').trim().split(/\s+/).filter(Boolean)}
+function toFunctionToken(words){const parts=words.filter(w=>w&&!/^\d+$/.test(w)&&!NAME_NOISE_WORDS.has(w.toLowerCase()));const camel=parts.map(w=>w[0].toUpperCase()+w.slice(1).toLowerCase()).join('').slice(0,24);return camel||'Signal'}
+function guessSignalType(sig,device){const role=String(sig?.role||'').toUpperCase(),iface=String(sig?.interface||'').toUpperCase(),dt=String(device?.device_type||'').toUpperCase();if(role==='GROUND')return'GND';if(role==='SUPPLY')return'PWR';if(TYPE_BY_INTERFACE[iface])return TYPE_BY_INTERFACE[iface];if(dt==='ACTUATOR'){if(/return|low.?side|_?ls$/i.test(sig?.prefix||sig?.name||''))return'LS';return role==='INPUT'?'HS':'CMD'}if(dt==='SENSOR')return'SNSR';if(iface==='PWM')return'PWM';return'SIG'}
+function signalNameTokens(sig,device,component,system){return{system:toSystemCode(system?.name),func:toFunctionToken(wordsFromName(device?.name)),position:POSITION_BY_LOCATION[String(component?.location||'').toUpperCase()],type:guessSignalType(sig,device)}}
+function proposeSignalName(sig,device,component,system){const tk=signalNameTokens(sig,device,component,system);const sameType=arr(device?.signals).filter(s=>guessSignalType(s,device)===tk.type);const idx=sameType.findIndex(s=>s.id===sig?.id);const func=idx>0?tk.func+(idx+1):tk.func;return[tk.system,func,tk.position,tk.type].filter(Boolean).join('_')}
+function explainSignalName(sig,device,component,system){const tk=signalNameTokens(sig,device,component,system);return['Formula: SYSTEM_Function[_POSITION]_TYPE','SYSTEM "'+tk.system+'" ← system name "'+(system?.name||'?')+'"','Function "'+tk.func+'" ← device name "'+(device?.name||'?')+'"',tk.position?('POSITION "'+tk.position+'" ← component location "'+(component?.location||'')+'"'):'POSITION omitted — location is not a recognized side','TYPE "'+tk.type+'" ← role='+(sig?.role||'?')+', interface='+(sig?.interface||'?')+', device_type='+(device?.device_type||'?')].join('\n')}
+function proposedValue(def,o,t){if(t==='signal'&&def.key==='prefix')return proposeSignalName(o,getDevice(),getComponent(),getSystem());const p={system:{location:'CHASSIS',brands:['MF','FT','VT'],platforms:['AGCO'],take_rate:100,is_mandatory:true,auto_mapping_enabled:true},component:{location:'CHASSIS',take_rate:100,is_mandatory:true,mapping_enabled:true},sensor:{device_type:'SENSOR',is_mandatory:true,mapping_enabled:true},actuator:{device_type:'ACTUATOR',is_mandatory:true,mapping_enabled:true}};return p[t]?.[def.key]}
+function applyProposal(k,v){editField(k,clone(v))}
+function cloneWithNewIds(o,type){const c=normalize(o,type||inferType(o));function walk(x){if(x&&typeof x==='object'){if(x.id)x.id=uid(String(x.id).split('_')[0]||'obj');Object.values(x).forEach(v=>Array.isArray(v)?v.forEach(walk):walk(v))}}walk(c);c.name=(c.name||nameOf(c)||'Object')+'_copy';return c}
+function libraryItemsOf(type){return state.library.filter(x=>x.type===type)}
+function addLibraryById(id){const item=state.library.find(x=>x.id===id);if(!item)return log('Library item not found','err');addLibraryItem(item)}
+function duplicateSelected(){const t=currentType(),o=current();if(t==='sensor'||t==='actuator')return duplicateDevice();if(!o)return log('Select an object to duplicate','err');if(t==='component'){const s=getSystem(),c=cloneWithNewIds(o,'component');s.components.push(c);selectComponent(c.id)}else if(t==='system'){const s=cloneWithNewIds(o,'system');state.arch.systems.push(s);selectSystem(s.id)}else if(['pin','connector','signal'].includes(t))duplicateIo(t);log(t+' duplicated','ok')}
+function duplicateDevice(){const c=getComponent(),d=getDevice();if(!c||!d)return log('Select a sensor or actuator to duplicate','err');const type=inferType(d),copy=cloneWithNewIds(d,type);(type==='sensor'?c.sensors:c.actuators).push(copy);selectDevice(copy.id);log(type+' duplicated','ok')}
+function duplicateIo(kind){const d=getDevice(),o=getIo();if(!d||!o)return log('Select pin, connector or signal','err');const type=kind||state.sel.ioKind,copy=cloneWithNewIds(o,type),key=type==='pin'?'pins':type==='connector'?'connectors':'signals';d[key].push(copy);selectIo(type,copy.id);log(type+' duplicated','ok')}
+function runButtonAudit(){const handlers=[...document.querySelectorAll('[onclick]')].map(e=>e.getAttribute('onclick')||''),ignored=new Set(['byId','event','JSON','Number','String','Math','Date','Array','Object','setTimeout','stopPropagation','click']);const miss=[];handlers.forEach(h=>[...h.matchAll(/\b([A-Za-z_]\w*)\s*\(/g)].forEach(m=>{const n=m[1];if(!ignored.has(n)&&typeof window[n]!=='function')miss.push(n)}));const uniq=[...new Set(miss)];log(uniq.length?'Button audit warning: '+uniq.join(', '):'Button audit OK — all handlers found',uniq.length?'warn':'ok');return uniq}
+function runContractSelfTest(){const failures=[],check=(ok,msg)=>{if(!ok)failures.push(msg)},sen=makeDevice('SENSOR','PRESSURE_ANALOG_3PIN'),act=makeDevice('ACTUATOR','PV_PROPORTIONAL_HS_LS'),comp=makeComponent(),sys=makeSystem();comp.sensors=[sen];comp.actuators=[act];sys.components=[comp];state.arch.systems=[sys];state.sel={type:'system',systemId:sys.id};const exported=cSystem(sys),legacy=cSystemLegacy(sys),ccomp=exported.components[0],cdev=ccomp.sensors[0],adev=ccomp.actuators[0];check(EEC_SCHEMA_VERSION==='eec-system-1.4','Schema must be eec-system-1.4');check(sys.auto_mapping_enabled===true,'System auto_mapping_enabled default missing');check(comp.mapping_enabled===true,'Component mapping_enabled default missing');check(sen.pins.length===3&&sen.signals.length===3&&sen.connectors[0].used_cavities===3,'Default pressure sensor must be 3 pins / 3 signals / 3 cavities');check(act.pins.length===2&&act.signals.length===2&&act.connectors[0].used_cavities===2,'Default PV actuator must be 2 pins / 2 signals / 2 cavities');check(act.drive_topology==='HIGH_SIDE_LOW_SIDE','Actuator topology not set');check(exported.schema_version==='eec-system-1.4','vNext schema export failed');check(cdev.pins.length===3&&cdev.signals.length===3&&cdev.connectors[0].used_cavities===3,'vNext explicit sensor pins export failed');check(adev.pins.length===2&&adev.signals.length===2&&adev.drive_topology==='HIGH_SIDE_LOW_SIDE','vNext explicit actuator topology export failed');check(!adev.pins.some(p=>p.role==='INOUT'),'Coil pins must not be INOUT');check(legacy.devices.length===2,'Legacy devices[] flattening failed');check(validateModel(false).length===0,'Default guided templates should validate');failures.forEach(x=>log('Contract self-test: '+x,'err'));log(failures.length?'Contract self-test FAILED — '+failures.length+' issue(s)':'Contract self-test PASSED — guided templates, explicit pins and exports are aligned',failures.length?'err':'ok');return failures}
+function makeSystem(){return{type:'system',schema_version:EEC_SCHEMA_VERSION,id:uid('sys'),name:'Vehicle_System_'+(state.arch.systems.length+1),version:'1.0',system_level:'SL1',priority:'MEDIUM',safety:'QM','Ref-2X':'',part_number:'',location:'CHASSIS',take_rate:100,is_mandatory:true,auto_mapping_enabled:true,platforms:['AGCO'],brands:['MF','FT','VT'],description:'',manufacturer:'',notes:'',components:[]}}
+function makeComponent(){return{type:'component',id:uid('cmp'),name:'Component','Ref-2X':'',part_number:'',supplier_pn:'',priority:'MEDIUM',safety:'QM',manufacturer:'',supplier:'',location:getSystem()?.location||'CHASSIS',take_rate:100,is_mandatory:true,mapping_enabled:true,weight_kg:0,cost_eur:0,description:'',notes:'',sensors:[],actuators:[]}}
+function makeSignal(role='OUTPUT',prefix='Signal',iface='DIGITAL',unit='NONE',min=0,max=1,type='U1',resolution=1){return{id:uid('sig'),prefix,name:prefix,count:1,type,interface:iface,unit,min,max,resolution,scaling:1,priority:'MEDIUM',safety:'QM',part_number:'',digital_structure:'UNSPECIFIED',electrical_requirement:0,role,description:'',notes:'',is_mapped:false}}
+function makePin(signalOrName='',number=1,overrides={}){const sig=typeof signalOrName==='object'&&signalOrName?signalOrName:null,signal=sig?(sig.prefix||sig.name||''):signalOrName;return{id:uid('pin'),number,name:overrides.name||('PIN'+number+'_'+(signal||'SIGNAL')),connector:overrides.connector||'X1',cavity:overrides.cavity||number,role:overrides.role||sig?.role||'OUTPUT',interface_type:overrides.interface_type||sig?.interface||'DIGITAL',electrical_requirement:Number(overrides.electrical_requirement??sig?.electrical_requirement??0),signal,nominal_current:Number(overrides.nominal_current??0),inrush_current:Number(overrides.inrush_current??overrides.nominal_current??0),max_voltage:Number(overrides.max_voltage??0),diagnostics_required:Number(overrides.diagnostics_required??0),safety_relevant:Boolean(overrides.safety_relevant??false),ground_class:overrides.ground_class||'LOGIC',required_reset_state:overrides.required_reset_state||'OFF',required_sensor_supply:overrides.required_sensor_supply||'UNKNOWN',required_sensor_ground:overrides.required_sensor_ground||'UNKNOWN',required_supply_voltage:Number(overrides.required_supply_voltage??0),required_supply_voltage_min:Number(overrides.required_supply_voltage_min??0),required_supply_voltage_max:Number(overrides.required_supply_voltage_max??0),preferred_supply_voltage:Number(overrides.preferred_supply_voltage??0)}}
+function makeConnector(cavities=1){return{id:uid('con'),name:'X1',part_number:'',family:'DEUTSCH',gender:'FEMALE',total_cavities:cavities,used_cavities:cavities,max_pin_number:cavities,sealed:true,color:'grey',mounting:'pigtail',ip_rating:'IP67',rated_voltage:32,rated_current:5,temperature_min:-40,temperature_max:125}}
+function defaultRoleForDevice(kind,iface='DIGITAL'){if(['CAN','LIN','ETHERNET','FLEXRAY'].includes(iface))return'INOUT';if(iface==='POWER')return'SUPPLY';if(iface==='GROUND')return'GROUND';return kind==='SENSOR'?'OUTPUT':'INPUT'}
+function makeGuidedSignal(name,role,iface,unit,min,max,type='U1',resolution=1){const s=makeSignal(role,name,iface,unit,min,max,type,resolution);s.name=name;return s}
+function pinForSignal(n,s,overrides={}){return makePin(s,n,{name:overrides.name||('P'+n+'_'+(s.prefix||s.name)),role:s.role,interface_type:s.interface,signal:s.prefix||s.name,cavity:n,connector:'X1',...overrides})}
+function makePressureSensorTemplate(){const d={type:'sensor',id:uid('sen'),name:'Pressure_Sensor_3Pin',device_type:'SENSOR',part_number:'',supplier_pn:'',sensor_template:'PRESSURE_ANALOG_3PIN',is_mandatory:true,mapping_enabled:true,priority:'HIGH',safety:'QM',manufacturer:'',description:'Prevalidated 3-pin pressure sensor: supply, ground, analog pressure output.',notes:'',owner_system:getSystem()?.name||'',owner_architecture:state.arch.name,connectors:[makeConnector(3)],pins:[],signals:[]};const s1=makeGuidedSignal('SENSOR_SUPPLY_5V','SUPPLY','POWER','VOLT',4.75,5.25,'U1',0.01),s2=makeGuidedSignal('SENSOR_GROUND','GROUND','GROUND','NONE',0,0,'U1',1),s3=makeGuidedSignal('Pressure_Analog','OUTPUT','ANALOG','BAR',0,250,'F32',0.1);d.signals=[s1,s2,s3];d.pins=[pinForSignal(1,s1,{name:'P1_SENSOR_SUPPLY_5V',nominal_current:0.02,inrush_current:0.02,max_voltage:5.5,ground_class:'LOGIC',required_sensor_supply:'OUT_SUP_ANA_5V_01',required_supply_voltage:5,required_supply_voltage_min:4.75,required_supply_voltage_max:5.25,preferred_supply_voltage:5}),pinForSignal(2,s2,{name:'P2_SENSOR_GROUND',nominal_current:0.02,inrush_current:0.02,max_voltage:0,ground_class:'LOGIC',required_sensor_ground:'OUT_SUP_ANA_5V_01_GND'}),pinForSignal(3,s3,{name:'P3_PRESSURE_ANALOG_OUT',nominal_current:0.005,inrush_current:0.005,max_voltage:5.5,diagnostics_required:1,ground_class:'LOGIC',required_sensor_supply:'OUT_SUP_ANA_5V_01',required_sensor_ground:'OUT_SUP_ANA_5V_01_GND',required_supply_voltage:5,required_supply_voltage_min:4.75,required_supply_voltage_max:5.25,preferred_supply_voltage:5})];return d}
+function makeAnalogSensorTemplate(){const d=makePressureSensorTemplate();d.name='Analog_Sensor_3Pin';d.sensor_template='ANALOG_SENSOR_3PIN';d.description='Prevalidated generic 3-pin analog voltage sensor: supply, ground, analog voltage output.';d.signals[2]=makeGuidedSignal('Analog_Output_0_5V','OUTPUT','ANALOG','VOLT',0,5,'F32',0.01);d.pins[2]=pinForSignal(3,d.signals[2],{name:'P3_ANALOG_OUTPUT_0_5V',nominal_current:0.005,inrush_current:0.005,max_voltage:5.5,diagnostics_required:1,ground_class:'LOGIC',required_sensor_supply:'OUT_SUP_ANA_5V_01',required_sensor_ground:'OUT_SUP_ANA_5V_01_GND',required_supply_voltage:5,required_supply_voltage_min:4.75,required_supply_voltage_max:5.25,preferred_supply_voltage:5});return d}
+function makeOnOffSwitchTemplate(){const d=makePressureSensorTemplate();d.name='On_Off_Switch_2Pin';d.sensor_template='ON_OFF_SWITCH_2PIN';d.description='Prevalidated 2-pin ON/OFF switch with reference and digital state net.';d.connectors=[makeConnector(2)];const s1=makeGuidedSignal('SWITCH_REFERENCE','SUPPLY','POWER','VOLT',0,24,'U1',1),s2=makeGuidedSignal('Switch_State','OUTPUT','DIGITAL','BOOLEAN',0,1,'U1',1);d.signals=[s1,s2];d.pins=[pinForSignal(1,s1,{name:'P1_SWITCH_REFERENCE',nominal_current:0.01,inrush_current:0.01,max_voltage:32,ground_class:'LOGIC',required_sensor_supply:'VBAT',required_supply_voltage:24,required_supply_voltage_min:9,required_supply_voltage_max:32,preferred_supply_voltage:24}),pinForSignal(2,s2,{name:'P2_SWITCH_STATE',nominal_current:0.005,inrush_current:0.005,max_voltage:32,diagnostics_required:1,ground_class:'LOGIC',required_sensor_supply:'VBAT',required_sensor_ground:'BATT_GND'})];return d}
+function makeCurrentSensorTemplate(){const d=makePressureSensorTemplate();d.name='Current_Output_Sensor_3Pin';d.sensor_template='CURRENT_SENSOR_3PIN';d.description='Prevalidated 3-pin current-output sensor, typically 4-20 mA.';d.signals[2]=makeGuidedSignal('Current_Output_4_20mA','OUTPUT','CURRENT','AMPERE',0.004,0.020,'F32',0.0001);d.pins[2]=pinForSignal(3,d.signals[2],{name:'P3_CURRENT_OUTPUT_4_20MA',nominal_current:0.02,inrush_current:0.02,max_voltage:30,diagnostics_required:1,ground_class:'LOGIC',required_sensor_supply:'OUT_SUP_ANA_5V_01',required_sensor_ground:'OUT_SUP_ANA_5V_01_GND',required_supply_voltage:5,required_supply_voltage_min:4.75,required_supply_voltage_max:5.25,preferred_supply_voltage:5});return d}
+function makeFrequencySensorTemplate(){const d=makePressureSensorTemplate();d.name='Frequency_Sensor_3Pin';d.sensor_template='FREQUENCY_SENSOR_3PIN';d.description='Prevalidated 3-pin frequency sensor.';d.signals[2]=makeGuidedSignal('Frequency_Output','OUTPUT','FREQUENCY','HERTZ',0,10000,'U32',1);d.pins[2]=pinForSignal(3,d.signals[2],{name:'P3_FREQUENCY_OUTPUT',nominal_current:0.01,inrush_current:0.01,max_voltage:32,diagnostics_required:1,ground_class:'LOGIC',required_sensor_supply:'OUT_SUP_ANA_5V_01',required_sensor_ground:'OUT_SUP_ANA_5V_01_GND',required_supply_voltage:5,required_supply_voltage_min:4.75,required_supply_voltage_max:5.25,preferred_supply_voltage:5});return d}
+function makeResistanceSensorTemplate(){const d=makePressureSensorTemplate();d.name='Resistance_Sensor_2Pin';d.sensor_template='RESISTANCE_SENSOR_2PIN';d.description='Prevalidated 2-pin resistive sensor with plus/minus measurement nets.';d.connectors=[makeConnector(2)];const s1=makeGuidedSignal('Resistance_Sense_Plus','OUTPUT','RESISTANCE','NONE',0,10000,'F32',1),s2=makeGuidedSignal('Resistance_Sense_Minus','OUTPUT','RESISTANCE','NONE',0,10000,'F32',1);d.signals=[s1,s2];d.pins=[pinForSignal(1,s1,{name:'P1_RESISTANCE_SENSE_PLUS',nominal_current:0.002,inrush_current:0.002,max_voltage:5,ground_class:'LOGIC',required_sensor_supply:'SENSOR_SUPPLY',required_supply_voltage:5,required_supply_voltage_min:0,required_supply_voltage_max:5,preferred_supply_voltage:5}),pinForSignal(2,s2,{name:'P2_RESISTANCE_SENSE_MINUS',nominal_current:0.002,inrush_current:0.002,max_voltage:5,ground_class:'LOGIC',required_sensor_ground:'SENSOR_GND'})];return d}
+function makeActuatorTemplate(template='PV_PROPORTIONAL_HS_LS'){const isPV=template.startsWith('PV'),isLS=template.endsWith('HS_LS'),iface=isPV?'PWM':'DIGITAL',unit=isPV?'PERCENT':'BOOLEAN',max=isPV?100:1,current=isPV?0.82:1.25;const d={type:'actuator',schema_version:'eec-actuator-1.5',id:uid('act'),name:isPV?'Proportional_Valve_2Pin':'Directional_Valve_ON_OFF_2Pin',device_type:'ACTUATOR',actuator_template:template,drive_topology:isLS?'HIGH_SIDE_LOW_SIDE':'HIGH_SIDE_GROUND_RETURN',part_number:'',supplier_pn:'',is_mandatory:true,mapping_enabled:true,priority:'HIGH',safety:'QM',manufacturer:'',description:isPV?'Prevalidated proportional valve coil template.':'Prevalidated directional ON/OFF valve coil template.',notes:'',owner_system:getSystem()?.name||'',owner_architecture:state.arch.name,connectors:[makeConnector(2)],signals:[],pins:[]};const s1=makeGuidedSignal(isPV?'PV_Command_HS':'DV_Command_HS','INPUT',iface,unit,0,max,isPV?'F32':'U1',isPV?1:1);if(isLS){const s2=makeGuidedSignal(isPV?'PV_Return_LS':'DV_Return_LS','INPUT',iface,unit,0,max,isPV?'F32':'U1',isPV?1:1);d.signals=[s1,s2];d.pins=[pinForSignal(1,s1,{name:'P1_HIGH_SIDE_COMMAND',electrical_requirement:4,nominal_current:current,inrush_current:current,max_voltage:32,diagnostics_required:3,safety_relevant:true,ground_class:'POWER',required_sensor_supply:'VBAT',required_sensor_ground:'BATT_GND',required_supply_voltage:24,required_supply_voltage_min:9,required_supply_voltage_max:32,preferred_supply_voltage:24}),pinForSignal(2,s2,{name:'P2_LOW_SIDE_RETURN',electrical_requirement:8,nominal_current:current,inrush_current:current,max_voltage:32,diagnostics_required:3,safety_relevant:true,ground_class:'POWER',required_sensor_supply:'VBAT',required_sensor_ground:'BATT_GND',required_supply_voltage:24,required_supply_voltage_min:9,required_supply_voltage_max:32,preferred_supply_voltage:24})]}else{const s2=makeGuidedSignal('POWER_GND','GROUND','GROUND','NONE',0,0,'U1',1);d.signals=[s1,s2];d.pins=[pinForSignal(1,s1,{name:'P1_HIGH_SIDE_COMMAND',electrical_requirement:4,nominal_current:current,inrush_current:current,max_voltage:32,diagnostics_required:3,safety_relevant:true,ground_class:'POWER',required_sensor_supply:'VBAT',required_sensor_ground:'BATT_GND',required_supply_voltage:24,required_supply_voltage_min:9,required_supply_voltage_max:32,preferred_supply_voltage:24}),pinForSignal(2,s2,{name:'P2_POWER_GND',electrical_requirement:0,nominal_current:current,inrush_current:current,max_voltage:0,diagnostics_required:0,safety_relevant:true,ground_class:'POWER',required_sensor_ground:'BATT_GND'})]}return d}
+function chooseSensorTemplate(){const msg=`Choose sensor template:\n1 = Pressure analog 3-pin (default)\n2 = ON/OFF switch 2-pin\n3 = Analog sensor 3-pin\n4 = Current sensor 3-pin\n5 = Frequency sensor 3-pin\n6 = Resistance sensor 2-pin`;const v=(prompt(msg,'1')||'1').trim().toUpperCase();return({1:'PRESSURE_ANALOG_3PIN',2:'ON_OFF_SWITCH_2PIN',3:'ANALOG_SENSOR_3PIN',4:'CURRENT_SENSOR_3PIN',5:'FREQUENCY_SENSOR_3PIN',6:'RESISTANCE_SENSOR_2PIN',PRESSURE:'PRESSURE_ANALOG_3PIN',ANALOG:'ANALOG_SENSOR_3PIN',CURRENT:'CURRENT_SENSOR_3PIN',FREQUENCY:'FREQUENCY_SENSOR_3PIN',RESISTANCE:'RESISTANCE_SENSOR_2PIN',SWITCH:'ON_OFF_SWITCH_2PIN'}[v]||'PRESSURE_ANALOG_3PIN')}
+function chooseActuatorTemplate(){const msg=`Choose actuator template:\n1 = DV directional valve ON/OFF, HS + ground\n2 = DV directional valve ON/OFF, HS + low-side\n3 = PV proportional valve, HS + ground\n4 = PV proportional valve, HS + low-side (default)`;const v=(prompt(msg,'4')||'4').trim().toUpperCase();return({1:'DV_ON_OFF_HS_GND',2:'DV_ON_OFF_HS_LS',3:'PV_PROPORTIONAL_HS_GND',4:'PV_PROPORTIONAL_HS_LS',DV:'DV_ON_OFF_HS_GND',PV:'PV_PROPORTIONAL_HS_LS'}[v]||'PV_PROPORTIONAL_HS_LS')}
+function makeDevice(kind,templateKey){if(kind==='SENSOR'){const key=templateKey||'PRESSURE_ANALOG_3PIN';if(key==='ON_OFF_SWITCH_2PIN')return makeOnOffSwitchTemplate();if(key==='CURRENT_SENSOR_3PIN')return makeCurrentSensorTemplate();if(key==='ANALOG_SENSOR_3PIN')return makeAnalogSensorTemplate();if(key==='FREQUENCY_SENSOR_3PIN')return makeFrequencySensorTemplate();if(key==='RESISTANCE_SENSOR_2PIN')return makeResistanceSensorTemplate();return makePressureSensorTemplate()}return makeActuatorTemplate(templateKey||'PV_PROPORTIONAL_HS_LS')}
+function inferType(o,path=''){const p=path.toLowerCase(),t=String(o?.type||'').toLowerCase(),dt=String(o?.device_type||'').toUpperCase();if(t==='system'||o?.components||o?.devices||p.includes('systems'))return'system';if(t==='component'||o?.sensors||o?.actuators||p.includes('components'))return'component';if(dt==='SENSOR'||t==='sensor'||p.includes('sensors'))return'sensor';if(dt==='ACTUATOR'||t==='actuator'||p.includes('actuators'))return'actuator';if(t==='connector'||o?.total_cavities!==undefined||p.includes('connectors'))return'connector';if(t==='pin'||o?.number!==undefined&&o?.role!==undefined||p.includes('pins'))return'pin';if(t==='signal'||o?.prefix||o?.interface||p.includes('signals'))return'signal';return'unknown'}
+function alias(value,map){return map[value]||value}
+function normalize(o,type=inferType(o)){o=clone(o);{const _sa={'AGPL_A':'ASIL_A','AGPL_B':'ASIL_B','AGPL_C':'ASIL_C','AGPL_D':'ASIL_D','SAFETY_RELATED':'ASIL_A'};if(o.safety&&_sa[o.safety])o.safety=_sa[o.safety];}if(type==='system'){o.id=o.id||uid('sys');o.type='system';o.schema_version=EEC_SCHEMA_VERSION;if(o.is_mandatory===undefined)o.is_mandatory=true;if(o.auto_mapping_enabled===undefined)o.auto_mapping_enabled=true;o.components=arr(o.components).map(x=>normalize(x,'component'));if(arr(o.devices).length){const c=makeComponent();c.name='ImportedDevices';o.devices.forEach(d=>String(d.device_type||d.type).toUpperCase()==='ACTUATOR'?c.actuators.push(normalize(d,'actuator')):c.sensors.push(normalize(d,'sensor')));o.components.push(c);delete o.devices}}if(type==='component'){o.id=o.id||uid('cmp');o.type='component';if(o.is_mandatory===undefined)o.is_mandatory=true;if(o.mapping_enabled===undefined)o.mapping_enabled=true;o.sensors=arr(o.sensors).map(x=>normalize(x,'sensor'));o.actuators=arr(o.actuators).map(x=>normalize(x,'actuator'))}if(type==='sensor'||type==='actuator'){o.id=o.id||uid(type==='sensor'?'sen':'act');o.type=type;o.device_type=type==='sensor'?'SENSOR':'ACTUATOR';if(o.is_mandatory===undefined)o.is_mandatory=true;if(o.mapping_enabled===undefined)o.mapping_enabled=true;o.connectors=arr(o.connectors).map(x=>normalize(x,'connector'));o.pins=arr(o.pins).map(x=>normalize(x,'pin'));o.signals=arr(o.signals).map(x=>normalize(x,'signal'));if(!o.pins.length&&o.signals.length)o.pins=o.signals.map((s,i)=>makePin(s,i+1))}if(type==='connector'){o.id=o.id||uid('con');o.family=alias(o.family||'CUSTOM',{SUPERSEAL:'AMP_SUPERSEAL',M12:'CUSTOM',UNKNOWN:'CUSTOM'});o.gender=alias(o.gender||'MALE',{INLINE:'HYBRID',UNKNOWN:'MALE'});if(o.used_cavities===undefined)o.used_cavities=Number(o.total_cavities||0)}if(type==='pin'){o.id=o.id||uid('pin');o.role=alias(o.role||'UNASSIGNED',{COMMUNICATION:'INOUT'});o.interface_type=o.interface_type||o.interface||'DIGITAL';o.ground_class=alias(o.ground_class||'UNCLASSIFIED',{NONE:'UNCLASSIFIED',CHASSIS:'POWER',SENSOR:'LOGIC'});o.required_reset_state=alias(o.required_reset_state||'OFF',{LAST_STATE:'OFF',UNKNOWN:'OFF'});o.required_sensor_supply=alias(o.required_sensor_supply||'UNKNOWN',{NONE:'UNKNOWN',OUT_SUP_ANA_10V_01:'OUT_SUP_ANA_8V5_10V_01',VREF:'SENSOR_SUPPLY',CUSTOM:'UNKNOWN'});o.required_sensor_ground=alias(o.required_sensor_ground||'UNKNOWN',{NONE:'UNKNOWN',OUT_SUP_ANA_10V_01_GND:'OUT_SUP_ANA_8V5_10V_01_GND',POWER_GND:'BATT_GND',LOGIC_GND:'SENSOR_GND',CUSTOM:'UNKNOWN'});['nominal_current','inrush_current','max_voltage','diagnostics_required','required_supply_voltage','required_supply_voltage_min','required_supply_voltage_max','preferred_supply_voltage'].forEach(k=>{if(o[k]===undefined)o[k]=0})}if(type==='signal'){o.id=o.id||uid('sig');o.prefix=o.prefix||o.name||'Signal';o.name=o.name||o.prefix;o.interface=o.interface||o.interface_type||'DIGITAL';delete o.interface_type;o.role=alias(o.role||'OUTPUT',{COMMUNICATION:'INOUT'});o.unit=alias(o.unit||'NONE',{HZ:'HERTZ',DEGREE_C:'CELSIUS'});o.digital_structure=alias(o.digital_structure||'UNSPECIFIED',{PUSH_PULL:'UNSPECIFIED',OPEN_DRAIN:'UNSPECIFIED'});if(!ENUMS.signalType.includes(o.type))o.type='U1'}return o}
+function getSystem(){return state.arch.systems.find(s=>s.id===state.sel.systemId)}function getComponent(){return getSystem()?.components?.find(c=>c.id===state.sel.componentId)}function getDevice(){const c=getComponent();return c?[...arr(c.sensors),...arr(c.actuators)].find(d=>d.id===state.sel.deviceId):null}function getIo(){const d=getDevice();if(!d)return null;const list=state.sel.ioKind==='pin'?d.pins:state.sel.ioKind==='connector'?d.connectors:state.sel.ioKind==='signal'?d.signals:[];return arr(list).find(o=>o.id===state.sel.ioId)}function current(){return getIo()||getDevice()||getComponent()||getSystem()||null}function currentType(){return getIo()?state.sel.ioKind:getDevice()?inferType(getDevice()):getComponent()?'component':getSystem()?'system':'unknown'}
+function selectSystem(id){state.sel={type:'system',systemId:id};renderAll()}function selectComponent(id){state.sel={...state.sel,type:'component',componentId:id,deviceId:null,ioId:null,ioKind:null};renderAll()}function selectDevice(id){state.sel={...state.sel,type:'device',deviceId:id,ioId:null,ioKind:null};renderAll()}function selectIo(kind,id){state.sel={...state.sel,type:'io',ioKind:kind,ioId:id};renderAll()}
+function newSystem(){const s=makeSystem();state.arch.systems.push(s);selectSystem(s.id);log('System created','ok')}function newComponent(){const s=getSystem();if(!s)return log('Create/select a system first','err');const c=makeComponent();s.components.push(c);selectComponent(c.id);log('Component created','ok')}function newDevice(kind,templateKey){const c=getComponent();if(!c)return log('Create/select a component first','err');const selected=templateKey||(kind==='SENSOR'?chooseSensorTemplate():chooseActuatorTemplate());const d=makeDevice(kind,selected);(kind==='SENSOR'?c.sensors:c.actuators).push(d);selectDevice(d.id);log(kind+' created from template '+selected,'ok')}function newIo(kind){const d=getDevice();if(!d)return log('Create/select a sensor or actuator first','err');const next=arr(d.pins).reduce((m,p)=>Math.max(m,Number(p.number)||0),0)+1,base=d.device_type==='SENSOR'?'SensorSignal':'ActuatorCommand',sigPrefix=base+'_'+(arr(d.signals).length+1),first=arr(d.signals)[0];let o=kind==='pin'?makePin(first||'',next):kind==='connector'?makeConnector():makeSignal(defaultRoleForDevice(d.device_type),sigPrefix);(kind==='pin'?d.pins:kind==='connector'?d.connectors:d.signals).push(o);selectIo(kind,o.id);log(kind+' created','ok')}
+function deleteSelected(){const t=state.sel.type;if(t==='io'){const d=getDevice(),k=state.sel.ioKind;if(d){const key=k==='pin'?'pins':k==='connector'?'connectors':'signals';d[key]=arr(d[key]).filter(x=>x.id!==state.sel.ioId);state.sel.ioId=null;state.sel.ioKind=null;state.sel.type='device';log(k+' deleted','warnlog')}}else if(t==='device'){const c=getComponent();if(c){c.sensors=arr(c.sensors).filter(x=>x.id!==state.sel.deviceId);c.actuators=arr(c.actuators).filter(x=>x.id!==state.sel.deviceId);state.sel.deviceId=null;state.sel.type='component';log('Device deleted','warnlog')}}else if(t==='component'){const s=getSystem();if(s){s.components=arr(s.components).filter(x=>x.id!==state.sel.componentId);state.sel.componentId=null;state.sel.type='system';log('Component deleted','warnlog')}}else if(t==='system'){state.arch.systems=state.arch.systems.filter(x=>x.id!==state.sel.systemId);state.sel={type:'none'};log('System deleted','warnlog')}renderAll()}
+function badgeClass(kind){return'badge badge-'+(kind||'unknown')}
+
+/* ── NEW: UI toggles ── */
+function setNavTab(t){state.navTab=t;byId('navArchTab').classList.toggle('active',t==='architecture');byId('navLibTab').classList.toggle('active',t==='library');byId('archPane').classList.toggle('hidden',t!=='architecture');byId('libPane').classList.toggle('hidden',t!=='library')}
+function toggleJson(){state.jsonVisible=!state.jsonVisible;byId('mainGrid').classList.toggle('json-hidden',!state.jsonVisible);byId('jsonToggleBtn').textContent=state.jsonVisible?'JSON ▸':'JSON ◂'}
+function toggleTerminal(){state.termCollapsed=!state.termCollapsed;byId('app').classList.toggle('term-collapsed',state.termCollapsed)}
+function expandAllArch(on){state.arch.systems.forEach(s=>{state.archExpanded['sys:'+s.id]=on;arr(s.components).forEach(c=>{state.archExpanded['cmp:'+c.id]=on;[...arr(c.sensors),...arr(c.actuators)].forEach(d=>{state.archExpanded['dev:'+d.id]=on})})});renderHierarchy()}
+function archExp(key,auto){const v=state.archExpanded[key];return v===undefined?auto:v}
+function toggleArch(key,cur){state.archExpanded[key]=!cur;renderHierarchy()}
+
+/* ── NEW: unified architecture tree ── */
+function tnode(o){const tw=o.expandable?(o.expanded?'▾':'▸'):'·';return `<div class="tnode ${o.active?'active':''}" style="padding-left:${8+o.depth*15}px" onclick="${o.click}"><span class="tw" onclick="event.stopPropagation();${o.expandable?`toggleArch('${o.key}',${o.expanded})`:''}">${tw}</span><span class="tdot dot-${o.kind}"></span><span class="tname">${esc(o.name)}</span>${o.meta?`<span class="tmeta">${o.meta}</span>`:''}<span class="trow-actions">${o.actions||''}</span></div>`}
+function renderHierarchy(){const el=byId('archTree');if(!el)return;if(!state.arch.systems.length){el.innerHTML='<div class="empty">No system yet. Create one to start building your architecture.</div>';return}let html='';const sysSel=state.sel.systemId,cmpSel=state.sel.componentId,devSel=state.sel.deviceId,ioSel=state.sel.ioId;
+  state.arch.systems.forEach(s=>{const k='sys:'+s.id,comps=arr(s.components),exp=archExp(k,s.id===sysSel);
+    html+=tnode({key:k,depth:0,kind:'system',name:nameOf(s),active:state.sel.type==='system'&&s.id===sysSel,expandable:comps.length>0,expanded:exp,meta:comps.length+'c',click:`selectSystem('${s.id}')`,actions:`<button class="t-add" title="Add component" onclick="event.stopPropagation();selectSystem('${s.id}');newComponent()">+C</button><button onclick="event.stopPropagation();selectSystem('${s.id}');duplicateSelected()">⧉</button><button class="danger-link" onclick="event.stopPropagation();selectSystem('${s.id}');deleteSelected()">×</button>`});
+    if(exp)comps.forEach(c=>{const ck='cmp:'+c.id,devs=[...arr(c.sensors).map(d=>({d,kind:'sensor'})),...arr(c.actuators).map(d=>({d,kind:'actuator'}))],cexp=archExp(ck,c.id===cmpSel);
+      html+=tnode({key:ck,depth:1,kind:'component',name:nameOf(c),active:c.id===cmpSel&&state.sel.type==='component',expandable:devs.length>0,expanded:cexp,meta:arr(c.sensors).length+'S·'+arr(c.actuators).length+'A',click:`selectSystem('${s.id}');selectComponent('${c.id}')`,actions:`<button class="t-add" title="Add sensor" onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');newDevice('SENSOR')">+S</button><button class="t-add" title="Add actuator" onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');newDevice('ACTUATOR')">+A</button><button onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');duplicateSelected()">⧉</button><button class="danger-link" onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');deleteSelected()">×</button>`});
+      if(cexp)devs.forEach(({d,kind})=>{const dk='dev:'+d.id,io=[...arr(d.connectors).map(o=>({o,k:'connector'})),...arr(d.pins).map(o=>({o,k:'pin'})),...arr(d.signals).map(o=>({o,k:'signal'}))],dexp=archExp(dk,d.id===devSel);
+        html+=tnode({key:dk,depth:2,kind:kind,name:nameOf(d),active:d.id===devSel&&state.sel.type==='device',expandable:io.length>0,expanded:dexp,meta:arr(d.pins).length+'p',click:`selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}')`,actions:`<button class="t-add" title="Add pin" onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}');newIo('pin')">+P</button><button class="t-add" title="Add connector" onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}');newIo('connector')">+C</button><button class="t-add" title="Add signal" onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}');newIo('signal')">+S</button><button onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}');duplicateDevice()">⧉</button><button class="danger-link" onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}');deleteSelected()">×</button>`});
+        if(dexp)io.forEach(({o,k})=>{html+=tnode({key:'io:'+o.id,depth:3,kind:k,name:nameOf(o),active:o.id===ioSel&&state.sel.type==='io',expandable:false,expanded:false,meta:'',click:`selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}');selectIo('${k}','${o.id}')`,actions:`<button onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}');selectIo('${k}','${o.id}');duplicateIo('${k}')">⧉</button><button class="danger-link" onclick="event.stopPropagation();selectSystem('${s.id}');selectComponent('${c.id}');selectDevice('${d.id}');selectIo('${k}','${o.id}');deleteSelected()">×</button>`})});
+      });
+    });
+  });
+  el.innerHTML=html}
+function option(values,v){return values.map(x=>`<option value="${esc(x)}" ${String(v)===String(x)?'selected':''}>${esc(x)}</option>`).join('')}function editField(k,v){const o=current();if(!o)return;o[k]=v;if(k==='prefix')o.name=v;if(k==='name'&&currentType()==='system'){arr(o.components).forEach(c=>[...arr(c.sensors),...arr(c.actuators)].forEach(d=>d.owner_system=v))}log('Edited '+k,'edit');renderAll(false)}
+const FIELD_UNITS={take_rate:'%',weight_kg:'kg',cost_eur:'EUR',total_cavities:'cavities',used_cavities:'cavities',max_pin_number:'pin #',rated_voltage:'V',rated_current:'A',temperature_min:'°C',temperature_max:'°C',number:'pin #',cavity:'cavity',electrical_requirement:'bitmask',nominal_current:'A',inrush_current:'A',max_voltage:'V',diagnostics_required:'bitmask',required_supply_voltage:'V',required_supply_voltage_min:'V',required_supply_voltage_max:'V',preferred_supply_voltage:'V',min:'signal unit',max:'signal unit',resolution:'signal unit',scaling:'ratio'};
+const FIELD_HELP={name:'Object name exported to JSON and used in reports.',schema_version:'JSON contract version expected by framework import.',system_level:'System criticality level used for estimation and priority.',priority:'Business / mapping priority.',safety:'Safety classification used for ordering and checks.',location:'Physical tractor zone for local ECU grouping.',take_rate:'Percentage of tractors expected to use this object. Used for mapping priority.',is_mandatory:'Mandatory objects are mapped before optional objects.',auto_mapping_enabled:'If false the system is skipped by auto mapping.',mapping_enabled:'If false this component/device is not mapped.',drive_topology:'Coil drive topology. HS_GND maps pin 1 to high-side output and pin 2 to ground. HS_LS maps both pins to ECU outputs as a driver pair.',device_type:'SENSOR or ACTUATOR. Defines expected signal direction.',connector:'Connector name that owns this pin cavity.',cavity:'Physical connector cavity number.',total_cavities:'Total physical cavities in the connector. Validation requires this to match the number of pins for guided devices.',used_cavities:'Used cavities. Validation requires sum of used cavities = pins = signals/nets.',max_pin_number:'Highest physical pin/cavity number on connector.',sealed:'True for sealed connector families.',ip_rating:'Ingress protection rating.',rated_voltage:'Connector voltage rating.',rated_current:'Connector current rating.',temperature_min:'Minimum operating temperature.',temperature_max:'Maximum operating temperature.',prefix:'Signal/net exported name. Pins reference this value.',type:'Payload data type for the logical signal/net.',interface:'Electrical interface carried by the signal/net.',interface_type:'Electrical interface expected on this physical pin.',unit:'Engineering unit of this signal/net.',role:'Device-side direction/role: sensor outputs go to ECU input; actuator inputs are driven by ECU outputs; supply/ground are power nets.',electrical_requirement:'Bitmask for ECU capability requirement, e.g. HIGH_SIDE or LOW_SIDE.',signal:'Signal/net carried by this physical pin. Must reference one entry in signals[].',nominal_current:'Normal current required by this pin/net. Checked against ECU pin current capacity.',inrush_current:'Peak start-up current for driver sizing.',max_voltage:'Maximum voltage expected on this pin/net.',diagnostics_required:'Required diagnostic features bitmask.',safety_relevant:'Marks the pin/net as safety relevant.',ground_class:'POWER or LOGIC ground class.',required_reset_state:'Required ECU output state at reset, usually OFF for actuators.',required_sensor_supply:'Required named sensor supply rail.',required_sensor_ground:'Required named sensor ground rail.',required_supply_voltage:'Nominal supply voltage.',required_supply_voltage_min:'Minimum valid supply voltage.',required_supply_voltage_max:'Maximum valid supply voltage.',preferred_supply_voltage:'Preferred supply voltage used for candidate scoring.',min:'Minimum physical/logical value.',max:'Maximum physical/logical value.',resolution:'Smallest useful step.',scaling:'Scale factor applied by generated/imported model.'};
+function unitOf(k){return FIELD_UNITS[k]||''}function helpOf(k){return FIELD_HELP[k]||'Framework field used by import/export, validation or mapping.'}function infoHtml(k){return '<span class="info-dot" title="'+esc(helpOf(k))+'">i</span>'+(unitOf(k)?'<span class="unit-tag">['+esc(unitOf(k))+']</span>':'')}
+function fieldHtml(def,o){const t=currentType(),tag=def.flag==='map'?'<span class="badge map">mapping</span>':def.flag==='req'?'<span class="badge req">required</span>':'',v=o[def.key];let input='';if(def.type==='textarea')input='<textarea onchange="editField(\''+def.key+'\',this.value)">'+esc(v||'')+'</textarea>';else if(def.type==='bool')input='<select onchange="editField(\''+def.key+'\',this.value===\'true\')"><option value="true" '+(v===true?'selected':'')+'>true</option><option value="false" '+(v===false?'selected':'')+'>false</option></select>';else if(def.type==='brands'){const selected=arr(v);input='<select class="brand-select" multiple onchange="editField(\''+def.key+'\',Array.from(this.selectedOptions).map(o=>o.value))">'+(def.values||ENUMS.brands).map(b=>'<option value="'+esc(b)+'" '+(selected.includes(b)?'selected':'')+'>'+esc(b)+'</option>').join('')+'</select><div class="proposal"><span>Possible brands: MF, FT, VT</span><button onclick=\'applyProposal("'+def.key+'",["MF","FT","VT"])\'>Use all</button></div>'}else if(def.type==='enum')input='<select onchange="editField(\''+def.key+'\',this.value)">'+option(def.values,v)+'</select>';else if(def.type==='number')input='<input type="number" step="any" value="'+esc(v??'')+'" onchange="editField(\''+def.key+'\',this.value===\'\'?null:Number(this.value))">';else if(def.type==='csv')input='<input value="'+esc(arr(v).join(', '))+'" onchange="editField(\''+def.key+'\',this.value.split(\',\').map(x=>x.trim()).filter(Boolean))">';else if(def.type==='signalRef'){const d=getDevice();input='<select onchange="editField(\''+def.key+'\',this.value)"><option value="">none</option>'+arr(d?.signals).map(s=>'<option value="'+esc(s.prefix||s.name)+'" '+(v===(s.prefix||s.name)?'selected':'')+'>'+esc(s.prefix||s.name)+'</option>').join('')+'</select>'}else input='<input value="'+esc(v??'')+'" onchange="editField(\''+def.key+'\',this.value)">';const pv=proposedValue(def,o,t),show=def.type!=='brands'&&pv!==undefined&&(JSON.stringify(pv)!==JSON.stringify(v)),ptxt=Array.isArray(pv)?pv.join(', '):pv,namingInfo=(show&&t==='signal'&&def.key==='prefix')?'<span class="info-dot" title="'+esc(explainSignalName(o,getDevice(),getComponent(),getSystem()))+'">i</span>':'';return '<div class="field-wrap"><label>'+esc(def.label)+' '+tag+infoHtml(def.key)+'</label>'+input+(show?'<div class="proposal"><span>Proposal: '+esc(ptxt)+'</span>'+namingInfo+'<button onclick=\'applyProposal("'+def.key+'",'+JSON.stringify(pv).replace(/'/g,'&#39;')+')\'>Use</button></div>':'')+'</div>'}
+function childSummary(o,t){if(t==='system')return renderSystemDependencies(o);if(t==='component')return renderComponentDependencies(o);if(t==='sensor'||t==='actuator')return renderDeviceDependencies(o);return ''}
+function objectForm(o,t){return `<div class="card"><div class="grid3">${(SCHEMA[t]||[]).map(def=>fieldHtml(def,o)).join('')}</div></div>`}
+function librarySelect(type,label){const items=libraryItemsOf(type);return `<div class="select-inline"><div><label>${label}</label><select id="libSelect_${type}">${items.map(x=>`<option value="${x.id}">${esc(x.name)} — ${esc(x.path||'')}</option>`).join('')}</select></div><button class="lib small" ${items.length?'':'disabled'} onclick="addLibraryById(byId('libSelect_${type}').value)">Add</button></div>`}
+function renderSystemDependencies(s){const comps=arr(s.components),devices=comps.flatMap(c=>[...arr(c.sensors).map(d=>({d,c,k:'sensor'})),...arr(c.actuators).map(d=>({d,c,k:'actuator'}))]);return `<div class="focus-card"><div class="editor-headline"><div><h3>${esc(s.name||'System')}</h3><div class="editor-subtitle">${esc(s.system_level||'SL1')} · ${esc(s.location||'—')} · ${EEC_SCHEMA_VERSION}</div></div><span class="${badgeClass('system')}">system</span></div><div class="summary-kpis"><div class="kpi"><b>${comps.length}</b><span>Components</span></div><div class="kpi"><b>${devices.length}</b><span>Devices</span></div><div class="kpi"><b>${devices.flatMap(x=>arr(x.d.signals)).length}</b><span>Signals</span></div><div class="kpi"><b>${devices.flatMap(x=>[...arr(x.d.pins),...arr(x.d.connectors)]).length}</b><span>Pins / Conn.</span></div></div><div class="quick-actions"><button class="success small" onclick="newComponent()">+ Component</button><button class="small" onclick="duplicateSelected()">Duplicate system</button><button class="danger small" onclick="deleteSelected()">Delete system</button></div>${librarySelect('component','Add existing component from library')}</div><div class="dependency-grid">${comps.map(c=>`<div class="dep-card"><div class="dep-title"><b>${esc(c.name)}</b><button class="small" onclick="selectComponent('${c.id}')">Open</button></div><div class="mini-list"><span class="pill">${arr(c.sensors).length} sensors</span><span class="pill">${arr(c.actuators).length} actuators</span></div></div>`).join('')||'<div class="empty">No components yet — add one above.</div>'}</div>`}
+function renderComponentDependencies(c){const devices=[...arr(c.sensors).map(d=>({d,k:'sensor'})),...arr(c.actuators).map(d=>({d,k:'actuator'}))];return `<div class="section-title"><h3>Component dependencies</h3><div class="toolbar"><button class="success small" onclick="newDevice('SENSOR')">+ Sensor</button><button class="warn small" onclick="newDevice('ACTUATOR')">+ Actuator</button></div></div><div class="card">${librarySelect('sensor','Select existing sensor from library')}${librarySelect('actuator','Select existing actuator from library')}</div><div class="dependency-grid">${devices.map(x=>`<div class="dep-card"><div class="dep-title"><b>${esc(nameOf(x.d))}</b><div class="card-actions"><button class="small" onclick="selectDevice('${x.d.id}')">Open</button><button class="small" onclick="selectDevice('${x.d.id}');duplicateDevice()">Dup</button><button class="danger-link small" onclick="selectDevice('${x.d.id}');deleteSelected()">Del</button></div></div><span class="${badgeClass(x.k)}">${x.k}</span></div>`).join('')||'<div class="empty">No sensor or actuator yet.</div>'}</div>`}
+function renderDeviceDependencies(d){const rows=[...arr(d.connectors).map(o=>({o,k:'connector'})),...arr(d.pins).map(o=>({o,k:'pin'})),...arr(d.signals).map(o=>({o,k:'signal'}))];return `<div class="section-title"><h3>Device dependencies</h3><div class="toolbar"><button class="success small" onclick="newIo('pin')">+ Pin</button><button class="success small" onclick="newIo('connector')">+ Connector</button><button class="success small" onclick="newIo('signal')">+ Signal</button></div></div><div class="card">${librarySelect('pin','Add existing pin from library')}${librarySelect('connector','Add existing connector from library')}${librarySelect('signal','Add existing signal from library')}</div><div class="dependency-grid">${rows.map(x=>`<div class="dep-card"><div class="dep-title"><b>${esc(nameOf(x.o))}</b><div class="card-actions"><button class="small" onclick="selectIo('${x.k}','${x.o.id}')">Open</button><button class="small" onclick="selectIo('${x.k}','${x.o.id}');duplicateIo('${x.k}')">Dup</button><button class="danger-link small" onclick="selectIo('${x.k}','${x.o.id}');deleteSelected()">Del</button></div></div><span class="${badgeClass(x.k)}">${x.k}</span></div>`).join('')||'<div class="empty">No pin, connector or signal yet.</div>'}</div>`}
+function renderEditor(){const o=current(),t=currentType(),body=byId('editorBody');byId('editorTitle').textContent=o?`${t} · ${nameOf(o)}`:'Editor';if(!o){body.innerHTML='<div class="empty" style="margin-top:30px">Select an object in the architecture tree, or create a new system to begin.</div>';return}const actions=`<div class="toolbar"><button class="small" onclick="duplicateSelected()">Duplicate</button>${t==='signal'?'<button class="lib small" onclick="saveSignalToLibrary()" title="Add this signal to the reusable library and write it into library/signals/">Save to Library</button>':''}<button class="danger small" onclick="deleteSelected()">Delete</button></div>`;if(t==='system')body.innerHTML=`${renderSystemDependencies(o)}<div class="section-title"><h3>System properties</h3>${actions}</div>${objectForm(o,t)}`;else if(t==='component')body.innerHTML=`<div class="editor-split"><div><div class="section-title"><h3>Component properties</h3>${actions}</div>${objectForm(o,t)}</div><div>${renderComponentDependencies(o)}</div></div>`;else if(t==='sensor'||t==='actuator')body.innerHTML=`<div class="editor-split"><div><div class="section-title"><h3>${t} properties</h3>${actions}</div>${objectForm(o,t)}</div><div>${renderDeviceDependencies(o)}</div></div>`;else body.innerHTML=`<div class="section-title"><h3>${t} properties</h3>${actions}</div>${objectForm(o,t)}`}
+function renderBread(){['System','Component','Device','Io'].forEach(n=>byId('crumb'+n).classList.remove('active'));if(getSystem())byId('crumbSystem').classList.add('active');if(getComponent())byId('crumbComponent').classList.add('active');if(getDevice())byId('crumbDevice').classList.add('active');if(getIo())byId('crumbIo').classList.add('active');byId('pathText').textContent=[getSystem()?.name,getComponent()?.name,getDevice()?.name,getIo()?nameOf(getIo()):null].filter(Boolean).join(' › ')}
+function buildLibraryTree(){const root={kind:'folder',name:'library',path:'library',children:[]},folders={library:root};function folder(parts){let cur=root,path='library';parts.filter(Boolean).forEach(part=>{path+='/'+part;if(!folders[path]){folders[path]={kind:'folder',name:part,path,children:[]};cur.children.push(folders[path])}cur=folders[path]});return cur}state.library.forEach(item=>{const raw=(item.path||item.name||'object.json').replace(/\\/g,'/'),parts=raw.split('/').filter(Boolean),file=parts.pop()||item.name;folder(parts).children.push({kind:'libraryObject',name:item.name||file,file,path:'lib/'+raw,item,objectKind:item.type||'unknown'})});return root}
+function renderLibrary(){const el=byId('libraryView'),chips=byId('libraryChips');if(!el)return;const counts={system:0,component:0,sensor:0,actuator:0,connector:0,pin:0,signal:0,unknown:0};state.library.forEach(x=>counts[x.type]=(counts[x.type]||0)+1);if(chips)chips.innerHTML='<span class="chip">'+(state.libraryDirHandle?'📁 '+esc(state.libraryDirHandle.name)+' connected':'📁 not connected — saved signals will download')+'</span>'+Object.entries(counts).filter(([k,v])=>v||['system','component','sensor','actuator'].includes(k)).map(([k,v])=>`<span class="chip">${k}: ${v}</span>`).join('');if(!state.library.length){el.innerHTML='<div class="empty">Import a library folder or JSON files to reuse objects.</div>';return}const filter=(byId('libraryFilter').value||'').toLowerCase(),root=buildLibraryTree();el.innerHTML='';function matches(n){if(!filter)return true;const hay=[n.name,n.file,n.path,n.objectKind,n.item?.name,n.item?.path,n.item?.type,JSON.stringify(n.item?.data||{})].filter(Boolean).join(' ').toLowerCase();return hay.includes(filter)||(n.children||[]).some(matches)}function row(n,d=0){if(!matches(n))return;const isFolder=n.kind==='folder',expanded=state.libraryExpanded[n.path]!==false,div=document.createElement('div');div.className='item '+(!isFolder&&state.selectedLibraryId===n.item.id?'active':'');div.style.marginLeft=(d*12)+'px';div.innerHTML=`<span class="twisty">${isFolder?(expanded?'▾':'▸'):''}</span><span class="${isFolder?'folder-name':'object-name'}">${isFolder?'📁':'🗂️'} ${esc(isFolder?n.name:(n.item.name||n.file))}</span>${!isFolder?`<span class="${badgeClass(n.objectKind)}">${esc(n.objectKind)}</span><span class="path-hint">${esc(n.item.path||'')}</span>`:''}`;div.onclick=e=>{e.stopPropagation();if(isFolder){state.libraryExpanded[n.path]=!expanded;renderLibrary()}else{state.selectedLibraryId=n.item.id;renderLibrary();log('Library selected: '+(n.item.name||n.file),'info')}};if(!isFolder)div.ondblclick=e=>{e.stopPropagation();addLibraryItem(n.item)};el.appendChild(div);if(isFolder&&expanded)(n.children||[]).forEach(c=>row(c,d+1))}row(root)}
+function addLibraryType(type){const item=state.library.find(x=>x.id===state.selectedLibraryId&&x.type===type);if(!item)return log('Select a '+type+' in library first','err');addLibraryItem(item)}function addLibraryToCurrent(){const item=state.library.find(x=>x.id===state.selectedLibraryId);if(!item)return log('Select an object in library first','err');addLibraryItem(item)}
+function addLibraryItem(item){const o=cloneWithNewIds(item.data,item.type),t=item.type;if(t==='system'){state.arch.systems.push(o);selectSystem(o.id)}else if(t==='component'){const s=getSystem();if(!s)return log('Select a system first','err');s.components.push(o);selectComponent(o.id)}else if(t==='sensor'||t==='actuator'){const c=getComponent();if(!c)return log('Select a component first','err');(t==='sensor'?c.sensors:c.actuators).push(o);selectDevice(o.id)}else if(['connector','pin','signal'].includes(t)){const d=getDevice();if(!d)return log('Select a sensor or actuator first','err');(t==='connector'?d.connectors:t==='pin'?d.pins:d.signals).push(o);selectIo(t,o.id)}else return log('Unsupported library object type: '+t,'err');log('Added '+t+' from library as a cloned object','ok');renderAll()}
+async function importLibraryFiles(ev){const files=[...ev.target.files].filter(f=>f.name.endsWith('.json'));for(const file of files){try{const data=JSON.parse(await file.text()),type=inferType(data,file.webkitRelativePath||file.name);state.library.push({id:uid('lib'),type,name:data.name||data.prefix||file.name,path:file.webkitRelativePath||file.name,data:normalize(data,type)});}catch(e){log('Parse error '+file.name+': '+e.message,'err')}}ev.target.value='';setNavTab('library');log(files.length+' library file(s) imported','ok');saveLibraryToStorage();renderAll()}async function importJsonFiles(ev){const files=[...ev.target.files];for(const file of files){try{const data=JSON.parse(await file.text()),type=inferType(data,file.name);if(type==='system'){const s=normalize(data,'system');state.arch.systems.push(s);selectSystem(s.id);log('System imported: '+s.name,'ok')}else{state.library.push({id:uid('lib'),type,name:data.name||data.prefix||file.name,path:file.name,data:normalize(data,type)});log('Object imported into library: '+file.name,'ok')}}catch(e){log('Parse error '+file.name+': '+e.message,'err')}}ev.target.value='';saveLibraryToStorage();renderAll()}function openLibrarySystem(){const item=state.library.find(x=>x.id===state.selectedLibraryId);if(!item||item.type!=='system')return log('Select a system in library','err');const s=normalize(item.data,'system');state.arch.systems.push(s);selectSystem(s.id);log('System opened from library','ok')}
+// --- Library persistence (localStorage) + on-disk "signals" folder writes ---
+const LIBRARY_STORAGE_KEY='eec_signal_library_v1';
+function saveLibraryToStorage(){try{localStorage.setItem(LIBRARY_STORAGE_KEY,JSON.stringify(state.library))}catch(e){log('Could not persist library: '+e.message,'err')}}
+function loadLibraryFromStorage(){try{const raw=localStorage.getItem(LIBRARY_STORAGE_KEY);if(raw)state.library=JSON.parse(raw)}catch(e){log('Could not load saved library: '+e.message,'err')}}
+async function connectLibraryFolder(){if(!window.showDirectoryPicker)return log('This browser does not support direct folder writes — saved signals will download as files instead.','err');try{state.libraryDirHandle=await window.showDirectoryPicker({mode:'readwrite'});log('Library folder connected: new signals will be written to '+state.libraryDirHandle.name+'/signals/','ok')}catch(e){log('Folder connection cancelled','info')}renderAll()}
+async function writeLibraryFile(subfolder,filename,text){if(!state.libraryDirHandle){downloadText(filename,text);log('Downloaded '+filename+' — move it into library/'+subfolder+'/','info');return}try{const dir=await state.libraryDirHandle.getDirectoryHandle(subfolder,{create:true}),fh=await dir.getFileHandle(filename,{create:true}),w=await fh.createWritable();await w.write(text);await w.close();log('Saved '+subfolder+'/'+filename+' to library folder','ok')}catch(e){log('Folder write failed ('+e.message+'), downloading instead','err');downloadText(filename,text)}}
+function saveSignalToLibrary(){const o=current();if(!o||currentType()!=='signal')return log('Select a signal first','err');const name=o.prefix||o.name||'Signal',file=name.replace(/[^A-Za-z0-9_.-]+/g,'_')+'.json',path='library/signals/'+file,existing=state.library.find(x=>x.type==='signal'&&x.data&&(x.data.prefix||x.data.name)===name),entry=existing||{id:uid('lib'),type:'signal'};entry.type='signal';entry.name=name;entry.path=path;entry.data=clone(o);if(!existing)state.library.push(entry);saveLibraryToStorage();writeLibraryFile('signals',file,JSON.stringify(entry.data,null,2));log('Signal "'+name+'" saved to library ('+path+')','ok');renderAll()}
+function cConnector(c){return{name:c.name||'',part_number:c.part_number||'',family:ENUMS.family.includes(c.family)?c.family:'CUSTOM',gender:ENUMS.gender.includes(c.gender)?c.gender:'MALE',total_cavities:Number(c.total_cavities||0),used_cavities:Number(c.used_cavities??c.total_cavities??0),max_pin_number:Number(c.max_pin_number||0),sealed:Boolean(c.sealed),color:c.color||'',mounting:c.mounting||'',ip_rating:c.ip_rating||'',rated_voltage:Number(c.rated_voltage||0),rated_current:Number(c.rated_current||0),temperature_min:Number(c.temperature_min??-40),temperature_max:Number(c.temperature_max??125)}}
+function cPin(p){return{number:Number(p.number||0),name:p.name||'',connector:p.connector||'X1',cavity:Number(p.cavity||p.number||0),role:ENUMS.pin_role.includes(p.role)?p.role:'UNASSIGNED',interface_type:ENUMS.iface.includes(p.interface_type)?p.interface_type:'DIGITAL',signal:p.signal||'',electrical_requirement:Number(p.electrical_requirement||0),nominal_current:Number(p.nominal_current||0),inrush_current:Number(p.inrush_current||0),max_voltage:Number(p.max_voltage||0),diagnostics_required:Number(p.diagnostics_required||0),safety_relevant:Boolean(p.safety_relevant),ground_class:p.ground_class||'UNCLASSIFIED',required_reset_state:p.required_reset_state||'OFF',required_sensor_supply:p.required_sensor_supply||'UNKNOWN',required_sensor_ground:p.required_sensor_ground||'UNKNOWN',required_supply_voltage:Number(p.required_supply_voltage||0),required_supply_voltage_min:Number(p.required_supply_voltage_min||0),required_supply_voltage_max:Number(p.required_supply_voltage_max||0),preferred_supply_voltage:Number(p.preferred_supply_voltage||0)}}
+function linkedPin(d,s){const n=s.prefix||s.name;return arr(d.pins).find(p=>p.signal===n)||null}
+function cSignal(s,pin=null){const p=pin||{};return{prefix:s.prefix||s.name||'Signal',count:Number(s.count||1),type:ENUMS.signalType.includes(s.type)?s.type:'U1',interface:ENUMS.iface.includes(s.interface)?s.interface:'DIGITAL',unit:ENUMS.unit.includes(s.unit)?s.unit:'NONE',role:ENUMS.pin_role.includes(s.role)?s.role:'OUTPUT',priority:s.priority||'MEDIUM',safety:s.safety||'QM',part_number:s.part_number||'',electrical_requirement:Number(p.electrical_requirement??s.electrical_requirement??0),min:s.min??0,max:s.max??1,resolution:s.resolution??1,scaling:s.scaling??1,digital_structure:ENUMS.digital.includes(s.digital_structure)?s.digital_structure:'UNSPECIFIED',nominal_current:Number(p.nominal_current||0),inrush_current:Number(p.inrush_current||0),max_voltage:Number(p.max_voltage||0),diagnostics_required:Number(p.diagnostics_required||0),safety_relevant:Boolean(p.safety_relevant),ground_class:p.ground_class||'UNCLASSIFIED',required_reset_state:p.required_reset_state||'OFF',required_sensor_supply:p.required_sensor_supply||'UNKNOWN',required_sensor_ground:p.required_sensor_ground||'UNKNOWN',required_supply_voltage:Number(p.required_supply_voltage||0),required_supply_voltage_min:Number(p.required_supply_voltage_min||0),required_supply_voltage_max:Number(p.required_supply_voltage_max||0),preferred_supply_voltage:Number(p.preferred_supply_voltage||0)}}
+function cDevice(d,kind){return{name:d.name||kind,part_number:d.part_number||'',supplier_pn:d.supplier_pn||'',device_type:kind,schema_version:kind==='ACTUATOR'?'eec-actuator-1.5':'eec-sensor-1.5',drive_topology:d.drive_topology||'',sensor_template:d.sensor_template||'',actuator_template:d.actuator_template||'',is_mandatory:d.is_mandatory!==false,mapping_enabled:d.mapping_enabled!==false,priority:d.priority||'MEDIUM',safety:d.safety||'QM',signals:arr(d.signals).map(s=>cSignal(s,linkedPin(d,s))),pins:arr(d.pins).map(cPin),connectors:arr(d.connectors).map(cConnector)}}
+function cComponent(c){return{name:c.name||'Component',priority:c.priority||'MEDIUM',safety:c.safety||'QM',is_mandatory:c.is_mandatory!==false,mapping_enabled:c.mapping_enabled!==false,sensors:arr(c.sensors).map(d=>cDevice(d,'SENSOR')),actuators:arr(c.actuators).map(d=>cDevice(d,'ACTUATOR'))}}
+function cSystem(sys=getSystem()||state.arch.systems[0]){if(!sys)return null;return{type:'system',schema_version:EEC_SCHEMA_VERSION,name:sys.name,part_number:sys.part_number||'',version:sys.version||'1.0',system_level:sys.system_level||'SL1','Ref-2X':sys['Ref-2X']||'',priority:sys.priority||'MEDIUM',safety:sys.safety||'QM',location:sys.location||'',take_rate:Number(sys.take_rate??100),is_mandatory:sys.is_mandatory!==false,auto_mapping_enabled:sys.auto_mapping_enabled!==false,components:arr(sys.components).map(cComponent)}}
+function cSystemLegacy(sys=getSystem()||state.arch.systems[0]){if(!sys)return null;const devices=[];arr(sys.components).forEach(c=>{arr(c.sensors).forEach(d=>devices.push(cDevice(d,'SENSOR')));arr(c.actuators).forEach(d=>devices.push(cDevice(d,'ACTUATOR')))});return{schema_version:EEC_SCHEMA_VERSION,type:'system',name:sys.name,part_number:sys.part_number||'',version:sys.version||'1.0',system_level:sys.system_level||'SL1','Ref-2X':sys['Ref-2X']||'',priority:sys.priority||'MEDIUM',safety:sys.safety||'QM',location:sys.location||'',take_rate:Number(sys.take_rate??100),is_mandatory:sys.is_mandatory!==false,auto_mapping_enabled:sys.auto_mapping_enabled!==false,devices}}
+function logCAdapterNotice(){log('vNext adapter (v7.2): components[] format. C framework reads both components[] (vNext) and devices[] (Legacy). Safety labels use ASIL_A/B/C/D (ISO 26262).','info')}
+function validateModel(verbose=false){const p=[],w=[],req=(ok,msg)=>{if(!ok)p.push(msg)},warn=(ok,msg)=>{if(!ok)w.push(msg)},num=x=>typeof x==='number'&&Number.isFinite(x);arr(state.arch.systems).forEach(s=>{req(s.name,'System missing name');req(s.schema_version===EEC_SCHEMA_VERSION,'System '+s.name+' schema_version must be '+EEC_SCHEMA_VERSION);req(typeof s.auto_mapping_enabled==='boolean','System '+s.name+' missing auto_mapping_enabled');req(ENUMS.system_level.includes(s.system_level),'System '+s.name+' has unsupported system_level '+s.system_level);req(ENUMS.priority.includes(s.priority),'System '+s.name+' has unsupported priority '+s.priority);req(ENUMS.safety.includes(s.safety),'System '+s.name+' has unsupported safety '+s.safety);req(arr(s.platforms).length<=8,'System '+s.name+' exceeds 8 platforms');req(arr(s.brands).length<=8,'System '+s.name+' exceeds 8 brands');warn(Boolean(s['Ref-2X']),'System '+s.name+' has no Ref-2X; estimation lookup will not resolve it');req(arr(s.components).length,'System '+s.name+' has no component');arr(s.components).forEach(c=>{req(c.name,'Component missing name');req(typeof c.mapping_enabled==='boolean','Component '+c.name+' missing mapping_enabled');req(arr(c.sensors).length+arr(c.actuators).length,'Component '+c.name+' has no sensor/actuator');[...arr(c.sensors),...arr(c.actuators)].forEach(d=>{const kind=d.device_type||'SENSOR';req(d.name,'Device missing name');req(typeof d.is_mandatory==='boolean','Device '+d.name+' missing is_mandatory');req(typeof d.mapping_enabled==='boolean','Device '+d.name+' missing mapping_enabled');req(['SENSOR','ACTUATOR'].includes(kind),'Device '+d.name+' has unsupported device_type '+kind);req(arr(d.connectors).length,'Device '+d.name+' has no connector');req(arr(d.pins).length,'Device '+d.name+' has no pin');req(arr(d.signals).length,'Device '+d.name+' has no signal');const usedCavities=arr(d.connectors).reduce((a,c)=>a+Number(c.used_cavities||0),0),totalCavities=arr(d.connectors).reduce((a,c)=>a+Number(c.total_cavities||0),0);req(arr(d.pins).length===arr(d.signals).length,'Device '+d.name+' must have same number of pins and signals/nets');req(arr(d.pins).length===usedCavities,'Device '+d.name+' pins count must equal sum of used connector cavities');req(arr(d.pins).length===totalCavities,'Device '+d.name+' pins count must equal sum of total connector cavities');const sigNames=new Set(),pinNumbers=new Set(),connNames=new Set();arr(d.signals).forEach(sig=>{const n=sig.prefix||sig.name;req(Boolean(n),'Device '+d.name+' has signal without prefix');req(!sigNames.has(n),'Device '+d.name+' has duplicate signal '+n);sigNames.add(n);req(ENUMS.signalType.includes(sig.type),'Signal '+n+' has invalid payload type '+sig.type);req(ENUMS.iface.includes(sig.interface),'Signal '+n+' has invalid interface '+sig.interface);req(ENUMS.unit.includes(sig.unit),'Signal '+n+' has invalid unit '+sig.unit);req(ENUMS.pin_role.includes(sig.role),'Signal '+n+' has invalid role '+sig.role);req(Number.isInteger(Number(sig.count))&&Number(sig.count)>0&&Number(sig.count)<=999,'Signal '+n+' count must be 1..999');req(num(Number(sig.min))&&num(Number(sig.max))&&Number(sig.min)<=Number(sig.max),'Signal '+n+' min/max range is invalid');req(Number(sig.resolution)>0,'Signal '+n+' resolution must be > 0');req(Number(sig.scaling)!==0,'Signal '+n+' scaling must not be 0');const expected=defaultRoleForDevice(kind,sig.interface);req(sig.role===expected,'Signal '+n+' role '+sig.role+' should be '+expected+' for '+kind+' '+sig.interface)});arr(d.pins).forEach(pin=>{['number','name','role','interface_type','electrical_requirement','signal','nominal_current','inrush_current','max_voltage','diagnostics_required','safety_relevant','ground_class','required_reset_state','required_sensor_supply','required_sensor_ground','required_supply_voltage','required_supply_voltage_min','required_supply_voltage_max','preferred_supply_voltage'].forEach(k=>req(pin[k]!==undefined&&pin[k]!==null&&pin[k]!=='','Pin '+(pin.name||pin.number)+' missing '+k));req(Number.isInteger(Number(pin.number))&&Number(pin.number)>0,'Pin '+(pin.name||pin.number)+' number must be a positive integer');req(!pinNumbers.has(Number(pin.number)),'Device '+d.name+' has duplicate pin number '+pin.number);pinNumbers.add(Number(pin.number));req(ENUMS.pin_role.includes(pin.role),'Pin '+(pin.name||pin.number)+' has invalid role '+pin.role);req(ENUMS.iface.includes(pin.interface_type),'Pin '+(pin.name||pin.number)+' has invalid interface '+pin.interface_type);req(!pin.signal||sigNames.has(pin.signal),'Pin '+(pin.name||pin.number)+' references unknown signal '+pin.signal);const linked=arr(d.signals).find(s=>(s.prefix||s.name)===pin.signal);if(linked){req(pin.role===linked.role,'Pin '+(pin.name||pin.number)+' role differs from signal '+pin.signal);req(pin.interface_type===linked.interface,'Pin '+(pin.name||pin.number)+' interface differs from signal '+pin.signal)}['nominal_current','inrush_current','max_voltage','diagnostics_required','required_supply_voltage','required_supply_voltage_min','required_supply_voltage_max','preferred_supply_voltage'].forEach(k=>req(Number(pin[k])>=0,'Pin '+(pin.name||pin.number)+' has negative '+k));req(!pin.required_supply_voltage_min||!pin.required_supply_voltage_max||Number(pin.required_supply_voltage_min)<=Number(pin.required_supply_voltage_max),'Pin '+(pin.name||pin.number)+' supply range is invalid');warn(!(d.mapping_enabled&&pin.role==='SUPPLY'&&Number(pin.required_supply_voltage)<=0&&Number(pin.required_supply_voltage_max)<=0),'Pin '+(pin.name||pin.number)+' SUPPLY has no required voltage');warn(!(d.mapping_enabled&&pin.role==='INPUT'&&kind==='ACTUATOR'&&Number(pin.max_voltage)<=0),'Actuator input '+(pin.name||pin.number)+' has no max_voltage');});arr(d.connectors).forEach(con=>{req(Boolean(con.name),'Device '+d.name+' has connector without name');req(!connNames.has(con.name),'Device '+d.name+' has duplicate connector '+con.name);connNames.add(con.name);req(ENUMS.family.includes(con.family),'Connector '+con.name+' has invalid family '+con.family);req(ENUMS.gender.includes(con.gender),'Connector '+con.name+' has invalid gender '+con.gender);req(Number(con.total_cavities)>0,'Connector '+con.name+' total_cavities must be > 0');req(Number(con.used_cavities)>=0&&Number(con.used_cavities)<=Number(con.total_cavities),'Connector '+con.name+' used_cavities exceeds total_cavities');warn(Number(con.max_pin_number)<=Number(con.total_cavities),'Connector '+con.name+' max_pin_number exceeds cavity count')})})})});state.problems=p;state.warnings=w;byId('problemCount').textContent=p.length+' problems / '+w.length+' warnings';byId('modelStatus').textContent=p.length?'INVALID':w.length?'VALID + WARNINGS':'VALID';byId('modelStatus').className='status '+(p.length?'bad':'ok');if(verbose){p.forEach(x=>log(x,'err'));w.forEach(x=>log(x,'warnlog'));if(!p.length&&!w.length)log('Validation passed','ok')}return p}
+function renderJson(){byId('tabObject').classList.toggle('active',state.jsonTab==='object');byId('tabC').classList.toggle('active',state.jsonTab==='c');byId('tabLegacy').classList.toggle('active',state.jsonTab==='legacy');byId('tabRaw').classList.toggle('active',state.jsonTab==='raw');const obj=state.jsonTab==='c'?cSystem():state.jsonTab==='legacy'?cSystemLegacy():current();const text=JSON.stringify(obj||{},null,2);byId('jsonView').classList.toggle('hidden',state.jsonTab==='raw');byId('jsonEdit').classList.toggle('hidden',state.jsonTab!=='raw');if(state.jsonTab==='raw')byId('jsonEdit').value=text;else byId('jsonView').textContent=text}function setJsonTab(t){state.jsonTab=t;renderJson()}function applyJsonToSelected(){try{const obj=JSON.parse(byId('jsonEdit').classList.contains('hidden')?byId('jsonView').textContent:byId('jsonEdit').value);const t=currentType();if(t==='system'){Object.assign(getSystem(),normalize(obj,'system'))}else if(t==='component'){Object.assign(getComponent(),normalize(obj,'component'))}else if(t==='sensor'||t==='actuator'){Object.assign(getDevice(),normalize(obj,t))}else if(['pin','connector','signal'].includes(t)){Object.assign(getIo(),normalize(obj,t))}log('JSON applied to selected object','ok');renderAll()}catch(e){log('Cannot apply JSON: '+e.message,'err')}}
+function downloadText(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}function exportCJson(){const probs=validateModel(true);if(probs.length)return log('Export blocked: invalid model','err');const sys=cSystem();if(!sys)return log('No system to export','err');downloadText((sys.name||'system')+'_vnext_components_import.json',JSON.stringify(sys,null,2));logCAdapterNotice();log('vNext (components[] format) exported — supported by C framework v7.2+. Use Export Legacy for older C builds.','export')}function exportLegacyCJson(){const probs=validateModel(true);if(probs.length)return log('Export blocked: invalid model','err');const sys=cSystemLegacy();if(!sys)return log('No system to export','err');downloadText((sys.name||'system')+'_legacy_devices_import.json',JSON.stringify(sys,null,2));log('Legacy devices[] JSON exported','export')}function downloadSelected(){const obj=current();if(!obj)return;downloadText((nameOf(obj)||'object')+'.json',JSON.stringify(obj,null,2))}function downloadJsonView(){downloadText((state.jsonTab==='c'?'vNext_components_import':state.jsonTab==='legacy'?'legacy_devices_import':'object')+'.json',state.jsonTab==='raw'?byId('jsonEdit').value:byId('jsonView').textContent)}async function copyJson(){await navigator.clipboard.writeText(state.jsonTab==='raw'?byId('jsonEdit').value:byId('jsonView').textContent);log('JSON copied','info')}
+function renderLogs(){const e=byId('terminal');e.innerHTML=state.logs.slice(-300).map(l=>`<div class="${l.level}">[${l.time}] ${esc(l.msg)}</div>`).join('');e.scrollTop=e.scrollHeight}function renderAll(doValidate=true){renderHierarchy();renderEditor();renderLibrary();renderBread();renderJson();if(doValidate)validateModel(false)}
+function initResize(){let mode=null,sx=0,sy=0,sl=0,sr=0,sb=0;const css=(k,d)=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue(k))||d;function start(e,m){mode=m;sx=e.clientX;sy=e.clientY;sl=css('--left',320);sr=css('--right',460);sb=css('--bottom',190);document.body.style.userSelect='none'}byId('resizeLeft').onmousedown=e=>start(e,'left');byId('resizeRight').onmousedown=e=>start(e,'right');byId('resizeBottom').onmousedown=e=>start(e,'bottom');window.onmousemove=e=>{if(!mode)return;if(mode==='left')document.documentElement.style.setProperty('--left',Math.max(240,Math.min(620,sl+e.clientX-sx))+'px');if(mode==='right')document.documentElement.style.setProperty('--right',Math.max(320,Math.min(820,sr-(e.clientX-sx)))+'px');if(mode==='bottom')document.documentElement.style.setProperty('--bottom',Math.max(100,Math.min(520,sb-(e.clientY-sy)))+'px')};window.onmouseup=()=>{mode=null;document.body.style.userSelect=''}}
+window.addEventListener('DOMContentLoaded',()=>{initResize();loadLibraryFromStorage();newSystem();log('EE Architect Design v7.1 ready — eec-system-1.4 explicit-pins adapter with legacy fallback','ok')});
+</script>
+</body>
+</html>

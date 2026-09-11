@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\tools\generate_architecture_tree_html.py", line 669, in <module>
+    main()
+  File "C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\tools\generate_architecture_tree_html.py", line 658, in main
+    arch = get_arch(load_json(json_path))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\tools\generate_architecture_tree_html.py", line 45, in load_json
+    d = json.loads(p.read_text(encoding="utf-8"))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\at16987\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\at16987\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\at16987\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 22 column 27 (char 555)

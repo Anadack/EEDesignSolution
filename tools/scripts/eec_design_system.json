@@ -1,0 +1,294 @@
+{
+  "_comment": "Industry-grade design system for E/E Architect documentation. All values are configurable.",
+  "theme": {
+    "name": "Professional Dark",
+    "description": "Industry-standard dark theme for technical documentation"
+  },
+  "colors": {
+    "dark": {
+      "bg": "#07111f",
+      "bg_secondary": "#0b1220",
+      "bg_tertiary": "#060a12",
+      "surface1": "#0f172a",
+      "surface2": "#131a2e",
+      "surface3": "#1a2240",
+      "border0": "#1e2848",
+      "border1": "#273250",
+      "border2": "#2d3a5c"
+    },
+    "text": {
+      "primary": "#e5edf9",
+      "secondary": "#9aa8bd",
+      "tertiary": "#7a8199",
+      "dim": "#5a6678",
+      "fade": "#4a5668"
+    },
+    "accent": {
+      "cyan": "#2ee6ff",
+      "purple": "#b388ff",
+      "green": "#2ee6a0",
+      "orange": "#ffb43d",
+      "red": "#ff5a78",
+      "amber": "#ffa500",
+      "teal": "#19d6c0"
+    },
+    "semantic": {
+      "success": "#2ee6a0",
+      "warning": "#ffa500",
+      "error": "#ff5a78",
+      "info": "#2ee6ff"
+    },
+    "pin_status": {
+      "valid": "var(--semantic-success)",
+      "warning": "var(--semantic-warning)",
+      "error": "var(--semantic-error)",
+      "free": "var(--text-dim)"
+    },
+    "interface": {
+      "analog": "#5aa6ff",
+      "pwm": "#ffb43d",
+      "digital": "#2ee6a0",
+      "sent": "#b388ff",
+      "can": "#ff5a78",
+      "lin": "#ff9e6e",
+      "ethernet": "#19d6c0",
+      "flexray": "#b388ff",
+      "isobus": "#2ee6a0",
+      "power": "#6c83a2",
+      "ground": "#46566e",
+      "current": "#19d6c0",
+      "frequency": "#ffb43d",
+      "resistance": "#2ee6a0",
+      "sensor_supply": "#2ee6ff"
+    },
+    "io_types": {
+      "ai": "#60a5fa",
+      "di": "#34d399",
+      "fi": "#f59e0b",
+      "sent": "#818cf8",
+      "curr": "#2dd4bf",
+      "res": "#facc15",
+      "pwm_hs": "#c084fc",
+      "pwm_ls": "#d8b4fe",
+      "do_hs": "#4ade80",
+      "do_ls": "#86efac",
+      "can": "#fb7185",
+      "lin": "#fb923c",
+      "eth": "#06b6d4",
+      "flex": "#f472b6",
+      "sup": "#f97316",
+      "gnd": "#94a3b8"
+    }
+  },
+  "typography": {
+    "font_family_primary": "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+    "font_family_mono": "'Fira Code', 'Courier New', monospace",
+    "font_weight_regular": 400,
+    "font_weight_medium": 500,
+    "font_weight_semibold": 600,
+    "font_weight_bold": 700,
+    "font_weight_extrabold": 800,
+    "font_weight_black": 900,
+    "line_height_tight": 1.2,
+    "line_height_normal": 1.4,
+    "line_height_relaxed": 1.6,
+    "line_height_loose": 1.8
+  },
+  "sizing": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "12px",
+    "lg": "16px",
+    "xl": "24px",
+    "2xl": "32px",
+    "3xl": "48px",
+    "4xl": "64px"
+  },
+  "radius": {
+    "none": "0px",
+    "sm": "4px",
+    "md": "8px",
+    "lg": "12px",
+    "xl": "16px",
+    "2xl": "20px",
+    "3xl": "24px",
+    "full": "999px"
+  },
+  "shadows": {
+    "sm": "0 2px 8px rgba(0,0,0,0.2)",
+    "md": "0 4px 16px rgba(0,0,0,0.3)",
+    "lg": "0 6px 24px rgba(0,0,0,0.35)",
+    "xl": "0 8px 32px rgba(0,0,0,0.4)",
+    "inner": "inset 0 2px 8px rgba(0,0,0,0.2)",
+    "focus": "0 0 0 3px rgba(46,230,255,0.15)"
+  },
+  "gradients": {
+    "bg_glow_1": "radial-gradient(circle at 14% 0%, rgba(46,230,255,0.10), transparent 32%)",
+    "bg_glow_2": "radial-gradient(circle at 86% 0%, rgba(179,136,255,0.08), transparent 32%)",
+    "card_glow": "radial-gradient(circle at 88% -20%, rgba(46,230,255,0.16), transparent 55%)",
+    "accent_bar": "linear-gradient(90deg, var(--accent-cyan), var(--accent-purple))",
+    "button_hover": "linear-gradient(135deg, rgba(46,230,255,0.1), rgba(179,136,255,0.1))"
+  },
+  "layout": {
+    "page_max_width": "1600px",
+    "page_min_width": "320px",
+    "content_max_width": "1480px",
+    "sidebar_width": "340px",
+    "table_max_height_viewport_percent": 74,
+    "sticky_header_offset_px": 39
+  },
+  "spacing": {
+    "page_padding": "28px",
+    "page_padding_sm": "16px",
+    "section_padding": "20px",
+    "card_padding": "18px",
+    "grid_gap": "22px",
+    "grid_gap_sm": "16px",
+    "element_gap": "12px",
+    "element_gap_sm": "10px",
+    "element_gap_xs": "8px"
+  },
+  "typography_scale": {
+    "h1": {
+      "size": "clamp(2rem, 3vw, 3.5rem)",
+      "weight": 800,
+      "letter_spacing": "-0.04em",
+      "line_height": 1.03
+    },
+    "h2": {
+      "size": "clamp(1.75rem, 2.5vw, 2.5rem)",
+      "weight": 700,
+      "letter_spacing": "-0.02em",
+      "line_height": 1.1
+    },
+    "h3": {
+      "size": "clamp(1.25rem, 1.8vw, 1.75rem)",
+      "weight": 700,
+      "letter_spacing": "-0.01em",
+      "line_height": 1.2
+    },
+    "body": {
+      "size": "1rem",
+      "weight": 400,
+      "letter_spacing": "0em",
+      "line_height": 1.5
+    },
+    "body_sm": {
+      "size": "0.875rem",
+      "weight": 400,
+      "letter_spacing": "0em",
+      "line_height": 1.4
+    },
+    "caption": {
+      "size": "0.75rem",
+      "weight": 600,
+      "letter_spacing": "0.07em",
+      "line_height": 1.2
+    },
+    "overline": {
+      "size": "0.7rem",
+      "weight": 800,
+      "letter_spacing": "0.12em",
+      "line_height": 1.2,
+      "transform": "uppercase"
+    }
+  },
+  "components": {
+    "button": {
+      "padding": "9px 12px",
+      "border_radius": "12px",
+      "font_size": "0.9rem",
+      "font_weight": 600,
+      "min_width": "auto",
+      "transition": "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)"
+    },
+    "input": {
+      "padding": "10px 12px",
+      "border_radius": "12px",
+      "font_size": "1rem",
+      "min_height": "38px"
+    },
+    "input_filter": {
+      "padding": "5px 7px",
+      "border_radius": "8px",
+      "font_size": "0.78rem",
+      "min_height": "auto"
+    },
+    "table": {
+      "border_radius": "14px",
+      "th_padding": "10px 12px",
+      "td_padding": "10px 12px",
+      "th_font_size": "0.76rem",
+      "td_font_size": "0.95rem",
+      "th_font_weight": 600,
+      "td_max_width": "320px",
+      "row_height": "auto",
+      "border_color": "var(--dark-border0)",
+      "header_sticky": true,
+      "header_z_index": 3
+    },
+    "card": {
+      "padding": "18px",
+      "border_radius": "16px",
+      "accent_bar_height": "2px",
+      "accent_bar_colors": "linear-gradient(90deg, var(--accent-cyan), var(--accent-purple))",
+      "shadow": "0 4px 16px rgba(0,0,0,0.3)"
+    },
+    "section": {
+      "padding": "20px",
+      "border_radius": "18px",
+      "shadow": "0 6px 24px rgba(0,0,0,0.25)"
+    },
+    "hero": {
+      "padding": "28px",
+      "border_radius": "20px"
+    },
+    "pill": {
+      "padding": "3px 8px",
+      "border_radius": "999px",
+      "font_size": "0.78rem",
+      "font_weight": 700
+    },
+    "badge": {
+      "padding": "4px 8px",
+      "border_radius": "999px",
+      "font_size": "0.75rem",
+      "font_weight": 700
+    },
+    "icon": {
+      "size_xs": "14px",
+      "size_sm": "16px",
+      "size_md": "18px",
+      "size_lg": "24px",
+      "size_xl": "32px",
+      "stroke_width": 1.8
+    }
+  },
+  "responsive": {
+    "breakpoints": {
+      "xs": "0px",
+      "sm": "640px",
+      "md": "900px",
+      "lg": "1280px",
+      "xl": "1600px",
+      "2xl": "1920px"
+    },
+    "table_collapse_width": "900px",
+    "sidebar_stack_width": "900px"
+  },
+  "animation": {
+    "duration_fast": "0.1s",
+    "duration_normal": "0.2s",
+    "duration_slow": "0.3s",
+    "easing_ease_in_out": "cubic-bezier(0.4, 0, 0.2, 1)",
+    "easing_ease_out": "cubic-bezier(0, 0, 0.2, 1)",
+    "easing_ease_in": "cubic-bezier(0.4, 0, 1, 1)"
+  },
+  "accessibility": {
+    "focus_outline_width": "2px",
+    "focus_outline_color": "var(--accent-cyan)",
+    "min_touch_target": "44px",
+    "min_color_contrast": "4.5:1",
+    "reduced_motion": true
+  }
+}

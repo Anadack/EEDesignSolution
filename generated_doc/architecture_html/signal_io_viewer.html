@@ -1,0 +1,994 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>EE Architect Design — Signal I/O Dictionary</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-base:     #0d0f14;
+  --bg-surface:  #131720;
+  --bg-raised:   #1a1f2e;
+  --bg-hover:    #1f2538;
+  --bg-active:   #242b42;
+
+  --border-subtle: rgba(255,255,255,.06);
+  --border-med:    rgba(255,255,255,.10);
+  --border-strong: rgba(255,255,255,.16);
+
+  --text-primary:   #e8ecf4;
+  --text-secondary: #8993a8;
+  --text-muted:     #5a6278;
+  --text-accent:    #60a5fa;
+
+  --accent:     #3b82f6;
+  --accent-dim: rgba(59,130,246,.15);
+  --accent-glow:rgba(59,130,246,.25);
+
+  --col-ai:     #f59e0b;
+  --col-di:     #10b981;
+  --col-curr:   #06b6d4;
+  --col-fi:     #8b5cf6;
+  --col-res:    #d946ef;
+  --col-temp:   #ec4899;
+  --col-pwm:    #f97316;
+  --col-pwm-hs: #fb923c;
+  --col-pwm-ls: #fdba74;
+  --col-do:     #ef4444;
+  --col-do-hs:  #f87171;
+  --col-do-ls:  #fca5a5;
+  --col-can:    #22d3ee;
+  --col-lin:    #a78bfa;
+  --col-sup:    #34d399;
+  --col-gnd:    #6b7280;
+  --col-default:#94a3b8;
+
+  --sensor-color:   #10b981;
+  --actuator-color: #f97316;
+  --ecu-color:      #3b82f6;
+  --bus-color:      #22d3ee;
+  --power-color:    #34d399;
+  --ground-color:   #6b7280;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+  height: 100vh;
+}
+
+button, input, select { font: inherit; }
+
+.app {
+  display: grid;
+  grid-template-columns: 290px 1fr 340px;
+  grid-template-rows: 48px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 16px;
+  position: relative;
+  z-index: 10;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 20px;
+  border-right: 1px solid var(--border-subtle);
+  margin-right: 16px;
+}
+
+.topbar-logo-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-logo-icon svg { width: 16px; height: 16px; fill: white; }
+
+.topbar-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  color: var(--text-primary);
+}
+
+.topbar-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: .04em; }
+
+.topbar-stats { display: flex; gap: 0; margin-right: auto; }
+
+.topbar-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-right: 1px solid var(--border-subtle);
+  height: 48px;
+}
+
+.topbar-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.topbar-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.topbar-gen { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); padding-left: 14px; }
+
+.tab-bar { display: flex; gap: 2px; padding: 0 16px; margin-left: 12px; }
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0 14px;
+  height: 48px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover { color: var(--text-secondary); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.sidebar {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border-subtle); flex-shrink: 0; }
+
+.sidebar-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.search-wrap { position: relative; }
+
+.search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-med);
+  border-radius: var(--r-sm);
+  padding: 7px 10px 7px 30px;
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+.search-input:focus { border-color: var(--accent); }
+
+.system-list { overflow-y: auto; flex: 1; padding: 8px; }
+.system-list::-webkit-scrollbar { width: 4px; }
+.system-list::-webkit-scrollbar-track { background: transparent; }
+.system-list::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
+
+.sys-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: all .12s;
+}
+
+.sys-item:hover { background: var(--bg-hover); border-color: var(--border-med); }
+.sys-item.active { background: var(--accent-dim); border-color: var(--accent); }
+
+.sys-item-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 5px;
+  word-break: break-word;
+}
+
+.sys-item.active .sys-item-name { color: var(--text-accent); }
+
+.sys-item-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.sys-meta-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+
+.sys-meta-pill strong { color: var(--text-secondary); font-weight: 600; }
+
+.main { overflow-y: auto; overflow-x: hidden; background: var(--bg-base); }
+.main::-webkit-scrollbar { width: 4px; }
+.main::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
+
+.view { display: none; padding: 20px; }
+.view.active { display: block; }
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+
+.card-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+}
+
+.sys-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+
+.sys-header-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sys-header-icon svg { width: 20px; height: 20px; fill: none; stroke: var(--accent); stroke-width: 1.5; }
+
+.sys-header-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 3px;
+  word-break: break-all;
+}
+
+.sys-header-file { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); }
+
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+
+.kpi-box {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-med);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); }
+
+.kpi-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+
+.io-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 8px; }
+
+.io-tile {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-med);
+  border-radius: var(--r-md);
+  padding: 12px;
+  cursor: pointer;
+  transition: all .12s;
+  position: relative;
+  overflow: hidden;
+}
+
+.io-tile::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--io-color, var(--col-default)); }
+.io-tile:hover { border-color: var(--io-color, var(--accent)); background: var(--bg-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+
+.io-code { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--io-color, var(--col-default)); margin-bottom: 3px; }
+.io-label-text { font-size: 9.5px; color: var(--text-muted); line-height: 1.3; margin-bottom: 6px; }
+.io-count-val { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+
+.wiring-diagram { display: grid; grid-template-columns: 1fr 230px 1fr; gap: 14px; align-items: start; min-height: 120px; }
+
+.wiring-lane-title {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wiring-lane-title::before { content: ''; display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--lane-color, var(--col-default)); }
+
+.wiring-nodes { display: grid; gap: 6px; }
+
+.wiring-node {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-med);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all .12s;
+  position: relative;
+}
+
+.wiring-node::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; background: var(--node-color, var(--col-default)); }
+.wiring-node:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+
+.wiring-node-name { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; word-break: break-word; line-height: 1.3; }
+.wiring-node-sub { font-size: 10px; color: var(--text-muted); margin-bottom: 6px; }
+.wiring-node-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.wiring-node.unmapped { border-style: dashed; opacity: .75; }
+
+.ecu-center { text-align: center; }
+
+.ecu-box {
+  background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-active) 100%);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--r-lg);
+  padding: 18px 14px;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--accent-dim), 0 4px 20px rgba(59,130,246,.1);
+  transition: all .15s;
+  margin-bottom: 8px;
+}
+
+.ecu-box:hover { box-shadow: 0 0 0 1px var(--accent-glow), 0 4px 24px rgba(59,130,246,.2); }
+
+.ecu-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: .1em; color: var(--accent); margin-bottom: 8px; }
+.ecu-name { font-size: 12.5px; font-weight: 700; color: var(--text-primary); line-height: 1.3; margin-bottom: 10px; word-break: break-word; }
+.ecu-stats { display: flex; flex-direction: column; gap: 4px; }
+.ecu-stat { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text-secondary); }
+.ecu-stat strong { color: var(--accent); }
+
+.flow-arrow { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 0; font-size: 9.5px; color: var(--text-muted); letter-spacing: .04em; }
+.flow-arrow::before, .flow-arrow::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
+
+.table-wrap { overflow: auto; border-radius: var(--r-md); border: 1px solid var(--border-subtle); }
+.table-wrap::-webkit-scrollbar { height: 4px; width: 4px; }
+.table-wrap::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-raised);
+  z-index: 2;
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-med);
+  white-space: nowrap;
+}
+
+td { padding: 9px 12px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; color: var(--text-secondary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,.02); color: var(--text-primary); }
+tr[data-inspect] { cursor: pointer; }
+
+.td-mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.td-device { font-weight: 600; color: var(--text-primary); font-size: 11px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: .04em;
+  background: rgba(255,255,255,.06);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-med);
+  white-space: nowrap;
+}
+
+.badge.sensor { background: rgba(16,185,129,.12); color: var(--sensor-color); border-color: rgba(16,185,129,.25); }
+.badge.actuator { background: rgba(249,115,22,.12); color: var(--actuator-color); border-color: rgba(249,115,22,.25); }
+.badge.ecu { background: rgba(59,130,246,.12); color: var(--ecu-color); border-color: rgba(59,130,246,.25); }
+.badge.bus { background: rgba(34,211,238,.12); color: var(--bus-color); border-color: rgba(34,211,238,.25); }
+.badge.io { background: color-mix(in srgb, var(--io-color, var(--col-default)) 15%, transparent); color: var(--io-color, var(--col-default)); border-color: color-mix(in srgb, var(--io-color, var(--col-default)) 30%, transparent); }
+.badge.warn { background: rgba(239,68,68,.12); color: #f87171; border-color: rgba(239,68,68,.25); }
+.badge.ok { background: rgba(16,185,129,.12); color: var(--sensor-color); border-color: rgba(16,185,129,.25); }
+
+.inspect { background: var(--bg-surface); border-left: 1px solid var(--border-subtle); display: flex; flex-direction: column; overflow: hidden; }
+.inspect-header { padding: 12px 14px 10px; border-bottom: 1px solid var(--border-subtle); flex-shrink: 0; }
+.inspect-title-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: 5px; }
+.inspect-title { font-size: 13px; font-weight: 700; color: var(--text-primary); word-break: break-word; }
+.inspect-sub { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; word-break: break-word; }
+.inspect-hint { padding: 12px 14px; flex-shrink: 0; }
+
+.hint-box { background: var(--bg-raised); border: 1px solid var(--border-subtle); border-radius: var(--r-md); padding: 10px 12px; font-size: 10.5px; color: var(--text-muted); line-height: 1.5; }
+
+.inspect-facts { padding: 0 14px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0; }
+.inspect-facts::-webkit-scrollbar { width: 3px; }
+.inspect-facts::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
+
+.fact-row { display: grid; grid-template-columns: 100px 1fr; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border-subtle); align-items: start; }
+.fact-row:last-child { border-bottom: none; }
+.fact-key { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); padding-top: 1px; }
+.fact-val { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-secondary); word-break: break-all; }
+
+.inspect-json-wrap { padding: 12px 14px; flex-shrink: 0; border-top: 1px solid var(--border-subtle); }
+.inspect-json-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: 6px; }
+
+pre#jsonView {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  overflow-y: auto;
+  max-height: 200px;
+  line-height: 1.5;
+}
+pre#jsonView::-webkit-scrollbar { width: 3px; }
+pre#jsonView::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
+
+.pinned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(59,130,246,.15);
+  border: 1px solid rgba(59,130,246,.3);
+  border-radius: 999px;
+  font-size: 9.5px;
+  color: var(--accent);
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.empty { text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 12px; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
+
+#details pre {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  overflow-y: auto;
+  max-height: calc(100vh - 160px);
+  line-height: 1.6;
+}
+
+.section-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
+
+.filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.filter-row select {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-med);
+  border-radius: var(--r-sm);
+  padding: 7px 10px;
+  color: var(--text-primary);
+  font-size: 11.5px;
+}
+
+.sidebar-filters { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border-subtle); }
+.filter-field { display: flex; flex-direction: column; gap: 4px; }
+.filter-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+.filter-field select {
+  width: 100%;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-med);
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+  color: var(--text-primary);
+  font-size: 11.5px;
+  outline: none;
+  transition: border-color .15s;
+}
+.filter-field select:focus { border-color: var(--accent); }
+.btn-clear {
+  background: transparent;
+  border: 1px solid var(--border-med);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .12s;
+}
+.btn-clear:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+@media (max-width: 1100px) {
+  .app { grid-template-columns: 250px 1fr; }
+  .inspect { display: none; }
+  .wiring-diagram { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">
+        <svg viewBox="0 0 16 16"><path d="M2 8h3M11 8h3M5 8a3 3 0 006 0M5 8a3 3 0 016 0M8 2v2M8 12v2" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+      </div>
+      <div>
+        <div class="topbar-title">EE ARCHITECT DESIGN</div>
+        <div class="topbar-subtitle">Signal I/O Dictionary</div>
+      </div>
+    </div>
+
+    <div class="topbar-stats" id="topbarStats"></div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-view="single">Signal Detail</button>
+      <button class="tab-btn" data-view="all">All Signals</button>
+      <button class="tab-btn" data-view="details">JSON</button>
+    </div>
+
+    <div class="topbar-gen" id="topbarGen"></div>
+  </header>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title" id="sidebarTitle">Signals</div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/></svg>
+        <input class="search-input" id="search" placeholder="Search signal, device, system…" autocomplete="off"/>
+      </div>
+      <div class="sidebar-filters">
+        <div class="filter-field">
+          <label class="filter-label" for="filterDirection">Direction</label>
+          <select id="filterDirection"></select>
+        </div>
+        <div class="filter-field">
+          <label class="filter-label" for="filterInterface">Interface</label>
+          <select id="filterInterface"></select>
+        </div>
+        <div class="filter-field">
+          <label class="filter-label" for="filterMapped">Mapped</label>
+          <select id="filterMapped">
+            <option value="">All</option>
+            <option value="mapped">Mapped</option>
+            <option value="unmapped">Unmapped</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label class="filter-label" for="filterPriority">Priority</label>
+          <select id="filterPriority"></select>
+        </div>
+        <button class="btn-clear" id="btnClearFilters" type="button">Clear filters</button>
+      </div>
+    </div>
+    <div class="system-list" id="signalList"></div>
+  </aside>
+
+  <main class="main">
+    <section class="view active" id="single"></section>
+    <section class="view" id="all"></section>
+    <section class="view" id="details"></section>
+  </main>
+
+  <aside class="inspect">
+    <div class="inspect-header">
+      <div class="inspect-title-label">Inspector <span id="pinnedBadge" class="pinned-badge" style="display:none;" onclick="unpin()">pinned — click to release</span></div>
+      <div class="inspect-title" id="dt">Select a signal</div>
+      <div class="inspect-sub" id="ds">Hover or click a signal, sender, or receiver to inspect its full properties.</div>
+    </div>
+    <div class="inspect-hint" id="inspectHint">
+      <div class="hint-box">Hover a node for a quick preview. Click to pin the inspector on that item.</div>
+    </div>
+    <div class="inspect-facts" id="facts"></div>
+    <div class="inspect-json-wrap">
+      <div class="inspect-json-label">Raw JSON</div>
+      <pre id="jsonView">{}</pre>
+    </div>
+  </aside>
+
+</div>
+
+<script id="payload" type="application/json">{"schema_version":"signal-io-viewer-1.0","title":"EE Architect Design — Signal I/O Dictionary","generated_at":"2026-06-21T20:20:56Z","signals":[{"name":"CAN_GND","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"CAN_GND","number":3,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_HAT3800_Angle_CANopen_M12_5Pin","type":"SENSOR","part_number":"HAT 3800","priority":"HIGH","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":7,"pin_name":"OUT_SUP_ANA_GND_04"}]},{"name":"CAN_H","interface":"CAN","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"CAN","direction":"BUS","sender_kind":"DEVICE","receiver_kind":"BUS","electrical_flags":[],"pin":{"name":"CAN_H","number":4,"role":"INOUT","interface_type":"CAN","connector":""},"device":{"name":"HYDAC_HAT3800_Angle_CANopen_M12_5Pin","type":"SENSOR","part_number":"HAT 3800","priority":"HIGH","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":9,"pin_name":"CAN1_H"}]},{"name":"CAN_L","interface":"CAN","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"CAN","direction":"BUS","sender_kind":"DEVICE","receiver_kind":"BUS","electrical_flags":[],"pin":{"name":"CAN_L","number":5,"role":"INOUT","interface_type":"CAN","connector":""},"device":{"name":"HYDAC_HAT3800_Angle_CANopen_M12_5Pin","type":"SENSOR","part_number":"HAT 3800","priority":"HIGH","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":10,"pin_name":"CAN1_L"}]},{"name":"CAN_SHLD","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"CAN_SHLD","number":1,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_HAT3800_Angle_CANopen_M12_5Pin","type":"SENSOR","part_number":"HAT 3800","priority":"HIGH","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":6,"pin_name":"OUT_SUP_ANA_GND_03"}]},{"name":"CAN_VPLUS_9_36V","interface":"POWER","unit":"VOLT","type":"U1","min":9,"max":36,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"CAN_VPLUS_9_36V","number":2,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_HAT3800_Angle_CANopen_M12_5Pin","type":"SENSOR","part_number":"HAT 3800","priority":"HIGH","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":7,"pin_name":"SUPPLY_07"}]},{"name":"Coil12PN5_1_50_2345_Cmd","interface":"PWM","unit":"PERCENT","type":"U16","min":0,"max":100,"resolution":0.01,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"PWM","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"Coil12PN5_1_50_2345_Cmd","number":1,"role":"INPUT","interface_type":"PWM","connector":""},"device":{"name":"Hitch_Raise_Solenoid_Valve","type":"ACTUATOR","part_number":"4356851","priority":"MEDIUM","safety":"QM"},"system":"Rear_Hydraulic_Hitch_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":18,"pin_name":"OUT_PWM_HS_LC_02"}]},{"name":"DirCoilCmd_HS","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"DO_HS","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":["HIGH_SIDE"],"pin":{"name":"DirCoilCmd_HS","number":1,"role":"INPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN","type":"ACTUATOR","part_number":"OD0236403POB00","priority":"HIGH","safety":"QM"},"system":"Example_System_with_Bosch_Rexroth_Coil_Actuators","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":21,"pin_name":"OUT_DO_HS_HC_01"},{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":22,"pin_name":"OUT_DO_HS_HC_02"},{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":24,"pin_name":"OUT_DO_HS_HC_04"}]},{"name":"DirCoilReturn_LS","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"DO_LS","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":["LOW_SIDE"],"pin":{"name":"DirCoilReturn_LS","number":2,"role":"INPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SIDE","type":"ACTUATOR","part_number":"OD0236403POB00","priority":"HIGH","safety":"QM"},"system":"Example_System_with_Bosch_Rexroth_Coil_Actuators","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":47,"pin_name":"OUT_PWM_LS_HC_01"}]},{"name":"EDS410_0V","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"EDS410_0V","number":3,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","type":"SENSOR","part_number":"EDS410","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":9,"pin_name":"GND_03"}]},{"name":"EDS410_OUT1_PNP","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"DI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"EDS410_OUT1_PNP","number":4,"role":"OUTPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","type":"SENSOR","part_number":"EDS410","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":54,"pin_name":"IN_DIF_AIV16_02"}]},{"name":"EDS410_OUT2_PNP","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"DI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"EDS410_OUT2_PNP","number":2,"role":"OUTPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","type":"SENSOR","part_number":"EDS410","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":53,"pin_name":"IN_DIF_AIV16_01"}]},{"name":"EDS410_SUPPLY_PLUS","interface":"POWER","unit":"VOLT","type":"U1","min":8,"max":42,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"EDS410_SUPPLY_PLUS","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","type":"SENSOR","part_number":"EDS410","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":4,"pin_name":"SUPPLY_04"}]},{"name":"EDS810_0V","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"EDS810_0V","number":3,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","type":"SENSOR","part_number":"EDS810","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":10,"pin_name":"GND_04"}]},{"name":"EDS810_OUT1_PNP","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"DI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"EDS810_OUT1_PNP","number":4,"role":"OUTPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","type":"SENSOR","part_number":"EDS810","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":56,"pin_name":"IN_DIF_AIV16_04"}]},{"name":"EDS810_OUT2_PNP","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"DI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"EDS810_OUT2_PNP","number":2,"role":"OUTPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","type":"SENSOR","part_number":"EDS810","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":55,"pin_name":"IN_DIF_AIV16_03"}]},{"name":"EDS810_SUPPLY_PLUS","interface":"POWER","unit":"VOLT","type":"U1","min":8,"max":36,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"EDS810_SUPPLY_PLUS","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","type":"SENSOR","part_number":"EDS810","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":5,"pin_name":"SUPPLY_05"}]},{"name":"ETS4100_0V","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"ETS4100_0V","number":2,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_ETS4100_Temperature_B_0_10V_3Wire_Probe_050","type":"SENSOR","part_number":"ETS4100","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":8,"pin_name":"GND_02"}]},{"name":"ETS4100_LOOP_SUPPLY_PLUS","interface":"POWER","unit":"VOLT","type":"U1","min":8,"max":32,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"ETS4100_LOOP_SUPPLY_PLUS","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_ETS4100_Temperature_A_4_20mA_2Wire_Probe_050","type":"SENSOR","part_number":"ETS4100","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":2,"pin_name":"SUPPLY_02"}]},{"name":"ETS4100_SUPPLY_24V","interface":"POWER","unit":"VOLT","type":"U1","min":12,"max":32,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"ETS4100_SUPPLY_24V","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_ETS4100_Temperature_B_0_10V_3Wire_Probe_050","type":"SENSOR","part_number":"ETS4100","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":3,"pin_name":"SUPPLY_03"}]},{"name":"ETS4100_Temperature_0_10V","interface":"ANALOG","unit":"CELSIUS","type":"F32","min":-25,"max":100,"resolution":0.01,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"AI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"ETS4100_Temperature_0_10V","number":3,"role":"OUTPUT","interface_type":"ANALOG","connector":""},"device":{"name":"HYDAC_ETS4100_Temperature_B_0_10V_3Wire_Probe_050","type":"SENSOR","part_number":"ETS4100","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":79,"pin_name":"IN_AII_AIV_01"}]},{"name":"ETS4100_Temperature_4_20mA","interface":"CURRENT","unit":"CELSIUS","type":"F32","min":-25,"max":100,"resolution":0.01,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":false,"io_code":"CURR","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"ETS4100_Temperature_4_20mA","number":2,"role":"OUTPUT","interface_type":"CURRENT","connector":""},"device":{"name":"HYDAC_ETS4100_Temperature_A_4_20mA_2Wire_Probe_050","type":"SENSOR","part_number":"ETS4100","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[]},{"name":"HAT1200_0V","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"AgPL_B","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HAT1200_0V","number":2,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady","type":"SENSOR","part_number":"HAT 1200","priority":"HIGH","safety":"AgPL_B"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":9,"pin_name":"GND_01"},{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":5,"pin_name":"OUT_SUP_ANA_GND_02"}]},{"name":"HAT1200_Angle_0_10V","interface":"ANALOG","unit":"DEGREE","type":"F32","min":0,"max":360,"resolution":0.01,"scaling":1,"priority":"MEDIUM","safety":"AgPL_B","is_mapped":true,"io_code":"AI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"HAT1200_Angle_0_10V","number":3,"role":"OUTPUT","interface_type":"ANALOG","connector":""},"device":{"name":"Rear_Hitch_Position_Sensor","type":"SENSOR","part_number":"HAT1200","priority":"MEDIUM","safety":"AgPL_B"},"system":"Rear_Hydraulic_Hitch_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":75,"pin_name":"IN_AIV_RES_01"}]},{"name":"HAT1200_Angle_4_20mA","interface":"CURRENT","unit":"DEGREE","type":"F32","min":0,"max":360,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"AgPL_B","is_mapped":false,"io_code":"CURR","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"HAT1200_Angle_4_20mA","number":3,"role":"OUTPUT","interface_type":"CURRENT","connector":""},"device":{"name":"HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady","type":"SENSOR","part_number":"HAT 1200","priority":"HIGH","safety":"AgPL_B"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[]},{"name":"HAT1200_SUPPLY_24V","interface":"POWER","unit":"VOLT","type":"U1","min":9,"max":36,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"HAT1200_SUPPLY_24V","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"Rear_Hitch_Position_Sensor","type":"SENSOR","part_number":"HAT1200","priority":"MEDIUM","safety":"AgPL_B"},"system":"Rear_Hydraulic_Hitch_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":1,"pin_name":"SUPPLY_01"}]},{"name":"HAT1200_SUPPLY_9_36V","interface":"POWER","unit":"VOLT","type":"U1","min":9,"max":36,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"HAT1200_SUPPLY_9_36V","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady","type":"SENSOR","part_number":"HAT 1200","priority":"HIGH","safety":"AgPL_B"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":6,"pin_name":"SUPPLY_06"}]},{"name":"HDA4300_0V","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HDA4300_0V","number":2,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_HDA4300_Pressure_40bar_B_0_10V_3Wire","type":"SENSOR","part_number":"HDA4300","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":15,"pin_name":"GND_07"},{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":16,"pin_name":"GND_08"},{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":7,"pin_name":"GND_01"}]},{"name":"HDA4300_LOOP_SUPPLY_PLUS","interface":"POWER","unit":"VOLT","type":"U1","min":8,"max":30,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"HDA4300_LOOP_SUPPLY_PLUS","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_HDA4300_Pressure_40bar_A_4_20mA_2Wire","type":"SENSOR","part_number":"HDA4300","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":2,"pin_name":"SUPPLY_02"},{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":8,"pin_name":"SUPPLY_08"}]},{"name":"HDA4300_Pressure_0_10V","interface":"ANALOG","unit":"BAR","type":"F32","min":0,"max":40,"resolution":0.01,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"AI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"HDA4300_Pressure_0_10V","number":3,"role":"OUTPUT","interface_type":"ANALOG","connector":""},"device":{"name":"HYDAC_HDA4300_Pressure_40bar_B_0_10V_3Wire","type":"SENSOR","part_number":"HDA4300","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":78,"pin_name":"IN_AIV_RES_04"}]},{"name":"HDA4300_Pressure_4_20mA","interface":"CURRENT","unit":"BAR","type":"F32","min":0,"max":40,"resolution":0.01,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":false,"io_code":"CURR","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"HDA4300_Pressure_4_20mA","number":2,"role":"OUTPUT","interface_type":"CURRENT","connector":""},"device":{"name":"HYDAC_HDA4300_Pressure_40bar_A_4_20mA_2Wire","type":"SENSOR","part_number":"HDA4300","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[]},{"name":"HDA4300_SUPPLY_24V","interface":"POWER","unit":"VOLT","type":"U1","min":12,"max":30,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"HDA4300_SUPPLY_24V","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_HDA4300_Pressure_40bar_B_0_10V_3Wire","type":"SENSOR","part_number":"HDA4300","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":4,"pin_name":"SUPPLY_04"},{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":5,"pin_name":"SUPPLY_05"},{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":1,"pin_name":"SUPPLY_01"}]},{"name":"HIT1500_CAN_GND","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"AgPL_B","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HIT1500_CAN_GND","number":3,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template","type":"SENSOR","part_number":"HIT1500","priority":"MEDIUM","safety":"AgPL_B"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":68,"pin_name":"OUT_SUP_ANA_GND_02"}]},{"name":"HIT1500_CAN_H","interface":"CAN","unit":"NONE","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"CAN","direction":"BUS","sender_kind":"DEVICE","receiver_kind":"BUS","electrical_flags":[],"pin":{"name":"HIT1500_CAN_H","number":4,"role":"INOUT","interface_type":"CAN","connector":""},"device":{"name":"HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template","type":"SENSOR","part_number":"HIT1500","priority":"MEDIUM","safety":"AgPL_B"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":13,"pin_name":"CAN3_H"}]},{"name":"HIT1500_CAN_L","interface":"CAN","unit":"NONE","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"CAN","direction":"BUS","sender_kind":"DEVICE","receiver_kind":"BUS","electrical_flags":[],"pin":{"name":"HIT1500_CAN_L","number":5,"role":"INOUT","interface_type":"CAN","connector":""},"device":{"name":"HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template","type":"SENSOR","part_number":"HIT1500","priority":"MEDIUM","safety":"AgPL_B"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":14,"pin_name":"CAN3_L"}]},{"name":"HIT1500_CAN_SHLD","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HIT1500_CAN_SHLD","number":1,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template","type":"SENSOR","part_number":"HIT1500","priority":"MEDIUM","safety":"AgPL_B"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":67,"pin_name":"OUT_SUP_ANA_GND_01"}]},{"name":"HIT1500_CAN_VPLUS","interface":"POWER","unit":"VOLT","type":"U1","min":9,"max":36,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"HIT1500_CAN_VPLUS","number":2,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template","type":"SENSOR","part_number":"HIT1500","priority":"MEDIUM","safety":"AgPL_B"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":1,"pin_name":"SUPPLY_01"}]},{"name":"HLT700_CAN_GND","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HLT700_CAN_GND","number":3,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template","type":"SENSOR","part_number":"HLT700","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":12,"pin_name":"GND_06"}]},{"name":"HLT700_CAN_H","interface":"CAN","unit":"NONE","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"CAN","direction":"BUS","sender_kind":"DEVICE","receiver_kind":"BUS","electrical_flags":[],"pin":{"name":"HLT700_CAN_H","number":4,"role":"INOUT","interface_type":"CAN","connector":""},"device":{"name":"HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template","type":"SENSOR","part_number":"HLT700","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":11,"pin_name":"CAN2_H"}]},{"name":"HLT700_CAN_L","interface":"CAN","unit":"NONE","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"CAN","direction":"BUS","sender_kind":"DEVICE","receiver_kind":"BUS","electrical_flags":[],"pin":{"name":"HLT700_CAN_L","number":5,"role":"INOUT","interface_type":"CAN","connector":""},"device":{"name":"HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template","type":"SENSOR","part_number":"HLT700","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":12,"pin_name":"CAN2_L"}]},{"name":"HLT700_CAN_SHLD","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HLT700_CAN_SHLD","number":1,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template","type":"SENSOR","part_number":"HLT700","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":11,"pin_name":"GND_05"}]},{"name":"HLT700_CAN_VPLUS","interface":"POWER","unit":"VOLT","type":"U1","min":9,"max":36,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"HLT700_CAN_VPLUS","number":2,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template","type":"SENSOR","part_number":"HLT700","priority":"MEDIUM","safety":"QM"},"system":"HYDAC_Selected_Sensor_Examples","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":6,"pin_name":"SUPPLY_06"}]},{"name":"HYDAC_2610160_CoilCommand_HS","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"DO_HS","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":["HIGH_SIDE"],"pin":{"name":"HYDAC_2610160_CoilCommand_HS","number":1,"role":"INPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"HYDAC_DIR_12DG_32_1329_UL_V0_PN2610160_HS_GND","type":"ACTUATOR","part_number":"2610160","priority":"MEDIUM","safety":"QM"},"system":"Example_HYDAC_Coil_Topologies_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":23,"pin_name":"OUT_DO_HS_HC_03"}]},{"name":"HYDAC_2610160_POWER_GND","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":0,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HYDAC_2610160_POWER_GND","number":2,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"HYDAC_DIR_12DG_32_1329_UL_V0_PN2610160_HS_GND","type":"ACTUATOR","part_number":"2610160","priority":"MEDIUM","safety":"QM"},"system":"Example_HYDAC_Coil_Topologies_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":14,"pin_name":"GND_06"}]},{"name":"HYDAC_4059964_CoilCommand_HS","interface":"PWM","unit":"PERCENT","type":"U1","min":0,"max":100,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"PWM_HS","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":["HIGH_SIDE"],"pin":{"name":"HYDAC_4059964_CoilCommand_HS","number":1,"role":"INPUT","interface_type":"PWM","connector":""},"device":{"name":"HYDAC_PROP_12PG_5_6_32_1329_PN4059964_HS_LS","type":"ACTUATOR","part_number":"4059964","priority":"MEDIUM","safety":"QM"},"system":"Example_HYDAC_Coil_Topologies_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":33,"pin_name":"OUT_PWM_HS_HC_01"}]},{"name":"HYDAC_4059964_CoilReturn_LS","interface":"PWM","unit":"PERCENT","type":"U1","min":0,"max":100,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"PWM_LS","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":["LOW_SIDE"],"pin":{"name":"HYDAC_4059964_CoilReturn_LS","number":2,"role":"INPUT","interface_type":"PWM","connector":""},"device":{"name":"HYDAC_PROP_12PG_5_6_32_1329_PN4059964_HS_LS","type":"ACTUATOR","part_number":"4059964","priority":"MEDIUM","safety":"QM"},"system":"Example_HYDAC_Coil_Topologies_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":49,"pin_name":"OUT_PWM_LS_HC_03"}]},{"name":"HYD_PDR10830_Cmd","interface":"PWM","unit":"PERCENT","type":"U16","min":0,"max":100,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"PWM","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"HYD_PDR10830_Cmd","number":3,"role":"INPUT","interface_type":"PWM","connector":""},"device":{"name":"Hitch_Proportional_Lowering_Valve","type":"ACTUATOR","part_number":"CONFIGURE_ORDER_VARIANT","priority":"MEDIUM","safety":"QM"},"system":"Rear_Hydraulic_Hitch_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":17,"pin_name":"OUT_PWM_HS_LC_01"}]},{"name":"HYD_PDR10830_Prop_Press_Vlv_Gnd","interface":"GROUND","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HYD_PDR10830_Prop_Press_Vlv_Gnd","number":2,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"Hitch_Proportional_Lowering_Valve","type":"ACTUATOR","part_number":"CONFIGURE_ORDER_VARIANT","priority":"MEDIUM","safety":"QM"},"system":"Rear_Hydraulic_Hitch_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":10,"pin_name":"GND_02"}]},{"name":"HYD_PDR10830_Prop_Press_Vlv_Sup","interface":"POWER","unit":"VOLT","type":"U16","min":0,"max":24,"resolution":0.1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"HYD_PDR10830_Prop_Press_Vlv_Sup","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"Hitch_Proportional_Lowering_Valve","type":"ACTUATOR","part_number":"CONFIGURE_ORDER_VARIANT","priority":"MEDIUM","safety":"QM"},"system":"Rear_Hydraulic_Hitch_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":3,"pin_name":"SUPPLY_03"}]},{"name":"HYD_Sol_Coil_12PN_5_1_50_2345_Gnd","interface":"GROUND","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"HYD_Sol_Coil_12PN_5_1_50_2345_Gnd","number":2,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"Hitch_Raise_Solenoid_Valve","type":"ACTUATOR","part_number":"4356851","priority":"MEDIUM","safety":"QM"},"system":"Rear_Hydraulic_Hitch_System","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":11,"pin_name":"GND_03"}]},{"name":"POWER_GND","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"POWER_GND","number":2,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN","type":"ACTUATOR","part_number":"OD0236403POB00","priority":"HIGH","safety":"QM"},"system":"Example_System_with_Bosch_Rexroth_Coil_Actuators","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":12,"pin_name":"GND_04"},{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":13,"pin_name":"GND_05"},{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":4,"pin_name":"OUT_SUP_ANA_GND_01"}]},{"name":"ParlockPressure","interface":"ANALOG","unit":"BAR","type":"U16","min":0,"max":25,"resolution":0.01,"scaling":1,"priority":"MEDIUM","safety":"QM","is_mapped":true,"io_code":"AI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"ParlockPressure","number":3,"role":"OUTPUT","interface_type":"ANALOG","connector":""},"device":{"name":"HYDAC_HDA4300_Pressure_25bar_B_0_10V","type":"SENSOR","part_number":"HDA4300","priority":"MEDIUM","safety":"QM"},"system":"BRAKE_SYSTEM","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":76,"pin_name":"IN_AIV_RES_02"},{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":77,"pin_name":"IN_AIV_RES_03"}]},{"name":"PropCoilCurrentCmd_HS","interface":"PWM","unit":"AMPERE","type":"F32","min":0,"max":0.8,"resolution":0.01,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"PWM_HS","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":["HIGH_SIDE"],"pin":{"name":"PropCoilCurrentCmd_HS","number":1,"role":"INPUT","interface_type":"PWM","connector":""},"device":{"name":"Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN","type":"ACTUATOR","part_number":"37-C4-R11,500","priority":"HIGH","safety":"QM"},"system":"Example_System_with_Bosch_Rexroth_Coil_Actuators","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":19,"pin_name":"OUT_PWM_HS_LC_03"},{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":20,"pin_name":"OUT_PWM_HS_LC_04"}]},{"name":"PropCoilReturn_LS","interface":"PWM","unit":"AMPERE","type":"F32","min":0,"max":0.8,"resolution":0.01,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"PWM_LS","direction":"OUTPUT","sender_kind":"ECU","receiver_kind":"DEVICE","electrical_flags":["LOW_SIDE"],"pin":{"name":"PropCoilReturn_LS","number":2,"role":"INPUT","interface_type":"PWM","connector":""},"device":{"name":"Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_LOW_S","type":"ACTUATOR","part_number":"37-C4-R11,500","priority":"HIGH","safety":"QM"},"system":"Example_System_with_Bosch_Rexroth_Coil_Actuators","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":48,"pin_name":"OUT_PWM_LS_HC_02"}]},{"name":"elobau_424A_4_20MA_120deg_ANGLE_4_20MA","interface":"CURRENT","unit":"DEGREE","type":"F32","min":0,"max":120,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":false,"io_code":"CURR","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"elobau_424A_4_20MA_120deg_ANGLE_4_20MA","number":3,"role":"OUTPUT","interface_type":"CURRENT","connector":""},"device":{"name":"elobau_424A_4_20MA_120deg","type":"SENSOR","part_number":"424A","priority":"HIGH","safety":"QM"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[]},{"name":"elobau_424A_4_20MA_120deg_GND","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424A_4_20MA_120deg_GND","number":2,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424A_4_20MA_120deg","type":"SENSOR","part_number":"424A","priority":"HIGH","safety":"QM"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":14,"pin_name":"GND_04"}]},{"name":"elobau_424A_4_20MA_120deg_SUPPLY","interface":"POWER","unit":"VOLT","type":"U16","min":9,"max":32,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"elobau_424A_4_20MA_120deg_SUPPLY","number":1,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"elobau_424A_4_20MA_120deg","type":"SENSOR","part_number":"424A","priority":"HIGH","safety":"QM"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":6,"pin_name":"SUPPLY_06"}]},{"name":"elobau_424C_360deg_CANopen_CAN_H","interface":"CAN","unit":"NONE","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"CAN","direction":"BUS","sender_kind":"DEVICE","receiver_kind":"BUS","electrical_flags":[],"pin":{"name":"elobau_424C_360deg_CANopen_CAN_H","number":4,"role":"INOUT","interface_type":"CAN","connector":""},"device":{"name":"elobau_424C_360deg_CANopen","type":"SENSOR","part_number":"424C","priority":"HIGH","safety":"QM"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":15,"pin_name":"CAN4_H"}]},{"name":"elobau_424C_360deg_CANopen_CAN_L","interface":"CAN","unit":"NONE","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"CAN","direction":"BUS","sender_kind":"DEVICE","receiver_kind":"BUS","electrical_flags":[],"pin":{"name":"elobau_424C_360deg_CANopen_CAN_L","number":5,"role":"INOUT","interface_type":"CAN","connector":""},"device":{"name":"elobau_424C_360deg_CANopen","type":"SENSOR","part_number":"424C","priority":"HIGH","safety":"QM"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X2","pin_number":16,"pin_name":"CAN4_L"}]},{"name":"elobau_424C_360deg_CANopen_GND","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424C_360deg_CANopen_GND","number":3,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424C_360deg_CANopen","type":"SENSOR","part_number":"424C","priority":"HIGH","safety":"QM"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":18,"pin_name":"GND_08"}]},{"name":"elobau_424C_360deg_CANopen_SHIELD","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424C_360deg_CANopen_SHIELD","number":1,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424C_360deg_CANopen","type":"SENSOR","part_number":"424C","priority":"HIGH","safety":"QM"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":17,"pin_name":"GND_07"}]},{"name":"elobau_424C_360deg_CANopen_SUPPLY_9_32V","interface":"POWER","unit":"VOLT","type":"U16","min":9,"max":32,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"QM","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"elobau_424C_360deg_CANopen_SUPPLY_9_32V","number":2,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"elobau_424C_360deg_CANopen","type":"SENSOR","part_number":"424C","priority":"HIGH","safety":"QM"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":9,"pin_name":"SUPPLY_09"}]},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT1","interface":"ANALOG","unit":"DEGREE","type":"F32","min":0,"max":120,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"AI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT1","number":3,"role":"OUTPUT","interface_type":"ANALOG","connector":""},"device":{"name":"elobau_424R_0_5_4_5V_parallel_120deg","type":"SENSOR","part_number":"424R","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":81,"pin_name":"IN_AII_AIV_03"}]},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT2","interface":"ANALOG","unit":"DEGREE","type":"F32","min":0,"max":120,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"AI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT2","number":6,"role":"OUTPUT","interface_type":"ANALOG","connector":""},"device":{"name":"elobau_424R_0_5_4_5V_parallel_120deg","type":"SENSOR","part_number":"424R","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":82,"pin_name":"IN_AII_AIV_04"}]},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_GND1","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424R_0_5_4_5V_parallel_120deg_GND1","number":1,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424R_0_5_4_5V_parallel_120deg","type":"SENSOR","part_number":"424R","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":15,"pin_name":"GND_05"}]},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_GND2","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424R_0_5_4_5V_parallel_120deg_GND2","number":4,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424R_0_5_4_5V_parallel_120deg","type":"SENSOR","part_number":"424R","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":16,"pin_name":"GND_06"}]},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_UB1","interface":"POWER","unit":"VOLT","type":"U16","min":9,"max":32,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"elobau_424R_0_5_4_5V_parallel_120deg_UB1","number":2,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"elobau_424R_0_5_4_5V_parallel_120deg","type":"SENSOR","part_number":"424R","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":7,"pin_name":"SUPPLY_07"}]},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_UB2","interface":"POWER","unit":"VOLT","type":"U16","min":9,"max":32,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"elobau_424R_0_5_4_5V_parallel_120deg_UB2","number":5,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"elobau_424R_0_5_4_5V_parallel_120deg","type":"SENSOR","part_number":"424R","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":8,"pin_name":"SUPPLY_08"}]},{"name":"elobau_424SD11D_DH_120deg_ANGLE_4_20MA_OUT1","interface":"CURRENT","unit":"DEGREE","type":"F32","min":0,"max":120,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":false,"io_code":"CURR","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"elobau_424SD11D_DH_120deg_ANGLE_4_20MA_OUT1","number":3,"role":"OUTPUT","interface_type":"CURRENT","connector":""},"device":{"name":"elobau_424SD11D_DH_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[]},{"name":"elobau_424SD11D_DH_120deg_GND1","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424SD11D_DH_120deg_GND1","number":1,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424SD11D_DH_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_DISPLAY_01","connector":"X1000","pin_number":69,"pin_name":"OUT_SUP_ANA_GND_03"}]},{"name":"elobau_424SD11D_DH_120deg_GND2","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424SD11D_DH_120deg_GND2","number":4,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424SD11D_DH_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":11,"pin_name":"GND_01"}]},{"name":"elobau_424SD11D_DH_120deg_SWITCH_OUT2_HIGH_SIDE","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"DI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":["HIGH_SIDE"],"pin":{"name":"elobau_424SD11D_DH_120deg_SWITCH_OUT2_HIGH_SIDE","number":6,"role":"OUTPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"elobau_424SD11D_DH_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":57,"pin_name":"IN_DIF_AIV16_05"}]},{"name":"elobau_424SD11D_DH_120deg_UB1","interface":"POWER","unit":"VOLT","type":"U16","min":9,"max":32,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"elobau_424SD11D_DH_120deg_UB1","number":2,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"elobau_424SD11D_DH_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":2,"pin_name":"SUPPLY_02"}]},{"name":"elobau_424SD11D_DH_120deg_UB2","interface":"POWER","unit":"VOLT","type":"U16","min":9,"max":32,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"elobau_424SD11D_DH_120deg_UB2","number":5,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"elobau_424SD11D_DH_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":3,"pin_name":"SUPPLY_03"}]},{"name":"elobau_424SD16D_DS_120deg_ANGLE_0_5_4_5V_RATIOMETRIC_OUT1","interface":"ANALOG","unit":"DEGREE","type":"F32","min":0,"max":120,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"AI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":[],"pin":{"name":"elobau_424SD16D_DS_120deg_ANGLE_0_5_4_5V_RATIOMETRIC_OUT1","number":3,"role":"OUTPUT","interface_type":"ANALOG","connector":""},"device":{"name":"elobau_424SD16D_DS_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":80,"pin_name":"IN_AII_AIV_02"}]},{"name":"elobau_424SD16D_DS_120deg_GND1","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424SD16D_DS_120deg_GND1","number":1,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424SD16D_DS_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":12,"pin_name":"GND_02"}]},{"name":"elobau_424SD16D_DS_120deg_GND2","interface":"GROUND","unit":"NONE","type":"U1","min":0,"max":0,"resolution":1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"GND","direction":"GROUND_RETURN","sender_kind":"DEVICE","receiver_kind":"GROUND","electrical_flags":[],"pin":{"name":"elobau_424SD16D_DS_120deg_GND2","number":4,"role":"GROUND","interface_type":"GROUND","connector":""},"device":{"name":"elobau_424SD16D_DS_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":13,"pin_name":"GND_03"}]},{"name":"elobau_424SD16D_DS_120deg_SWITCH_OUT2_PUSH_PULL","interface":"DIGITAL","unit":"BOOLEAN","type":"U1","min":0,"max":1,"resolution":1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"DI","direction":"INPUT","sender_kind":"DEVICE","receiver_kind":"ECU","electrical_flags":["HIGH_SIDE","LOW_SIDE"],"pin":{"name":"elobau_424SD16D_DS_120deg_SWITCH_OUT2_PUSH_PULL","number":6,"role":"OUTPUT","interface_type":"DIGITAL","connector":""},"device":{"name":"elobau_424SD16D_DS_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_CABIN_01","connector":"X1","pin_number":58,"pin_name":"IN_DIF_AIV16_06"}]},{"name":"elobau_424SD16D_DS_120deg_UB1","interface":"POWER","unit":"VOLT","type":"U16","min":4.5,"max":5.5,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"elobau_424SD16D_DS_120deg_UB1","number":2,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"elobau_424SD16D_DS_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":4,"pin_name":"SUPPLY_04"}]},{"name":"elobau_424SD16D_DS_120deg_UB2","interface":"POWER","unit":"VOLT","type":"U16","min":4.5,"max":5.5,"resolution":0.1,"scaling":1,"priority":"HIGH","safety":"AgPL_B","is_mapped":true,"io_code":"SUP","direction":"SUPPLY","sender_kind":"POWER","receiver_kind":"DEVICE","electrical_flags":[],"pin":{"name":"elobau_424SD16D_DS_120deg_UB2","number":5,"role":"SUPPLY","interface_type":"POWER","connector":""},"device":{"name":"elobau_424SD16D_DS_120deg","type":"SENSOR","part_number":"424SD","priority":"HIGH","safety":"AgPL_B"},"system":"Example_System_with_selected_elobau_angle_sensors","mapped_ecus":[{"ecu":"AEC_ENGINE_01","connector":"X1","pin_number":5,"pin_name":"SUPPLY_05"}]}],"summary":{"total":79,"mapped":74,"unmapped":5,"sensor_to_ecu":18,"ecu_to_actuator":9,"bus":8,"supply":20,"ground":24,"systems":6,"devices":28,"ecus":6}}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('payload').textContent);
+const SIGNALS = DATA.signals || [];
+const SUMMARY = DATA.summary || {};
+let selected = SIGNALS[0]?.name || '';
+let pinned = null;
+let filters = { direction: '', interface: '', mapped: '', priority: '' };
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function sig(n){ return SIGNALS.find(s => s.name === n); }
+function fmtRange(s){
+  if (s.min === null || s.min === undefined) return '—';
+  if (s.min === 0 && s.max === 0 && s.unit === 'NONE') return '—';
+  return `${s.min} … ${s.max} ${s.unit !== 'NONE' ? s.unit : ''}`.trim();
+}
+function ioColorVar(code){
+  const map = {AI:'--col-ai', DI:'--col-di', CURR:'--col-curr', FI:'--col-fi', RES:'--col-res', TEMP:'--col-temp',
+    PWM:'--col-pwm', PWM_HS:'--col-pwm-hs', PWM_LS:'--col-pwm-ls', DO:'--col-do', DO_HS:'--col-do-hs', DO_LS:'--col-do-ls',
+    CAN:'--col-can', LIN:'--col-lin', SUP:'--col-sup', GND:'--col-gnd'};
+  return `var(${map[code] || '--col-default'})`;
+}
+function dirLabel(d){
+  return {INPUT:'Device → ECU', OUTPUT:'ECU → Device', SUPPLY:'Supply → Device', GROUND_RETURN:'Device → Ground', BUS:'Bidirectional (bus)'}[d] || d;
+}
+function kindColor(kind, deviceType){
+  if (kind === 'ECU') return 'var(--ecu-color)';
+  if (kind === 'BUS') return 'var(--bus-color)';
+  if (kind === 'POWER') return 'var(--power-color)';
+  if (kind === 'GROUND') return 'var(--ground-color)';
+  if (kind === 'DEVICE') return deviceType === 'ACTUATOR' ? 'var(--actuator-color)' : 'var(--sensor-color)';
+  return 'var(--col-default)';
+}
+function chip(t, cl=''){ return `<span class="badge ${cl}">${esc(t)}</span>`; }
+
+function endpointNode(kind, s, isSender){
+  const color = kindColor(kind, s.device.type);
+  if (kind === 'DEVICE') {
+    const cls = s.device.type === 'ACTUATOR' ? 'actuator' : 'sensor';
+    return `<div class="wiring-node" style="--node-color:${color}" data-inspect='${esc(JSON.stringify({kind:'Device', label:s.device.name, type:s.device.type, part_number:s.device.part_number, priority:s.device.priority, safety:s.device.safety, system:s.system}))}'>
+      <div class="wiring-node-name">${esc(s.device.name)}</div>
+      <div class="wiring-node-sub">${esc(s.system)}</div>
+      <div class="wiring-node-chips">${chip(s.device.type, cls)}${s.device.part_number ? chip(s.device.part_number) : ''}</div>
+    </div>`;
+  }
+  if (kind === 'ECU') {
+    if (!s.mapped_ecus.length) {
+      return `<div class="wiring-node unmapped" style="--node-color:${color}" data-inspect='${esc(JSON.stringify({kind:'ECU', label:'Not yet allocated', signal:s.name}))}'>
+        <div class="wiring-node-name">ECU (unallocated)</div>
+        <div class="wiring-node-sub">No ECU pin currently maps this signal</div>
+      </div>`;
+    }
+    return s.mapped_ecus.map(m => `<div class="wiring-node" style="--node-color:${color}" data-inspect='${esc(JSON.stringify({kind:'ECU pin', ecu:m.ecu, connector:m.connector, pin_number:m.pin_number, pin_name:m.pin_name, signal:s.name}))}'>
+      <div class="wiring-node-name">${esc(m.ecu)}</div>
+      <div class="wiring-node-sub">${esc(m.connector)} · pin ${esc(m.pin_number)} · ${esc(m.pin_name)}</div>
+      <div class="wiring-node-chips">${chip('ECU','ecu')}</div>
+    </div>`).join('');
+  }
+  if (kind === 'POWER') {
+    return `<div class="wiring-node" style="--node-color:${color}" data-inspect='${esc(JSON.stringify({kind:'Power source', label:'Vehicle / protected supply'}))}'>
+      <div class="wiring-node-name">Vehicle / Protected Supply</div>
+      <div class="wiring-node-sub">Battery or ECU-switched supply rail</div>
+    </div>`;
+  }
+  if (kind === 'GROUND') {
+    return `<div class="wiring-node" style="--node-color:${color}" data-inspect='${esc(JSON.stringify({kind:'Ground reference', label:'Chassis / ECU ground'}))}'>
+      <div class="wiring-node-name">Chassis / ECU Ground</div>
+      <div class="wiring-node-sub">Return path</div>
+    </div>`;
+  }
+  if (kind === 'BUS') {
+    return `<div class="wiring-node" style="--node-color:${color}" data-inspect='${esc(JSON.stringify({kind:'Bus network', label:'Shared CAN bus'}))}'>
+      <div class="wiring-node-name">CAN Bus (shared)</div>
+      <div class="wiring-node-sub">Multi-drop network — other ECUs/devices on this segment</div>
+    </div>`;
+  }
+  return '';
+}
+
+function wiringDiagram(s){
+  const senderColor = kindColor(s.sender_kind, s.device.type);
+  const receiverColor = kindColor(s.receiver_kind, s.device.type);
+  return `<div class="wiring-diagram">
+    <div class="wiring-lane" style="--lane-color:${senderColor}">
+      <div class="wiring-lane-title">Sender / Producer</div>
+      <div class="wiring-nodes">${endpointNode(s.sender_kind, s, true)}</div>
+    </div>
+    <div class="ecu-center">
+      <div class="ecu-box" data-inspect='${esc(JSON.stringify(s))}'>
+        <div class="ecu-label">SIGNAL</div>
+        <div class="ecu-name">${esc(s.name)}</div>
+        <div class="ecu-stats">
+          <div class="ecu-stat">${chip(s.io_code,'io')} <strong>${esc(s.interface)}</strong></div>
+          <div class="ecu-stat">Range: <strong>${esc(fmtRange(s))}</strong></div>
+          <div class="ecu-stat">${s.is_mapped ? chip('MAPPED','ok') : chip('UNMAPPED','warn')}</div>
+        </div>
+      </div>
+      <div class="flow-arrow">${esc(dirLabel(s.direction))}</div>
+    </div>
+    <div class="wiring-lane" style="--lane-color:${receiverColor}">
+      <div class="wiring-lane-title">Receiver / Consumer</div>
+      <div class="wiring-nodes">${endpointNode(s.receiver_kind, s, false)}</div>
+    </div>
+  </div>`;
+}
+
+function factsForSignal(s){
+  return {
+    'Signal': s.name, 'Interface': s.interface, 'IO code': s.io_code, 'Direction': dirLabel(s.direction),
+    'Unit': s.unit, 'Min': s.min, 'Max': s.max, 'Resolution': s.resolution, 'Scaling': s.scaling, 'Data type': s.type,
+    'Priority': s.priority, 'Safety': s.safety, 'Mapped': s.is_mapped ? 'Yes' : 'No',
+    'Electrical flags': (s.electrical_flags||[]).join(', ') || '—',
+    'Pin name': s.pin.name, 'Pin number': s.pin.number, 'Pin role': s.pin.role,
+    'Device': s.device.name, 'Device type': s.device.type, 'Device part number': s.device.part_number,
+    'System': s.system,
+    'Mapped ECU(s)': s.mapped_ecus.length ? s.mapped_ecus.map(m=>`${m.ecu} (${m.connector} pin ${m.pin_number})`).join(' · ') : 'Not yet allocated',
+  };
+}
+
+function setInspect(title, sub, obj, facts={}){
+  if (pinned && !obj.__force) return;
+  $('#dt').textContent = title;
+  $('#ds').textContent = sub || '';
+  $('#facts').innerHTML = Object.entries(facts).filter(([k,v]) => v !== undefined && v !== null && String(v) !== '').map(([k,v]) => `<div class="fact-row"><div class="fact-key">${esc(k)}</div><div class="fact-val">${esc(v)}</div></div>`).join('');
+  $('#jsonView').textContent = JSON.stringify(obj, null, 2);
+}
+function inspectPayload(payload){
+  if (!payload) return;
+  if (payload.name && payload.interface !== undefined) {
+    setInspect(payload.name, `${payload.io_code} · ${payload.system}`, payload, factsForSignal(payload));
+  } else {
+    setInspect(payload.kind || 'Object', payload.label || '', payload, payload);
+  }
+}
+function bind(root=document){
+  root.querySelectorAll('[data-inspect]').forEach(el => {
+    el.onmouseenter = () => { try { inspectPayload(JSON.parse(el.dataset.inspect)); } catch(e){} };
+    el.onclick = () => { try { const o = JSON.parse(el.dataset.inspect); o.__force = true; pinned = o; inspectPayload(o); } catch(e){} };
+  });
+}
+function unpin(){ pinned = null; $('#pinnedBadge').style.display = 'none'; inspectPayload(sig(selected)); }
+window.unpin = unpin;
+
+function renderTopbarStats(){
+  const s = SUMMARY;
+  const tiles = [
+    ['Total Signals', s.total], ['Mapped', s.mapped], ['Unmapped', s.unmapped],
+    ['Sensor → ECU', s.sensor_to_ecu], ['ECU → Actuator', s.ecu_to_actuator], ['Bus (CAN)', s.bus],
+  ];
+  $('#topbarStats').innerHTML = tiles.map(([label,val]) => `<div class="topbar-stat"><div class="topbar-stat-val">${esc(val)}</div><div class="topbar-stat-label">${esc(label)}</div></div>`).join('');
+  $('#topbarGen').textContent = `Generated ${DATA.generated_at}`;
+}
+
+function uniqueSorted(key){
+  return Array.from(new Set(SIGNALS.map(s => s[key]).filter(v => v !== undefined && v !== null && v !== ''))).sort();
+}
+function populateFilterOptions(){
+  $('#filterDirection').innerHTML = '<option value="">All directions</option>' +
+    uniqueSorted('direction').map(d => `<option value="${esc(d)}">${esc(dirLabel(d))}</option>`).join('');
+  $('#filterInterface').innerHTML = '<option value="">All interfaces</option>' +
+    uniqueSorted('interface').map(i => `<option value="${esc(i)}">${esc(i)}</option>`).join('');
+  $('#filterPriority').innerHTML = '<option value="">All priorities</option>' +
+    uniqueSorted('priority').map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+}
+function filteredSignals(){
+  const q = $('#search').value.toLowerCase();
+  return SIGNALS.filter(s => {
+    if (q && !JSON.stringify(s).toLowerCase().includes(q)) return false;
+    if (filters.direction && s.direction !== filters.direction) return false;
+    if (filters.interface && s.interface !== filters.interface) return false;
+    if (filters.mapped === 'mapped' && !s.is_mapped) return false;
+    if (filters.mapped === 'unmapped' && s.is_mapped) return false;
+    if (filters.priority && s.priority !== filters.priority) return false;
+    return true;
+  });
+}
+function clearFilters(){
+  filters = { direction: '', interface: '', mapped: '', priority: '' };
+  $('#filterDirection').value = '';
+  $('#filterInterface').value = '';
+  $('#filterMapped').value = '';
+  $('#filterPriority').value = '';
+  $('#search').value = '';
+  renderSignalList();
+  allSignalsView();
+}
+
+function renderSignalList(){
+  const filtered = filteredSignals();
+  $('#sidebarTitle').textContent = `Signals (${filtered.length}/${SIGNALS.length})`;
+  $('#signalList').innerHTML = filtered.map(s => `<button class="sys-item ${s.name===selected?'active':''}" data-signal="${esc(s.name)}">
+    <div class="sys-item-name">${esc(s.name)}</div>
+    <div class="sys-item-meta">
+      <span class="sys-meta-pill">${chip(s.io_code,'io')}</span>
+      <span class="sys-meta-pill"><strong>${esc(s.sender_kind)}</strong> → <strong>${esc(s.receiver_kind)}</strong></span>
+    </div>
+  </button>`).join('') || '<div class="empty">No signals match your search.</div>';
+  $$('.sys-item').forEach(b => b.onclick = () => { selected = b.dataset.signal; pinned = null; $('#pinnedBadge').style.display='none'; renderAll(); show('single'); });
+}
+
+function singleView(){
+  const s = sig(selected) || SIGNALS[0];
+  if (!s) { $('#single').innerHTML = '<div class="card">No signals loaded.</div>'; return; }
+  $('#single').innerHTML = `
+    <div class="card">
+      <div class="sys-header">
+        <div class="sys-header-icon"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div>
+          <div class="sys-header-name">${esc(s.name)}</div>
+          <div class="sys-header-file">${esc(s.device.name)} · ${esc(s.system)}</div>
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi-box"><div class="kpi-label">Interface</div><div class="kpi-val" style="font-size:18px">${esc(s.interface)}</div></div>
+        <div class="kpi-box"><div class="kpi-label">IO Code</div><div class="kpi-val" style="font-size:18px;color:${ioColorVar(s.io_code)}">${esc(s.io_code)}</div></div>
+        <div class="kpi-box"><div class="kpi-label">Range</div><div class="kpi-val" style="font-size:16px">${esc(fmtRange(s))}</div></div>
+        <div class="kpi-box"><div class="kpi-label">Mapped</div><div class="kpi-val" style="font-size:18px">${s.is_mapped ? 'Yes' : 'No'}</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Sender → Signal → Receiver</div></div>
+      ${wiringDiagram(s)}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">All Properties</div></div>
+      ${factsTable(s)}
+    </div>
+  `;
+  bind($('#single'));
+  setInspect(s.name, `${s.io_code} · ${s.system}`, {...s, __force:true}, factsForSignal(s));
+}
+
+function factsTable(s){
+  const f = factsForSignal(s);
+  return `<div class="table-wrap"><table><tbody>${Object.entries(f).map(([k,v]) => `<tr><td style="width:200px;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em">${esc(k)}</td><td class="td-mono">${esc(v)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function allSignalsView(){
+  const rows = filteredSignals();
+  $('#all').innerHTML = `
+    <div class="card">
+      <div class="card-header"><div class="card-title">All Signals — Properties, Sender & Receiver</div></div>
+      <p style="color:var(--text-secondary);font-size:12px;margin-bottom:12px">${rows.length} of ${SIGNALS.length} signals. Click a row to inspect full properties on the right, or open it in Signal Detail.</p>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Signal</th><th>IO</th><th>Interface</th><th>Unit</th><th>Range</th><th>Direction</th><th>Sender</th><th>Receiver</th><th>Device</th><th>System</th><th>Mapped ECU(s)</th><th>Priority</th><th>Safety</th>
+        </tr></thead>
+        <tbody>${rows.map(s => `<tr data-inspect='${esc(JSON.stringify(s))}' data-goto="${esc(s.name)}">
+          <td class="td-device">${esc(s.name)}</td>
+          <td>${chip(s.io_code,'io')}</td>
+          <td class="td-mono">${esc(s.interface)}</td>
+          <td class="td-mono">${esc(s.unit)}</td>
+          <td class="td-mono">${esc(fmtRange(s))}</td>
+          <td class="td-mono">${esc(dirLabel(s.direction))}</td>
+          <td>${senderReceiverCell(s.sender_kind, s)}</td>
+          <td>${senderReceiverCell(s.receiver_kind, s)}</td>
+          <td class="td-device">${esc(s.device.name)}</td>
+          <td>${esc(s.system)}</td>
+          <td>${s.mapped_ecus.length ? s.mapped_ecus.map(m=>chip(m.ecu,'ecu')).join(' ') : chip('unallocated','warn')}</td>
+          <td>${esc(s.priority)}</td>
+          <td>${esc(s.safety)}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+  `;
+  $$('#all tr[data-inspect]').forEach(tr => {
+    tr.ondblclick = () => { selected = tr.dataset.goto; pinned=null; $('#pinnedBadge').style.display='none'; renderAll(); show('single'); };
+  });
+  bind($('#all'));
+}
+function senderReceiverCell(kind, s){
+  if (kind === 'DEVICE') return chip(s.device.name, s.device.type==='ACTUATOR'?'actuator':'sensor');
+  if (kind === 'ECU') return s.mapped_ecus.length ? s.mapped_ecus.map(m=>chip(m.ecu,'ecu')).join(' ') : chip('ECU (unallocated)','warn');
+  if (kind === 'POWER') return chip('Vehicle Supply');
+  if (kind === 'GROUND') return chip('Chassis Ground');
+  if (kind === 'BUS') return chip('CAN Bus','bus');
+  return chip(kind);
+}
+
+function detailsView(){
+  $('#details').innerHTML = `<div class="card"><h2 class="card-title" style="margin-bottom:10px">Full signal dataset (JSON)</h2><pre>${esc(JSON.stringify(SIGNALS, null, 2))}</pre></div>`;
+}
+
+function renderAll(){
+  renderTopbarStats();
+  renderSignalList();
+  singleView();
+  allSignalsView();
+  detailsView();
+}
+function show(v){
+  $$('.view').forEach(x => x.classList.remove('active'));
+  $$('.tab-btn').forEach(x => x.classList.toggle('active', x.dataset.view === v));
+  $('#'+v).classList.add('active');
+  bind($('#'+v));
+}
+$$('.tab-btn').forEach(b => b.onclick = () => show(b.dataset.view));
+$('#search').oninput = () => { renderSignalList(); allSignalsView(); };
+$('#filterDirection').onchange = () => { filters.direction = $('#filterDirection').value; renderSignalList(); allSignalsView(); };
+$('#filterInterface').onchange = () => { filters.interface = $('#filterInterface').value; renderSignalList(); allSignalsView(); };
+$('#filterMapped').onchange = () => { filters.mapped = $('#filterMapped').value; renderSignalList(); allSignalsView(); };
+$('#filterPriority').onchange = () => { filters.priority = $('#filterPriority').value; renderSignalList(); allSignalsView(); };
+$('#btnClearFilters').onclick = clearFilters;
+populateFilterOptions();
+renderAll();
+</script>
+</body>
+</html>

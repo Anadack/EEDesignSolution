@@ -1,0 +1,115 @@
+{
+  "platform": "E/E Architect Design Demo Platform",
+  "systems": [
+    {
+      "ref_2x": "2X0000000",
+      "name": "BRAKE_SYSTEM",
+      "found": true,
+      "total_signals": 8,
+      "io": [
+        {"interface": "POWER", "input": 2, "output": 0, "inout": 0, "total": 2},
+        {"interface": "GROUND", "input": 3, "output": 0, "inout": 0, "total": 3},
+        {"interface": "ANALOG", "input": 0, "output": 2, "inout": 0, "total": 2},
+        {"interface": "DIGITAL", "input": 1, "output": 0, "inout": 0, "total": 1}
+      ]
+    },
+    {
+      "ref_2x": "BOSCH-REXROTH-COIL-EXAMPL",
+      "name": "Example_System_with_Bosch_Rexroth_Coil_Actuators",
+      "found": true,
+      "total_signals": 8,
+      "io": [
+        {"interface": "DIGITAL", "input": 3, "output": 0, "inout": 0, "total": 3},
+        {"interface": "GROUND", "input": 2, "output": 0, "inout": 0, "total": 2},
+        {"interface": "PWM", "input": 3, "output": 0, "inout": 0, "total": 3}
+      ]
+    },
+    {
+      "ref_2x": "ELOBAU-ANGLE-SENSOR-CATAL",
+      "name": "Example_System_with_selected_elobau_angle_sensors",
+      "found": true,
+      "total_signals": 26,
+      "io": [
+        {"interface": "GROUND", "input": 9, "output": 0, "inout": 0, "total": 9},
+        {"interface": "POWER", "input": 8, "output": 0, "inout": 0, "total": 8},
+        {"interface": "UNKNOWN", "input": 0, "output": 2, "inout": 0, "total": 2},
+        {"interface": "DIGITAL", "input": 0, "output": 2, "inout": 0, "total": 2},
+        {"interface": "ANALOG", "input": 0, "output": 3, "inout": 0, "total": 3},
+        {"interface": "CAN", "input": 0, "output": 0, "inout": 2, "total": 2}
+      ]
+    },
+    {
+      "ref_2x": "EX-HYD-COIL-TOPO",
+      "name": "Example_HYDAC_Coil_Topologies_System",
+      "found": true,
+      "total_signals": 4,
+      "io": [
+        {"interface": "PWM", "input": 2, "output": 0, "inout": 0, "total": 2},
+        {"interface": "DIGITAL", "input": 1, "output": 0, "inout": 0, "total": 1},
+        {"interface": "GROUND", "input": 1, "output": 0, "inout": 0, "total": 1}
+      ]
+    },
+    {
+      "ref_2x": "SYS-HYDAC-SENSOR-LIB",
+      "name": "HYDAC_Selected_Sensor_Examples",
+      "found": true,
+      "total_signals": 36,
+      "io": [
+        {"interface": "POWER", "input": 10, "output": 0, "inout": 0, "total": 10},
+        {"interface": "GROUND", "input": 11, "output": 0, "inout": 0, "total": 11},
+        {"interface": "UNKNOWN", "input": 0, "output": 3, "inout": 0, "total": 3},
+        {"interface": "CAN", "input": 0, "output": 0, "inout": 6, "total": 6},
+        {"interface": "ANALOG", "input": 0, "output": 2, "inout": 0, "total": 2},
+        {"interface": "DIGITAL", "input": 0, "output": 4, "inout": 0, "total": 4}
+      ]
+    }
+  ],
+  "architecture_io": {
+    "total_signals": 82,
+    "systems_found": 5,
+    "systems_missing": 0,
+    "per_interface": [
+      {"interface": "POWER", "input": 20, "output": 0, "inout": 0, "total": 20},
+      {"interface": "GROUND", "input": 26, "output": 0, "inout": 0, "total": 26},
+      {"interface": "ANALOG", "input": 0, "output": 7, "inout": 0, "total": 7},
+      {"interface": "DIGITAL", "input": 5, "output": 6, "inout": 0, "total": 11},
+      {"interface": "PWM", "input": 5, "output": 0, "inout": 0, "total": 5},
+      {"interface": "UNKNOWN", "input": 0, "output": 5, "inout": 0, "total": 5},
+      {"interface": "CAN", "input": 0, "output": 0, "inout": 8, "total": 8}
+    ]
+  },
+  "ecu_capacities": [
+    {"variant": "SMALL", "total_pins": 86, "per_interface": {"DIGITAL": 19, "ANALOG": 32, "CAN": 6, "LIN": 1, "ETHERNET": 10}},
+    {"variant": "MEDIUM", "total_pins": 138, "per_interface": {"DIGITAL": 37, "ANALOG": 58, "CAN": 8, "LIN": 1, "ETHERNET": 10}},
+    {"variant": "LARGE", "total_pins": 166, "per_interface": {"DIGITAL": 59, "ANALOG": 60, "CAN": 8, "LIN": 1, "ETHERNET": 10}}
+  ],
+  "estimates": [
+    {"variant": "SMALL", "ecu_count": 5, "pins_available": 430, "pins_used": 82, "utilisation_pct": 19.1},
+    {"variant": "MEDIUM", "ecu_count": 5, "pins_available": 690, "pins_used": 82, "utilisation_pct": 11.9},
+    {"variant": "LARGE", "ecu_count": 5, "pins_available": 830, "pins_used": 82, "utilisation_pct": 9.9}
+  ],
+  "proposition": {
+    "ecu_count": 5,
+    "notes": "R1: Safety-critical systems (SL3+) on dedicated ECU. R2: High-priority systems prefer MEDIUM/LARGE for headroom. R3: Low-IO systems share SMALL ECUs (cost/wiring). R4: Target 40-70% utilisation for evolution margin. R5: Minimise total ECU count. R6: Interface compatibility enforced.",
+    "ecus": [
+      {"variant": "MEDIUM", "systems": "BRAKE_SYSTEM", "pins_used": 8, "pins_total": 138, "utilisation_pct": 5.8},
+      {"variant": "MEDIUM", "systems": "Example_System_with_Bosch_Rexroth_Coil_Actuators", "pins_used": 8, "pins_total": 138, "utilisation_pct": 5.8},
+      {"variant": "MEDIUM", "systems": "Example_HYDAC_Coil_Topologies_System", "pins_used": 4, "pins_total": 138, "utilisation_pct": 2.9},
+      {"variant": "SMALL", "systems": "Example_System_with_selected_elobau_angle_sensors", "pins_used": 26, "pins_total": 86, "utilisation_pct": 30.2},
+      {"variant": "SMALL", "systems": "HYDAC_Selected_Sensor_Examples", "pins_used": 36, "pins_total": 86, "utilisation_pct": 41.9}
+    ]
+  },
+  "design_rules": [
+    {"id": "R1", "title": "Safety isolation",       "description": "Safety-critical systems (SL3+) must have a dedicated ECU — no mixing with other systems."},
+    {"id": "R2", "title": "High-priority headroom", "description": "High-priority systems (CRITICAL/HIGH) prefer MEDIUM or LARGE ECU to allow evolution headroom."},
+    {"id": "R3", "title": "Low-IO consolidation",   "description": "Low-IO or low-priority systems can share a SMALL ECU to reduce cost and wiring."},
+    {"id": "R4", "title": "Utilisation target",     "description": "Target 40-70% ECU utilisation for maintainability and future evolution margin."},
+    {"id": "R5", "title": "ECU count minimisation", "description": "Minimise total ECU count to reduce wiring, weight and integration cost."},
+    {"id": "R6", "title": "Interface compatibility", "description": "Each ECU must physically support all required signal interface types for its assigned systems."}
+  ],
+  "thresholds": {
+    "safety_signal_threshold": 100,
+    "highpri_signal_threshold": 80,
+    "shared_fill_percent": 70
+  }
+}

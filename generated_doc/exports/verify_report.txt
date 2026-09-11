@@ -1,0 +1,82 @@
+========================================================================
+  E/E Architect Design — Architecture Verification Report
+========================================================================
+Name:     Imported Architecture
+ECUs:     6
+Systems:  12
+Signals:  107
+Buses:    7
+
+Checks performed:
+  V1  Global duplicate CAN address detection
+  V2  ECU pin occupied/signal consistency
+  V3  ECU pin identity uniqueness (connector+number)
+  V4  Differential pair validation (CAN/ETH/LIN)
+  V5  Signal-to-ECU mapping completeness
+  V6  Duplicate signal assignment detection
+  V7  Role compatibility (device pin vs ECU pin)
+  V8  Electrical capability matching
+  V9  Pull resistor requirement check
+  V10 Diagnostics requirement coverage
+  V11 Current overload detection (nominal + inrush)
+  V12 Ground class mixing prevention
+  V13 Safety-relevant signal diagnostic coverage
+  B1  Bus port index within ECU capacity
+  B2  ECU port not shared across buses
+  B3  Signal interface matches bus type
+  B4  No duplicate ECU port on same bus
+  B5  CAN/ISOBUS node count <= 32
+  B6  Unique CAN addresses per bus
+  B7  Bus-type signals assigned to a bus
+  B8  Bus bitrate > 0 when nodes connected
+
+------------------------------------------------------------------------
+Results:
+------------------------------------------------------------------------
+ERROR: duplicate CAN address 0x56 between AEC_CABIN_01 and AEC_TRANSMISSION_01
+ERROR: duplicate CAN address 0x12 between AEC_DISPLAY_01 and AEC_TRAILER_01
+ERROR: duplicate CAN address 0x34 between AEC_DISPLAY_01 and AEC_TRAILER_01
+ERROR: duplicate CAN address 0x70 between AEC_ENGINE_01 and AEC_REAR_HITCH_01
+ERROR: duplicate CAN address 0x71 between AEC_ENGINE_01 and AEC_REAR_HITCH_01
+ERROR: duplicate CAN address 0x72 between AEC_ENGINE_01 and AEC_REAR_HITCH_01
+  [FAIL] V1  6 duplicate CAN address(es) found
+  [PASS] V2  All occupied pins have signals, all signals on occupied pins
+ERROR: unmapped signal HAT1200_Angle_4_20mA referenced by sensor HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady pin 3
+ERROR: unmapped signal HDA4300_Pressure_4_20mA referenced by sensor HYDAC_HDA4300_Pressure_40bar_A_4_20mA_2Wire pin 2
+ERROR: unmapped signal ETS4100_Temperature_4_20mA referenced by sensor HYDAC_ETS4100_Temperature_A_4_20mA_2Wire_Probe_050 pin 2
+ERROR: unmapped signal elobau_424SD11D_DH_120deg_ANGLE_4_20MA_OUT1 referenced by sensor elobau_424SD11D_DH_120deg pin 3
+WARNING: electrical mismatch for signal elobau_424SD11D_DH_120deg_SWITCH_OUT2_HIGH_SIDE on AEC_CABIN_01 X1/57: device requires 0x04, ECU provides 0x43 (missing 0x04 HIGH_SIDE)
+WARNING: electrical mismatch for signal elobau_424SD16D_DS_120deg_SWITCH_OUT2_PUSH_PULL on AEC_CABIN_01 X1/58: device requires 0x0C, ECU provides 0x43 (missing 0x0C HIGH_SIDE LOW_SIDE)
+ERROR: unmapped signal elobau_424A_4_20MA_120deg_ANGLE_4_20MA referenced by sensor elobau_424A_4_20MA_120deg pin 3
+ERROR: diagnostics gap for signal HYDAC_4059964_CoilCommand_HS on AEC_CABIN_01 X1/33: device requires 0x07, ECU provides 0x31 (missing 0x06 SHORT_GND SHORT_BAT)
+ERROR: diagnostics gap for signal HYDAC_4059964_CoilReturn_LS on AEC_CABIN_01 X1/49: device requires 0x07, ECU provides 0x31 (missing 0x06 SHORT_GND SHORT_BAT)
+ERROR: unmapped signal HDA4300_Pressure_4_20mA referenced by sensor Hitch_Hydraulic_Pressure_Sensor pin 2
+  [FAIL] V5-V9  8 logical pin error(s)
+ERROR: bus 'Tractor_Bus': duplicate CAN address 0x56 between 'AEC_CABIN_01' and 'AEC_TRANSMISSION_01'
+ERROR: bus 'Tractor_Bus': duplicate CAN address 0x12 between 'AEC_DISPLAY_01' and 'AEC_TRAILER_01'
+ERROR: bus 'Tractor_Bus': duplicate CAN address 0x34 between 'AEC_DISPLAY_01' and 'AEC_TRAILER_01'
+ERROR: bus 'Tractor_Bus': duplicate CAN address 0x70 between 'AEC_ENGINE_01' and 'AEC_REAR_HITCH_01'
+ERROR: bus 'Tractor_Bus': duplicate CAN address 0x71 between 'AEC_ENGINE_01' and 'AEC_REAR_HITCH_01'
+ERROR: bus 'Tractor_Bus': duplicate CAN address 0x72 between 'AEC_ENGINE_01' and 'AEC_REAR_HITCH_01'
+WARNING: signal 'Engine_Torque_Estimate' (CAN) is not assigned to any bus
+WARNING: signal 'Engine_State' (CAN) is not assigned to any bus
+WARNING: signal 'Oil_Health_Flag' (CAN) is not assigned to any bus
+WARNING: signal 'Current_Gear' (CAN) is not assigned to any bus
+WARNING: signal 'Transmission_Oil_Temp' (CAN) is not assigned to any bus
+WARNING: signal 'Ground_Speed' (CAN) is not assigned to any bus
+WARNING: signal 'Active_DTC_Count' (CAN) is not assigned to any bus
+WARNING: signal 'MIL_Status' (CAN) is not assigned to any bus
+WARNING: signal 'Hitch_Position' (CAN) is not assigned to any bus
+WARNING: signal 'Draft_Force' (CAN) is not assigned to any bus
+WARNING: signal 'Hitch_State' (CAN) is not assigned to any bus
+WARNING: signal 'Display_Vehicle_Speed' (CAN) is not assigned to any bus
+WARNING: signal 'Cluster_Warning_Flags' (CAN) is not assigned to any bus
+WARNING: signal 'Brake_Pressure' (CAN) is not assigned to any bus
+WARNING: signal 'Brake_Applied' (CAN) is not assigned to any bus
+  [FAIL] B1-B8  6 bus verification error(s)
+  [PASS] C1-C5  All CAN message rules passed
+
+========================================================================
+SUMMARY:  2 check group(s) passed, 3 failed, 20 total error(s), 0 warning(s)
+STATUS: FAIL with 20 error(s)
+========================================================================

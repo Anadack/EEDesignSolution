@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E/E Architect Design Framework — From 0 to Hero</title>
+<style>
+:root{--bg:#090d14;--surface:#111722;--surface2:#171f2d;--surface3:#1f2a3b;--ink:#eef4ff;--muted:#9aa7ba;--muted2:#647086;--accent:#60a5fa;--accent2:#38bdf8;--good:#22c55e;--warn:#f59e0b;--bad:#ef4444;--violet:#a78bfa;--green:#34d399;--orange:#fb923c;--border:rgba(255,255,255,.10);--border2:rgba(255,255,255,.16);--shadow:0 18px 60px rgba(0,0,0,.36);--r:18px;--mono:'JetBrains Mono',Consolas,monospace}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 12% 8%,rgba(96,165,250,.16),transparent 28%),radial-gradient(circle at 90% 0%,rgba(167,139,250,.13),transparent 32%),linear-gradient(180deg,#080b12,#0a0f19 45%,#05070c);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.58}a{color:#93c5fd;text-decoration:none}a:hover{text-decoration:underline}.shell{display:grid;grid-template-columns:310px minmax(0,1fr);min-height:100vh}.side{position:sticky;top:0;height:100vh;overflow:auto;background:rgba(13,18,29,.92);border-right:1px solid var(--border);backdrop-filter:blur(12px);padding:22px 18px}.brand{display:flex;gap:12px;align-items:center;margin-bottom:18px}.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#1d4ed8);display:grid;place-items:center;box-shadow:0 0 0 1px rgba(96,165,250,.35),0 0 24px rgba(96,165,250,.22)}.logo svg{width:21px;height:21px}.brand h1{font-size:14px;margin:0;letter-spacing:.05em;text-transform:uppercase}.brand p{margin:2px 0 0;font-size:11px;color:var(--muted)}.search{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;color:var(--ink);outline:none;margin:8px 0 15px}.nav h3{margin:18px 0 8px;color:var(--muted2);font-size:10px;text-transform:uppercase;letter-spacing:.12em}.nav a{display:block;color:#cbd5e1;padding:7px 9px;border-radius:9px;font-size:12px}.nav a:hover{background:rgba(96,165,250,.10);text-decoration:none}.main{min-width:0}.hero{padding:46px 52px 22px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(17,24,39,.75),rgba(17,24,39,.24))}.eyebrow{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:11px;color:#bfdbfe;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:999px;padding:6px 10px;margin-bottom:14px}.hero h2{font-size:42px;letter-spacing:-.05em;line-height:1.05;margin:0 0 13px;max-width:1000px}.hero p{max-width:1050px;color:var(--muted);font-size:16px;margin:0}.content{padding:28px 52px 70px;max-width:1420px}.grid{display:grid;gap:16px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:1050px){.shell{grid-template-columns:1fr}.side{position:relative;height:auto}.g2,.g3,.g4{grid-template-columns:1fr}.hero,.content{padding-left:22px;padding-right:22px}}.card{background:linear-gradient(180deg,rgba(17,24,39,.94),rgba(15,23,42,.86));border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;margin:18px 0}.card.tight{padding:16px}.card h3{margin:0 0 10px;font-size:20px;letter-spacing:-.025em}.card h4{margin:18px 0 8px;font-size:15px}.muted{color:var(--muted)}.mini{font-size:12px;color:var(--muted)}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin:24px 0}.kpi{border:1px solid var(--border);background:rgba(23,31,45,.8);border-radius:16px;padding:15px;position:relative;overflow:hidden}.kpi:before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--accent)}.kpi b{display:block;font-family:var(--mono);font-size:29px;letter-spacing:-.04em}.kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.tocgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px}.toccard{padding:16px;border:1px solid var(--border);border-radius:16px;background:rgba(23,31,45,.58)}.toccard strong{display:block;margin-bottom:5px}.tag{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:11px;color:#cbd5e1;margin:2px}.tag.blue{color:#bfdbfe;border-color:rgba(96,165,250,.25);background:rgba(96,165,250,.10)}.tag.good{color:#bbf7d0;border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.10)}.tag.warn{color:#fde68a;border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.10)}.tag.bad{color:#fecaca;border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.10)}section{scroll-margin-top:22px}section>h2{font-size:30px;letter-spacing:-.04em;margin:38px 0 10px;border-top:1px solid var(--border);padding-top:32px}section:first-child>h2{border-top:0;padding-top:0}.lead{font-size:16px;color:#c7d2e3;max-width:1050px}.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:center;margin:18px 0}.step{background:rgba(23,31,45,.8);border:1px solid var(--border);border-radius:16px;padding:14px;min-height:120px}.step b{display:block;font-size:13px;margin-bottom:6px;color:#dbeafe}.arrow{text-align:center;color:#7dd3fc;font-size:24px;font-weight:900}@media(max-width:950px){.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}}table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:14px;overflow:hidden}th,td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;text-align:left}th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#bfdbfe;background:rgba(30,41,59,.86)}td{color:#dbe6f4}.tablewrap{overflow:auto;border-radius:14px}code,kbd{font-family:var(--mono);font-size:.92em;background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.16);padding:.1em .35em;border-radius:6px}pre{position:relative;background:#050814;border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:16px;overflow:auto;color:#d5e5ff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}pre code{background:transparent;border:0;padding:0;color:inherit}.copy{position:absolute;right:10px;top:8px;border:1px solid var(--border);background:rgba(23,31,45,.92);color:#cbd5e1;border-radius:9px;padding:5px 8px;font-size:11px;cursor:pointer}.callout{border-left:4px solid var(--accent);padding:13px 14px;background:rgba(96,165,250,.09);border-radius:12px;margin:14px 0}.callout.warn{border-left-color:var(--warn);background:rgba(245,158,11,.08)}.callout.bad{border-left-color:var(--bad);background:rgba(239,68,68,.08)}.callout.good{border-left-color:var(--good);background:rgba(34,197,94,.08)}.diagram{border:1px solid var(--border);border-radius:18px;background:rgba(12,18,30,.72);padding:18px;margin:16px 0;overflow:auto}.layers{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px}.layer{background:rgba(23,31,45,.88);border:1px solid var(--border);border-radius:14px;padding:13px;text-align:center}.layer strong{display:block;color:#eaf2ff}.layer span{display:block;color:var(--muted);font-size:12px;margin-top:5px}.lane{display:grid;grid-template-columns:1fr 90px 1fr;gap:12px;align-items:center}.node{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:13px}.node.sensor{border-left:4px solid var(--green)}.node.actuator{border-left:4px solid var(--orange)}.node.ecu{border:1.5px solid var(--accent);box-shadow:0 0 0 1px rgba(96,165,250,.12),0 0 28px rgba(96,165,250,.14)}.svgwrap svg{max-width:100%;height:auto}.tabs{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0}.tabbtn{border:1px solid var(--border);background:var(--surface2);color:#cbd5e1;border-radius:999px;padding:7px 10px;cursor:pointer}.tabbtn.active{background:var(--accent);color:white}.tabpane{display:none}.tabpane.active{display:block}.footer{padding:26px 52px 60px;color:var(--muted);border-top:1px solid var(--border)}.print{display:none}@media print{.side{display:none}.shell{display:block}.hero,.content{padding:18px}.card{box-shadow:none}.print{display:block}.nav{display:none}body{background:white;color:#111}.hero,.card{background:white;color:#111;border-color:#ddd}.muted,.mini{color:#555}a{color:#0645ad}}
+</style></head><body>
+<div class="shell">
+<aside class="side">
+ <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M4 12h4m8 0h4M8 12a4 4 0 0 1 8 0M8 12a4 4 0 0 0 8 0M12 3v4m0 10v4" stroke-linecap="round"/></svg></div><div><h1>E/E Architect Design</h1><p>Framework documentation · From 0 to Hero</p></div></div>
+ <input id="search" class="search" placeholder="Search in page…">
+ <nav class="nav"><h3>Guide</h3><a href="#start">From 0 to Hero</a><a href="#mental-model">Mental model</a><a href="#objects">Core objects</a><a href="#build">Build and run</a><a href="#first-model">First architecture</a><a href="#json-library">JSON library</a><a href="#signal-contract">Signal contract</a><a href="#electrical">Electrical rules</a><a href="#mapping">Mapping</a><a href="#strict-policy">Strict policy</a><a href="#verification">Verification</a><a href="#io-sizing">I/O sizing</a><a href="#exports-reports">Exports &amp; reports</a><a href="#validation-scripts">Validation scripts</a><a href="#polarion">Polarion workflow</a><a href="#best-practices">Best practices</a><a href="#troubleshooting">Troubleshooting</a><a href="#api-reference">API reference</a><a href="#source-inventory">Source inventory</a><h3>Artifacts</h3><a href="source_audit.json">Source audit JSON</a><a href="README.md">README</a><a href="VALIDATION_REPORT.md">Validation report</a></nav>
+</aside>
+<main class="main">
+<header class="hero"><div class="eyebrow">Framework guide · generated 2026-06-16 10:50 UTC</div><h2>E/E Architect Design Framework — complete documentation from 0 to Hero</h2><p>Professional standalone documentation for modeling, JSON libraries, mapping, verification, ECU I/O sizing, exports, HTML tools and practical workflows.</p></header>
+<div class="content">
+<section id="start">
+<h2>From 0 to Hero</h2>
+<p class="lead">This documentation turns the E/E Architect Design framework into a practical engineering workflow: model electrical and electronic systems, import generated JSON libraries, map signals to ECU pins, verify the architecture, export machine-readable JSON, and generate professional HTML documentation.</p>
+<div class="kpis">
+  <div class="kpi"><span>Source files scanned</span><b>21</b></div>
+  <div class="kpi"><span>Public headers</span><b>10</b></div>
+  <div class="kpi"><span>API groups</span><b>10</b></div>
+  <div class="kpi"><span>Framework prefix</span><b>EEC_</b></div>
+</div>
+
+<div class="flow">
+  <div class="step"><b>1 · Define objects</b><span class="muted">Architecture, systems, components, sensors, actuators, signals and ECU catalog.</span></div><div class="arrow">→</div>
+  <div class="step"><b>2 · Import JSON library</b><span class="muted">Generated system/sensor/actuator/ECU JSON files become runtime C objects.</span></div><div class="arrow">→</div>
+  <div class="step"><b>3 · Map</b><span class="muted">Relaxed, strict, single-ECU, auto-map all or smart auto-map.</span></div>
+</div>
+<div class="flow">
+  <div class="step"><b>4 · Verify</b><span class="muted">V1–V13 and B1–B8 rules catch electrical, logical, bus and diagnostics problems.</span></div><div class="arrow">→</div>
+  <div class="step"><b>5 · Export</b><span class="muted">Architecture JSON, physical JSON, pinout reports and reusable libraries.</span></div><div class="arrow">→</div>
+  <div class="step"><b>6 · Document</b><span class="muted">HTML reports, system viewer, I/O sizing, mapping documentation and Polarion workflows.</span></div>
+</div>
+
+<div class="callout good"><b>Branding note.</b> The documentation uses <b>E/E Architect Design</b> as product name. The C API prefix <code>EEC_</code> is preserved because it is part of the source-level ABI.</div>
+</section>
+
+<section id="mental-model">
+<h2>1. Mental model</h2>
+<p class="lead">The framework models a tractor E/E architecture as a hierarchy of systems, components, devices, pins, signals, ECUs and buses. Mapping is the operation that connects logical device signals to physical ECU pins.</p>
+
+<div class="diagram"><div class="layers">
+<div class="layer"><strong>Architecture</strong><span>Top-level container</span></div>
+<div class="layer"><strong>System</strong><span>Function / option / platform feature</span></div>
+<div class="layer"><strong>Component</strong><span>Functional grouping</span></div>
+<div class="layer"><strong>Device</strong><span>Sensor or actuator</span></div>
+<div class="layer"><strong>Pin + Signal</strong><span>Physical endpoint + logical data</span></div>
+</div></div>
+
+<div class="grid g3">
+<div class="card tight"><h3>Logical architecture</h3><p class="muted">Systems, components, sensors, actuators and signals. This answers: <i>what does the machine feature need?</i></p></div>
+<div class="card tight"><h3>Physical architecture</h3><p class="muted">ECUs, connectors, pin cavities, capabilities, diagnostics and buses. This answers: <i>where can it be connected?</i></p></div>
+<div class="card tight"><h3>Mapping layer</h3><p class="muted">Compatibility, scoring, validation and trace. This answers: <i>is this assignment electrically and functionally valid?</i></p></div>
+</div>
+</section>
+
+<section id="objects">
+<h2>2. Core objects and fields</h2>
+<p class="lead">These objects are visible in C structures, JSON exports and HTML reports.</p>
+<div class="tabs">
+<button class="tabbtn active" data-group="objects" data-target="obj-system">System</button>
+<button class="tabbtn" data-group="objects" data-target="obj-device">Device + pin</button>
+<button class="tabbtn" data-group="objects" data-target="obj-ecu">ECU + pin</button>
+<button class="tabbtn" data-group="objects" data-target="obj-bus">Bus</button>
+</div>
+<div class="tabpane active" data-group="objects" id="obj-system">
+<div class="tablewrap"><table><thead><tr><th>Object</th><th>Key fields</th><th>Meaning</th></tr></thead><tbody><tr><td>Architecture</td><td><code>name</code>, <code>systems</code>, <code>ecus</code>, <code>buses</code></td><td>Top-level container for all logical and physical objects.</td></tr><tr><td>System</td><td><code>name</code>, <code>Ref-2X</code>, <code>priority</code>, <code>safety</code>, <code>system_level</code>, <code>take_rate</code>, <code>is_mandatory</code></td><td>Machine feature or option to be mounted on a platform.</td></tr><tr><td>Component</td><td><code>name</code>, <code>part_number</code>, <code>supplier</code>, <code>location</code>, <code>sensors</code>, <code>actuators</code></td><td>Reusable functional group inside a system.</td></tr></tbody></table></div>
+</div>
+<div class="tabpane" data-group="objects" id="obj-device">
+<div class="tablewrap"><table><thead><tr><th>Object</th><th>Key fields</th><th>Meaning</th></tr></thead><tbody><tr><td>Sensor</td><td><code>pins</code>, <code>connectors</code>, <code>signals</code>, <code>priority</code>, <code>safety</code></td><td>Device that usually produces signals consumed by an ECU.</td></tr><tr><td>Actuator</td><td><code>pins</code>, <code>connectors</code>, <code>signals</code>, <code>drive_topology</code></td><td>Device that usually consumes ECU commands or power outputs.</td></tr><tr><td>Device pin</td><td><code>number</code>, <code>role</code>, <code>interface</code>, <code>electrical_requirement</code>, <code>diagnostics_required</code></td><td>Endpoint that requires a compatible ECU pin.</td></tr><tr><td>Signal</td><td><code>prefix/name</code>, <code>type</code>, <code>interface</code>, <code>unit</code>, <code>min/max</code>, <code>resolution</code></td><td>Logical information carried by one mapped endpoint.</td></tr></tbody></table></div>
+</div>
+<div class="tabpane" data-group="objects" id="obj-ecu">
+<div class="tablewrap"><table><thead><tr><th>Object</th><th>Key fields</th><th>Meaning</th></tr></thead><tbody><tr><td>ECU</td><td><code>name</code>, <code>variant</code>, <code>pins</code>, <code>connectors</code>, <code>can_addresses</code></td><td>Physical controller with pin resources.</td></tr><tr><td>ECU pin</td><td><code>connector_name</code>, <code>physical_number</code>, <code>role</code>, <code>interface</code>, <code>supported_capability_mask</code>, <code>electrical_capability</code>, <code>diagnostic_flags</code></td><td>Physical pin/cavity that can accept one or several compatible mappings depending on role.</td></tr><tr><td>Connector</td><td><code>name</code>, <code>family</code>, <code>gender</code>, <code>total_cavities</code>, <code>used_cavities</code>, <code>ip_rating</code></td><td>Mechanical housing and cavities.</td></tr></tbody></table></div>
+</div>
+<div class="tabpane" data-group="objects" id="obj-bus">
+<div class="tablewrap"><table><thead><tr><th>Object</th><th>Key fields</th><th>Meaning</th></tr></thead><tbody><tr><td>Bus</td><td><code>name</code>, <code>type</code>, <code>bitrate</code>, <code>nodes</code>, <code>signals</code></td><td>Logical network such as CAN, ISOBUS, LIN or Ethernet.</td></tr><tr><td>Bus node</td><td><code>ecu</code>, <code>port_index</code></td><td>An ECU port connected to a bus.</td></tr><tr><td>Bus signal</td><td><code>signal</code>, <code>interface</code></td><td>A signal assigned to the network when compatible with the bus type.</td></tr></tbody></table></div>
+</div>
+</section>
+
+<section id="build">
+<h2>3. Build and run workflow</h2>
+<p class="lead">A typical workflow compiles the C framework, runs an example architecture, writes JSON exports, then launches documentation scripts.</p>
+<pre><code># Example build idea from a project root
+make clean
+make strict-compile
+make run
+
+# Typical exports expected by documentation tools
+generated_doc/exports/example_architecture.json
+generated_doc/exports/example_physical_architecture.json
+
+# Generate reports or viewers
+python tools/scripts/generate_all_architecture_docs.py --root .
+python tools/scripts/generate_system_configuration_viewer_html.py --root . --input library/systems --verbose</code></pre>
+<div class="callout warn"><b>Portability rule.</b> Prefer configurable compiler/tool paths. Avoid hard-coded Windows-only paths inside wrapper scripts.</div>
+</section>
+
+<section id="first-model">
+<h2>4. Create a first architecture</h2>
+<p class="lead">The smallest useful model contains an architecture, one system, one signal, one sensor or actuator, and one ECU with a compatible pin.</p>
+<pre><code>#include &quot;EEC_architecture.h&quot;
+#include &quot;EEC_connect.h&quot;
+#include &quot;EEC_verify.h&quot;
+#include &quot;EEC_export.h&quot;
+
+int main(void) {
+    EEC_Architecture_t *arch = EEC_Architecture_Create(&quot;Demo Tractor Architecture&quot;);
+
+    EEC_System_t *hyd = EEC_Architecture_CreateSystem(arch, &quot;Hydraulic Position Control&quot;);
+    hyd-&gt;priority = EEC_PRIORITY_HIGH;
+    hyd-&gt;safety = EEC_SAFETY_QM;
+    hyd-&gt;system_level = EEC_SYSTEM_LEVEL_SL2;
+    hyd-&gt;is_mandatory = true;
+    hyd-&gt;take_rate = 100.0f;
+
+    EEC_Component_t *cmp = EEC_System_CreateComponent(hyd, &quot;Rear Hitch Position Sensor Assembly&quot;);
+    EEC_Sensor_t *sensor = EEC_Component_CreateSensor(cmp, &quot;Rear Hitch Position Sensor&quot;);
+
+    EEC_Signal_t *pos = EEC_Architecture_CreateSignalEx(
+        arch, &quot;RearHitchPosition&quot;, EEC_SIGNAL_TYPE_UNSIGNED_16BIT,
+        EEC_SIGNAL_INTERFACE_ANALOG, EEC_SIGNAL_UNIT_PERCENT,
+        0.0f, 100.0f, 0.1f, 1.0f);
+
+    EEC_Sensor_CreatePin(sensor, 1, EEC_PIN_ROLE_OUTPUT, pos,
+                         EEC_PIN_INTERFACE_ANALOG, &quot;Position output&quot;);
+
+    EEC_Ecu_t *ecu = EEC_Architecture_CreateEcu(arch, &quot;Rear ECU&quot;, &quot;MEDIUM&quot;);
+    EEC_Ecu_CreatePin(ecu, 12, &quot;X1&quot;, &quot;AI_12&quot;, &quot;ANALOG_INPUT&quot;,
+                      EEC_PIN_ROLE_INPUT, EEC_PIN_INTERFACE_ANALOG,
+                      EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_ANALOG),
+                      EEC_DIAG_RANGE_CHECK,
+                      &quot;0-5V analog input&quot;, &quot;ADC&quot;);
+
+    EEC_Ecu_t *ecus[] = { ecu };
+    EEC_System_connect_to_ecus(hyd, ecus, 1, stdout);
+    EEC_Verify_architecture(arch, stdout);
+    EEC_Export_architecture_json(arch, &quot;generated_doc/exports/example_architecture.json&quot;);
+    EEC_Export_physical_architecture_json(arch, &quot;generated_doc/exports/example_physical_architecture.json&quot;);
+
+    EEC_Architecture_Destroy(arch);
+    return 0;
+}</code></pre>
+</section>
+
+<section id="json-library">
+<h2>5. JSON library import/export</h2>
+<p class="lead">The framework can export systems, sensors, actuators, ECUs, bundles and signal groups. The same JSON can be imported back into a runtime architecture.</p>
+<div class="tablewrap"><table><thead><tr><th>Use case</th><th>Function</th><th>Result</th></tr></thead><tbody><tr><td>Export a system</td><td><code>EEC_Library_ExportSystem(system, path)</code></td><td>Reusable system JSON containing devices and signal definitions.</td></tr><tr><td>Import a generated system</td><td><code>EEC_Library_ImportSystem(arch, path)</code></td><td>Creates system, components, devices, pins and signals inside an architecture.</td></tr><tr><td>Export ECU preset</td><td><code>EEC_Library_ExportEcu(ecu, path)</code></td><td>Reusable ECU variant and CAN address metadata.</td></tr><tr><td>Import ECU preset</td><td><code>EEC_Library_ImportEcu(arch, path, name)</code></td><td>Creates an ECU from a library JSON and matching factory.</td></tr><tr><td>Export full bundle</td><td><code>EEC_Library_ExportBundle(arch, path)</code></td><td>Reusable architecture bundle.</td></tr></tbody></table></div>
+<h3>Generated system JSON fields</h3>
+<pre><code>{
+  &quot;type&quot;: &quot;system&quot;,
+  &quot;schema_version&quot;: &quot;eec-system-1.4&quot;,
+  &quot;name&quot;: &quot;Hydraulic_Position_Control&quot;,
+  &quot;priority&quot;: &quot;HIGH&quot;,
+  &quot;safety&quot;: &quot;QM&quot;,
+  &quot;system_level&quot;: &quot;SL2&quot;,
+  &quot;components&quot;: [
+    {
+      &quot;name&quot;: &quot;Position_Control_Component&quot;,
+      &quot;sensors&quot;: [ { &quot;type&quot;: &quot;sensor&quot;, &quot;pins&quot;: [], &quot;signals&quot;: [], &quot;connectors&quot;: [] } ],
+      &quot;actuators&quot;: [ { &quot;type&quot;: &quot;actuator&quot;, &quot;pins&quot;: [], &quot;signals&quot;: [], &quot;connectors&quot;: [] } ]
+    }
+  ]
+}</code></pre>
+</section>
+
+<section id="signal-contract">
+<h2>6. Signal contract and prefix mapping</h2>
+<p class="lead">A signal describes both payload and electrical intent. Generated JSON fields should map predictably into the C signal object and pin routing metadata.</p>
+<div class="tablewrap"><table><thead><tr><th>JSON field</th><th>Example</th><th>Meaning</th></tr></thead><tbody><tr><td><code>prefix</code></td><td><code>SENSOR_SUPPLY_5V</code></td><td>Canonical prefix used for generated signal names and grouped signal expansion.</td></tr><tr><td><code>name</code></td><td><code>SENSOR_SUPPLY_5V</code></td><td>Display and mapping name used by the mapping engine.</td></tr><tr><td><code>count</code></td><td><code>1</code></td><td>Number of generated signals when using a prefix/group template.</td></tr><tr><td><code>type</code></td><td><code>U1</code></td><td>Payload type. U1 is a one-bit/boolean-like payload; U8/U16/S16/F32 etc. are also supported.</td></tr><tr><td><code>interface</code></td><td><code>POWER</code></td><td>Electrical interface used for compatibility and I/O sizing.</td></tr><tr><td><code>unit</code></td><td><code>VOLT</code></td><td>Engineering unit.</td></tr><tr><td><code>min/max</code></td><td><code>4.75 / 5.25</code></td><td>Valid engineering range.</td></tr><tr><td><code>resolution</code></td><td><code>0.01</code></td><td>Smallest meaningful engineering step.</td></tr><tr><td><code>scaling</code></td><td><code>1</code></td><td>Ratio applied by downstream conversion logic.</td></tr><tr><td><code>priority</code></td><td><code>MEDIUM</code></td><td>Used by mapping score and scheduling decisions.</td></tr><tr><td><code>safety</code></td><td><code>QM</code></td><td>Safety classification.</td></tr><tr><td><code>digital_structure</code></td><td><code>UNSPECIFIED</code></td><td>Pull-up/pull-down/floating digital behavior.</td></tr><tr><td><code>electrical_requirement</code></td><td><code>0</code></td><td>Bitmask of required electrical flags. Requirement must be provided by ECU pin capability for hard cases.</td></tr><tr><td><code>role</code></td><td><code>SUPPLY</code></td><td>Logical role used against ECU pin role.</td></tr><tr><td><code>is_mapped</code></td><td><code>false</code></td><td>Updated once the signal is routed to ECU pin.</td></tr></tbody></table></div>
+<pre><code>{
+  &quot;prefix&quot;: &quot;SENSOR_SUPPLY_5V&quot;,
+  &quot;name&quot;: &quot;SENSOR_SUPPLY_5V&quot;,
+  &quot;count&quot;: 1,
+  &quot;type&quot;: &quot;U1&quot;,
+  &quot;interface&quot;: &quot;POWER&quot;,
+  &quot;unit&quot;: &quot;VOLT&quot;,
+  &quot;min&quot;: 4.75,
+  &quot;max&quot;: 5.25,
+  &quot;resolution&quot;: 0.01,
+  &quot;scaling&quot;: 1,
+  &quot;priority&quot;: &quot;MEDIUM&quot;,
+  &quot;safety&quot;: &quot;QM&quot;,
+  &quot;part_number&quot;: &quot;&quot;,
+  &quot;digital_structure&quot;: &quot;UNSPECIFIED&quot;,
+  &quot;electrical_requirement&quot;: 0,
+  &quot;role&quot;: &quot;SUPPLY&quot;,
+  &quot;description&quot;: &quot;5 V sensor reference supply&quot;,
+  &quot;notes&quot;: &quot;Use a compatible ECU sensor supply provider.&quot;,
+  &quot;is_mapped&quot;: false
+}</code></pre>
+</section>
+
+<section id="electrical">
+<h2>7. Electrical capabilities, requirements, roles and pull resistors</h2>
+<p class="lead">Electrical capability belongs to an ECU pin: what the pin can provide. Electrical requirement belongs to a device pin or signal: what the device needs. Mapping is safe only when hard requirements are covered.</p>
+<h3>Electrical bitmask values</h3>
+<div class="tablewrap"><table><thead><tr><th>Hex</th><th>Symbol</th><th>Meaning</th></tr></thead><tbody><tr><td>0x00</td><td>EEC_ELEC_NONE</td><td>No special electrical feature required/provided.</td></tr><tr><td>0x01</td><td>EEC_ELEC_PULLUP</td><td>Internal pull-up. The pin biases a floating switch/signal to logic high when the external contact is open.</td></tr><tr><td>0x02</td><td>EEC_ELEC_PULLDOWN</td><td>Internal pull-down. The pin biases a floating switch/signal to logic low when the external contact is open.</td></tr><tr><td>0x04</td><td>EEC_ELEC_HIGH_SIDE</td><td>High-side driver. ECU sources current from VBAT/supply to the load.</td></tr><tr><td>0x08</td><td>EEC_ELEC_LOW_SIDE</td><td>Low-side driver. ECU sinks current from the load to ground.</td></tr><tr><td>0x10</td><td>EEC_ELEC_PUSH_PULL</td><td>Push-pull output stage. ECU can actively drive high and low.</td></tr><tr><td>0x20</td><td>EEC_ELEC_CURRENT_SENSE</td><td>Current measurement or current-loop capability, for example 4–20 mA.</td></tr><tr><td>0x40</td><td>EEC_ELEC_VOLTAGE_IN</td><td>High-impedance voltage measurement input.</td></tr><tr><td>0x80</td><td>EEC_ELEC_DIFFERENTIAL</td><td>Differential signaling pair, for example CAN_H/CAN_L or Ethernet pair.</td></tr></tbody></table></div>
+<h3>Roles</h3>
+<div class="tablewrap"><table><thead><tr><th>Role</th><th>Meaning</th><th>Typical mapping</th></tr></thead><tbody><tr><td>INPUT</td><td>Device pin consumes a command/supply? On ECU side, INPUT means ECU reads the signal.</td><td>Sensor OUTPUT usually maps to ECU INPUT.</td></tr><tr><td>OUTPUT</td><td>Device pin produces a value or ECU pin drives a signal.</td><td>Actuator INPUT usually maps to ECU OUTPUT.</td></tr><tr><td>INOUT</td><td>Bidirectional communication.</td><td>CAN/LIN/Ethernet-like channels.</td></tr><tr><td>SUPPLY</td><td>Power/reference supply.</td><td>ECU SUPPLY pin provides VBAT/5V/8.5V/10V to device SUPPLY pin.</td></tr><tr><td>GROUND</td><td>Ground/return.</td><td>Ground class must match: POWER versus LOGIC when specified.</td></tr><tr><td>UNASSIGNED</td><td>Catalog-only / NC / DNC / intentionally unused.</td><td>Should not be mapped automatically.</td></tr></tbody></table></div>
+<h3>Interfaces and I/O sizing buckets</h3>
+<div class="tablewrap"><table><thead><tr><th>Interface</th><th>Meaning</th><th>Typical ECU reserve bucket</th></tr></thead><tbody><tr><td>DIGITAL</td><td>Discrete switch/input or on/off output.</td><td>DI, DO, DO_HS, DO_LS</td></tr><tr><td>ANALOG</td><td>Voltage analog signal.</td><td>AI + VOLTAGE_IN capability</td></tr><tr><td>PWM</td><td>Duty-cycle command or measurement.</td><td>PWM_HS/PWM_LS for actuator outputs; input capture for sensors if needed</td></tr><tr><td>CAN / ISOBUS</td><td>Differential bus channel.</td><td>INOUT + DIFFERENTIAL; bus rules apply</td></tr><tr><td>LIN</td><td>Single-wire serial bus.</td><td>INOUT; bus rules apply</td></tr><tr><td>SENT</td><td>SENT sensor channel.</td><td>SENT input</td></tr><tr><td>ETHERNET</td><td>Ethernet/100BASE-T1.</td><td>Differential pair; bus rules apply</td></tr><tr><td>RESISTANCE</td><td>Potentiometer/NTC/PTC.</td><td>RES plus supply/ground depending sensor</td></tr><tr><td>FREQUENCY</td><td>Frequency/period measurement, Hall/VR.</td><td>FI</td></tr><tr><td>CURRENT</td><td>Current loop or current measurement.</td><td>CURR + CURRENT_SENSE</td></tr><tr><td>POWER</td><td>Power or reference voltage.</td><td>SUP/SENS_SUP</td></tr><tr><td>GROUND</td><td>Return or ground.</td><td>GND</td></tr></tbody></table></div>
+<div class="callout"><b>Requirement rule.</b> For hard electrical matching: <code>(ecu_pin.electrical_capability & device_pin.electrical_requirement) == device_pin.electrical_requirement</code>.</div>
+<h3>How pull-up and pull-down work</h3>
+<div class="grid g2">
+<div class="card tight"><h3>Pull-up</h3><p class="muted">The ECU biases the input toward logic high through an internal resistor. A switch to ground pulls the input low when closed. Useful for active-low switches and open-collector/open-drain outputs.</p></div>
+<div class="card tight"><h3>Pull-down</h3><p class="muted">The ECU biases the input toward logic low. A switch to supply pulls the input high when closed. Useful for active-high switches and floating signal prevention.</p></div>
+</div>
+<pre><code>// Example: digital input that requires a pull-up
+signal-&gt;digital_structure = EEC_DIGITAL_STRUCTURE_PULLUP;
+device_pin-&gt;electrical_requirement |= EEC_ELEC_PULLUP;
+
+// ECU candidate must provide the pull-up capability
+ecu_pin-&gt;electrical_capability |= EEC_ELEC_PULLUP;</code></pre>
+</section>
+
+<section id="mapping">
+<h2>8. Mapping rules and functions</h2>
+<p class="lead">Mapping assigns each logical device pin/signal to a physical ECU pin. The framework has relaxed, strict, single-ECU and architecture-level strategies.</p>
+
+<div class="diagram">
+  <div class="lane">
+    <div class="node sensor"><b>Sensor / device side</b><br><span class="muted">OUTPUT analog pressure signal<br>SUPPLY 5 V<br>GROUND logic</span></div>
+    <div style="text-align:center;color:#7dd3fc;font-size:30px">→</div>
+    <div class="node ecu"><b>ECU pin side</b><br><span class="muted">INPUT analog pin<br>SUPPLY 5 V provider<br>LOGIC ground</span></div>
+  </div>
+  <br>
+  <div class="lane">
+    <div class="node actuator"><b>Actuator / device side</b><br><span class="muted">INPUT PWM coil command<br>GROUND power return</span></div>
+    <div style="text-align:center;color:#7dd3fc;font-size:30px">→</div>
+    <div class="node ecu"><b>ECU pin side</b><br><span class="muted">OUTPUT PWM high-side / low-side<br>POWER ground</span></div>
+  </div>
+</div>
+
+<div class="tablewrap"><table><thead><tr><th>Function</th><th>When to use</th><th>Behavior</th></tr></thead><tbody><tr><td><code>EEC_System_MapToEcu(system, ecu, trace)</code></td><td>You want one system on one target ECU.</td><td>Searches only that ECU. Compatible pins are used; failures are reported as mapping failures.</td></tr><tr><td><code>EEC_System_connect_to_ecus(system, ecus, count, trace)</code></td><td>You have a list of allowed ECUs.</td><td>Uses ECUs in caller-provided order and maps to first compatible free pin.</td></tr><tr><td><code>EEC_System_connect_to_ecus_strict(system, ecus, count, policy, trace)</code></td><td>You need connector/function/diagnostics constraints.</td><td>Filters and scores candidates using strict policy and can fail if required signals cannot be mapped.</td></tr><tr><td><code>EEC_Architecture_AutoMapAll(arch, ecus, count, trace)</code></td><td>Simple architecture-level mapping.</td><td>Loops through unmapped systems and maps them using relaxed mapping.</td></tr><tr><td><code>EEC_Architecture_AutoMapSmart(arch, ecus, count, trace)</code></td><td>Best default for complex architectures.</td><td>Sorts systems by score: mandatory, take rate, priority, AgPL, system level, interface diversity, pin count.</td></tr></tbody></table></div>
+<h3>Role compatibility</h3>
+<div class="tablewrap"><table><thead><tr><th>Logical device side</th><th>ECU side</th><th>Result</th></tr></thead><tbody><tr><td>Sensor OUTPUT / signal produced by device</td><td>ECU INPUT</td><td>OK</td></tr><tr><td>Actuator INPUT / command consumed by device</td><td>ECU OUTPUT</td><td>OK</td></tr><tr><td>INOUT bus signal</td><td>ECU INOUT</td><td>OK</td></tr><tr><td>SUPPLY</td><td>ECU SUPPLY</td><td>OK only if supply voltage/type compatible</td></tr><tr><td>GROUND</td><td>ECU GROUND</td><td>OK only if ground class compatible</td></tr><tr><td>Any other direction mismatch</td><td>—</td><td>Rejected</td></tr></tbody></table></div>
+<h3>Targeting selected ECUs</h3>
+<pre><code>// Map hydraulic system only on Rear ECU
+EEC_Ecu_t *rear_only[] = { rear_ecu };
+EEC_System_connect_to_ecus_strict(hydraulic_system, rear_only, 1, &amp;policy, trace);
+
+// Map cab systems with preferred order: Cab ECU first, Central ECU fallback
+EEC_Ecu_t *cab_candidates[] = { cab_ecu, central_ecu };
+EEC_System_connect_to_ecus_strict(cab_system, cab_candidates, 2, &amp;policy, trace);
+
+// Map remaining systems after dedicated assignments
+EEC_Ecu_t *remaining[] = { front_ecu, central_ecu, rear_ecu };
+EEC_Architecture_AutoMapSmart(arch, remaining, 3, trace);</code></pre>
+<div class="callout warn"><b>Declarative improvement recommended.</b> Add <code>mapping_policy</code> in system JSON to express allowed, preferred and forbidden ECUs. The current API already supports this by controlling the ECU candidate list in code.</div>
+</section>
+
+<section id="strict-policy">
+<h2>9. Strict mapping policy</h2>
+<p class="lead">Strict mapping adds per-signal rules and scoring. It is suitable for safety-relevant signals, diagnostic requirements and connector constraints.</p>
+<pre><code>EEC_StrictSignalRule_t rules[] = {
+    {
+        .signal_name = &quot;RearHitchPosition_A&quot;,
+        .preferred_connector = &quot;X1&quot;,
+        .required_pin_function = &quot;ANALOG_INPUT&quot;,
+        .required_diagnostic_flags = EEC_DIAG_RANGE_CHECK | EEC_DIAG_PLAUSIBILITY
+    }
+};
+
+EEC_StrictConnectPolicy_t policy = {
+    .rules = rules,
+    .rule_count = sizeof(rules)/sizeof(rules[0]),
+    .prefer_same_ecu = true,
+    .require_all_signals = true,
+    .verbose_trace = true
+};</code></pre>
+<div class="tablewrap"><table><thead><tr><th>Strict filter/scoring element</th><th>Effect</th></tr></thead><tbody><tr><td>Role + interface compatibility</td><td>Hard filter. Candidate is skipped if incompatible.</td></tr><tr><td>AgPL support</td><td>Hard filter in strict mode when candidate cannot support required AgPL.</td></tr><tr><td>Preferred connector</td><td>Hard filter when specified, and positive score when matched.</td></tr><tr><td>Required pin function</td><td>Hard filter when specified.</td></tr><tr><td>Required diagnostics</td><td>Hard filter when specified.</td></tr><tr><td>Priority</td><td>Higher priority signal increases score.</td></tr><tr><td>Diagnostic richness</td><td>Pins with diagnostic flags score better.</td></tr><tr><td>Electrical match</td><td>Pins covering all electrical requirements score better; missing bits are penalized or rejected by hard mapping.</td></tr><tr><td>Prefer same ECU</td><td>First successful ECU receives a strong bonus for subsequent mappings.</td></tr></tbody></table></div>
+</section>
+
+<section id="verification">
+<h2>10. Verification rules</h2>
+<p class="lead">Verification runs after mapping to detect hard errors and warnings. It should be part of every build or release pipeline.</p>
+<h3>Architecture rules V1–V13</h3>
+<div class="tablewrap"><table><thead><tr><th>Rule</th><th>Name</th><th>When it fails or warns</th></tr></thead><tbody><tr><td>V1</td><td>Duplicate CAN address detection</td><td>ERROR if two ECU objects use the same CAN node address.</td></tr><tr><td>V2</td><td>ECU pin occupied/signal consistency</td><td>ERROR if occupied pin has no signal or signal attached to a non-occupied pin.</td></tr><tr><td>V3</td><td>ECU pin identity uniqueness</td><td>ERROR if same ECU connector/physical pin is defined more than once.</td></tr><tr><td>V4</td><td>Differential pair validation</td><td>ERROR if CAN/ETH/LIN differential interfaces miss expected adjacent pair structure.</td></tr><tr><td>V5</td><td>Signal-to-ECU mapping completeness</td><td>ERROR if a logical signal referenced by a device pin is not mapped when expected.</td></tr><tr><td>V6</td><td>Duplicate signal assignment</td><td>ERROR if one signal is assigned to multiple ECU pins, except accepted shared ground cases.</td></tr><tr><td>V7</td><td>Role compatibility</td><td>ERROR for role mismatch between device pin and ECU pin.</td></tr><tr><td>V8</td><td>Electrical capability matching</td><td>WARNING or ERROR depending missing capability; requirement must be subset of capability for hard requirements.</td></tr><tr><td>V9</td><td>Pull resistor requirement</td><td>ERROR when mandatory pull-up/pull-down is required but ECU pin lacks capability.</td></tr><tr><td>V10</td><td>Diagnostics coverage</td><td>ERROR if required diagnostics are not covered by ECU diagnostic flags.</td></tr><tr><td>V11</td><td>Current overload</td><td>ERROR for nominal overload; WARNING for high inrush edge cases.</td></tr><tr><td>V12</td><td>Ground class mixing</td><td>ERROR if POWER ground device is routed to LOGIC ground or inverse mismatch when classes are specified.</td></tr><tr><td>V13</td><td>Safety diagnostic coverage</td><td>ERROR when a safety-relevant signal has no diagnostic capability.</td></tr></tbody></table></div>
+<h3>Bus rules B1–B8</h3>
+<div class="tablewrap"><table><thead><tr><th>Rule</th><th>Name</th><th>When it fails or warns</th></tr></thead><tbody><tr><td>B1</td><td>ECU bus port availability</td><td>ERROR when requested port index exceeds available ports.</td></tr><tr><td>B2</td><td>Port exclusivity</td><td>ERROR when one ECU port is connected to multiple buses.</td></tr><tr><td>B3</td><td>Duplicate ECU+port on bus</td><td>ERROR for repeated bus nodes.</td></tr><tr><td>B4</td><td>Bus/signal interface compatibility</td><td>ERROR if CAN bus carries non-CAN-compatible signal, etc.</td></tr><tr><td>B5</td><td>CAN node count</td><td>WARNING when CAN nodes exceed practical limit such as 32.</td></tr><tr><td>B6</td><td>Duplicate CAN address on bus</td><td>ERROR for duplicate addresses on same network.</td></tr><tr><td>B7</td><td>Bitrate missing</td><td>WARNING if bus bitrate is zero while nodes are connected.</td></tr><tr><td>B8</td><td>Unassigned bus signal</td><td>WARNING when a bus-capable signal is not assigned to any bus.</td></tr></tbody></table></div>
+<pre><code>FILE *report = fopen(&quot;generated_doc/exports/verification_report.txt&quot;, &quot;w&quot;);
+int errors = EEC_Verify_architecture(arch, report);
+EEC_Report_pin_allocation(arch, report);
+fclose(report);
+
+if (errors != 0) {
+    // Treat as failed build/release gate
+}</code></pre>
+</section>
+
+<section id="io-sizing">
+<h2>11. ECU I/O sizing</h2>
+<p class="lead">Sizing translates system JSON into physical ECU pin reserve counts. For a group where only one system is active at a time, reserve the maximum per I/O type, not the sum.</p>
+<div class="tablewrap"><table><thead><tr><th>I/O code</th><th>Meaning</th><th>Typical source</th></tr></thead><tbody><tr><td>AI</td><td>Analog input pin reserve</td><td>Sensor OUTPUT / interface ANALOG.</td></tr><tr><td>DI</td><td>Digital input pin reserve</td><td>Sensor OUTPUT / interface DIGITAL.</td></tr><tr><td>FI</td><td>Frequency input reserve</td><td>Sensor OUTPUT / interface FREQUENCY.</td></tr><tr><td>SENT</td><td>SENT input reserve</td><td>Sensor OUTPUT / interface SENT.</td></tr><tr><td>CURR</td><td>Current input reserve</td><td>Sensor OUTPUT / interface CURRENT.</td></tr><tr><td>RES</td><td>Resistance input reserve</td><td>Sensor OUTPUT / interface RESISTANCE.</td></tr><tr><td>PWM_HS</td><td>PWM high-side output reserve</td><td>Actuator INPUT / interface PWM / HIGH_SIDE requirement.</td></tr><tr><td>PWM_LS</td><td>PWM low-side output reserve</td><td>Actuator INPUT / interface PWM / LOW_SIDE requirement.</td></tr><tr><td>DO_HS</td><td>Digital high-side output reserve</td><td>Actuator INPUT / interface DIGITAL / HIGH_SIDE requirement.</td></tr><tr><td>DO_LS</td><td>Digital low-side output reserve</td><td>Actuator INPUT / interface DIGITAL / LOW_SIDE requirement.</td></tr><tr><td>CAN</td><td>CAN pins/channel reserve</td><td>INOUT bus pins; typically differential pair.</td></tr><tr><td>SUP</td><td>Supply pin reserve</td><td>Device SUPPLY pins.</td></tr><tr><td>GND</td><td>Ground pin reserve</td><td>Device GROUND pins; ground class matters.</td></tr></tbody></table></div>
+<h3>One active system at a time</h3>
+<div class="tablewrap"><table><thead><tr><th>I/O type</th><th>System A</th><th>System B</th><th>System C</th><th>Pins to reserve</th></tr></thead><tbody><tr><td>AI</td><td>2</td><td>4</td><td>3</td><td><b>4</b></td></tr><tr><td>DI</td><td>5</td><td>2</td><td>6</td><td><b>6</b></td></tr><tr><td>PWM_HS</td><td>1</td><td>3</td><td>2</td><td><b>3</b></td></tr><tr><td>CAN</td><td>1</td><td>1</td><td>2</td><td><b>2</b></td></tr></tbody></table></div>
+<div class="callout good"><b>Rule.</b> Alternatives mode: <code>reserve[type] = max(system_i[type])</code>. Cumulative mode: <code>reserve[type] = sum(system_i[type])</code>.</div>
+</section>
+
+<section id="exports-reports">
+<h2>12. Exports and HTML documentation tools</h2>
+<p class="lead">After mapping and verification, export JSON and generate documentation. The ecosystem includes architecture reports, system viewers, pinout documents, dataflow diagrams and I/O matrices.</p>
+<div class="tablewrap"><table><thead><tr><th>Output</th><th>Producer</th><th>Consumer</th></tr></thead><tbody><tr><td><code>generated_doc/exports/example_architecture.json</code></td><td><code>EEC_Export_architecture_json</code></td><td>Architecture HTML reports and traceability tools.</td></tr><tr><td><code>generated_doc/exports/example_physical_architecture.json</code></td><td><code>EEC_Export_physical_architecture_json</code></td><td>Pinout, wiring, allocation and physical reports.</td></tr><tr><td><code>generated_doc/system_viewer/index.html</code></td><td>System configuration viewer tool</td><td>Interactive system selection and I/O sizing.</td></tr><tr><td><code>generated_doc/architecture_html/architecture_documentation_index.html</code></td><td>Architecture documentation suite</td><td>Dataflow, signal dictionary, communication matrix, power/ground and harness reports.</td></tr><tr><td><code>system_io_matrix.csv</code></td><td>System I/O folder HTML tool</td><td>Spreadsheet-friendly I/O reserve matrix.</td></tr></tbody></table></div>
+<h3>Recommended report generation</h3>
+<pre><code>python tools/scripts/generate_all_architecture_docs.py --root .
+python tools/generate_system_realistic_viewer_html.py --root . --input library/systems --out docs/system_realistic_viewer/index.html
+# Or open the standalone folder-based HTML tool and choose library/systems from the browser</code></pre>
+</section>
+
+<section id="validation-scripts">
+<h2>13. Validation, normalization and migration scripts</h2>
+<p class="lead">The framework is supported by generic scripts for JSON validation, role normalization, connector key checks, library validation and migration from legacy JSON shapes.</p>
+<div class="tablewrap"><table><thead><tr><th>Script family</th><th>Purpose</th></tr></thead><tbody><tr><td><code>validate_system_json*.py</code></td><td>Check generated system JSON contract, pins/signals/connectors and code alignment.</td></tr><tr><td><code>validate_library_all.py</code></td><td>Validate whole component/sensor/actuator/ECU libraries.</td></tr><tr><td><code>validate_ecu_json.py</code></td><td>Validate ECU JSON pinout and connector structures.</td></tr><tr><td><code>validate_connector_keys.py</code></td><td>Detect inconsistent connector IDs/names/cavities.</td></tr><tr><td><code>normalize_system_json.py</code></td><td>Normalize generated systems to the current JSON contract.</td></tr><tr><td><code>normalize_library_roles.py</code></td><td>Correct sensor/actuator role semantics.</td></tr><tr><td><code>migrate_legacy_json.py</code></td><td>Move older JSON shapes to current v4/v5 contracts.</td></tr><tr><td><code>verify_exports.py</code></td><td>Compare original/import/export paths and ensure round-trip consistency.</td></tr></tbody></table></div>
+</section>
+
+<section id="polarion">
+<h2>14. Requirements and Polarion workflow</h2>
+<p class="lead">The project includes scripts to push requirements and documents to Polarion. Recommended practice is to generate HTML/Markdown reports first, validate them, then push controlled documents.</p>
+<div class="tablewrap"><table><thead><tr><th>Script</th><th>Purpose</th></tr></thead><tbody><tr><td><code>push_requirements_to_polarion.py</code></td><td>Push generated requirement items and trace IDs.</td></tr><tr><td><code>push_document_to_polarion.py</code></td><td>Push documentation content as a controlled document.</td></tr><tr><td><code>polarion_config.json</code></td><td>Configuration for endpoint/project/auth parameters.</td></tr></tbody></table></div>
+<div class="callout warn"><b>Release gate.</b> Only push documents after JSON validation, mapping verification, and report generation have passed.</div>
+</section>
+
+<section id="best-practices">
+<h2>15. Best practices</h2>
+<div class="grid g2">
+<div class="card tight"><h3>Modeling</h3><ul><li>Use explicit pins: one connector cavity = one device pin = one mappable signal/net.</li><li>Represent NC/DNC as <code>UNASSIGNED</code> and non-mappable.</li><li>Use stable <code>Ref-2X</code>, part numbers and schema versions.</li></ul></div>
+<div class="card tight"><h3>Mapping</h3><ul><li>Use strict mapping for safety-relevant systems.</li><li>Order ECU candidate arrays deliberately.</li><li>Use one target ECU list for dedicated systems and SmartMap for the rest.</li></ul></div>
+<div class="card tight"><h3>Electrical</h3><ul><li>Always set electrical requirements for actuator drivers.</li><li>Use ground classes to avoid logic/power ground mixing.</li><li>Define diagnostics requirements for safety-relevant pins.</li></ul></div>
+<div class="card tight"><h3>Documentation</h3><ul><li>Generate architecture docs after every mapping change.</li><li>Archive HTML, CSV and JSON summaries together.</li><li>Keep generated docs standalone for easy design review.</li></ul></div>
+</div>
+</section>
+
+<section id="troubleshooting">
+<h2>16. Troubleshooting</h2>
+<div class="tablewrap"><table><thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead><tbody><tr><td>Signal not mapped</td><td>No free compatible ECU pin, wrong role, wrong interface, or missing capability.</td><td>Check trace lines, ECU pin capability mask, role and interface.</td></tr><tr><td>Electrical mismatch warning</td><td>Device requirement not fully provided by ECU capability.</td><td>Add correct capability to ECU pin or change device topology.</td></tr><tr><td>Pull resistor error</td><td>Digital signal requires pull-up/down but candidate pin lacks it.</td><td>Set ECU pin <code>EEC_ELEC_PULLUP</code> or <code>EEC_ELEC_PULLDOWN</code>.</td></tr><tr><td>Ground class error</td><td>POWER ground device routed to LOGIC ground or inverse mismatch.</td><td>Use correct ground class or create dedicated power/signal ground pins.</td></tr><tr><td>Diagnostics gap</td><td>Device requires diagnostics unavailable on the ECU pin.</td><td>Choose diagnostic-capable pin or lower requirement only if justified.</td></tr><tr><td>CAN duplicate address</td><td>Two ECUs share same CAN node address.</td><td>Assign unique addresses per network.</td></tr><tr><td>System viewer I/O count looks too high</td><td>Using cumulative mode while systems are alternatives.</td><td>Switch to Alternatives mode: one active system at a time.</td></tr></tbody></table></div>
+</section>
+
+<section id="api-reference">
+<h2>17. API reference snapshot</h2>
+<p class="lead">This section is generated from public headers available in the workspace. It is a snapshot, not a replacement for source comments.</p>
+<h3>EEC_types.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_SensorSupply_ToString</code></td><td><code>const char *EEC_SensorSupply_ToString(EEC_SensorSupplyType_t s);</code></td></tr><tr><td><code>EEC_SensorSupply_Parse</code></td><td><code>EEC_SensorSupplyType_t EEC_SensorSupply_Parse(const char *str);</code></td></tr><tr><td><code>EEC_SensorGround_ToString</code></td><td><code>const char *EEC_SensorGround_ToString(EEC_SensorGroundType_t g);</code></td></tr><tr><td><code>EEC_SensorGround_Parse</code></td><td><code>EEC_SensorGroundType_t EEC_SensorGround_Parse(const char *str);</code></td></tr><tr><td><code>EEC_Signal_TypeString</code></td><td><code>const char *EEC_Signal_TypeString(EEC_SignalType_t type);</code></td></tr><tr><td><code>EEC_Signal_TypeBitWidth</code></td><td><code>uint32_t EEC_Signal_TypeBitWidth(EEC_SignalType_t type);</code></td></tr><tr><td><code>EEC_Signal_TypeIsSigned</code></td><td><code>bool EEC_Signal_TypeIsSigned(EEC_SignalType_t type);</code></td></tr><tr><td><code>EEC_Signal_InterfaceString</code></td><td><code>const char *EEC_Signal_InterfaceString(EEC_SignalInterface_t interface_type);</code></td></tr><tr><td><code>EEC_Signal_UnitString</code></td><td><code>const char *EEC_Signal_UnitString(EEC_SignalUnit_t unit);</code></td></tr><tr><td><code>EEC_Pin_RoleString</code></td><td><code>const char *EEC_Pin_RoleString(EEC_PinRole_t role);</code></td></tr><tr><td><code>EEC_Device_TypeString</code></td><td><code>const char *EEC_Device_TypeString(EEC_DeviceType_t type);</code></td></tr><tr><td><code>EEC_Priority_String</code></td><td><code>const char *EEC_Priority_String(EEC_ObjectPriority_t priority);</code></td></tr><tr><td><code>EEC_Safety_String</code></td><td><code>const char *EEC_Safety_String(EEC_SafetyClass_t safety);</code></td></tr><tr><td><code>EEC_System_LevelString</code></td><td><code>const char *EEC_System_LevelString(EEC_SystemLevel_t level);</code></td></tr><tr><td><code>EEC_ElectricalDefaultRequirement</code></td><td><code>uint32_t EEC_ElectricalDefaultRequirement(EEC_SignalInterface_t iface, EEC_PinRole_t role);</code></td></tr><tr><td><code>EEC_Signal_InterfaceToCapability</code></td><td><code>uint32_t EEC_Signal_InterfaceToCapability(EEC_SignalInterface_t interface_type);</code></td></tr><tr><td><code>EEC_Bus_TypeString</code></td><td><code>const char *EEC_Bus_TypeString(EEC_BusType_t type);</code></td></tr><tr><td><code>EEC_Bus_ParseType</code></td><td><code>EEC_BusType_t EEC_Bus_ParseType(const char *str);</code></td></tr><tr><td><code>EEC_Connector_FamilyString</code></td><td><code>const char *EEC_Connector_FamilyString(EEC_ConnectorFamily_t family);</code></td></tr><tr><td><code>EEC_Connector_ParseFamily</code></td><td><code>EEC_ConnectorFamily_t EEC_Connector_ParseFamily(const char *str);</code></td></tr><tr><td><code>EEC_Connector_GenderString</code></td><td><code>const char *EEC_Connector_GenderString(EEC_ConnectorGender_t gender);</code></td></tr><tr><td><code>EEC_Connector_ParseGender</code></td><td><code>EEC_ConnectorGender_t EEC_Connector_ParseGender(const char *str);</code></td></tr><tr><td><code>EEC_Bus_InterfaceCompatible</code></td><td><code>bool EEC_Bus_InterfaceCompatible(EEC_BusType_t bus_type, EEC_SignalInterface_t iface);</code></td></tr></tbody></table></div>
+<h3>EEC_architecture.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_Architecture_Create</code></td><td><code>EEC_Architecture_t *EEC_Architecture_Create(const char *name);</code></td></tr><tr><td><code>EEC_Architecture_Destroy</code></td><td><code>void EEC_Architecture_Destroy(EEC_Architecture_t *arch);</code></td></tr><tr><td><code>EEC_Architecture_SetName</code></td><td><code>void EEC_Architecture_SetName(EEC_Architecture_t *arch, const char *name);</code></td></tr><tr><td><code>EEC_Architecture_CreateSignalEx</code></td><td><code>EEC_Signal_t *EEC_Architecture_CreateSignalEx( EEC_Architecture_t *arch, const char *name, EEC_SignalType_t type, EEC_SignalInterface_t interface_type, EEC_SignalUnit_t unit, float min_value, float max_value, float resolution, float scaling );</code></td></tr><tr><td><code>EEC_Architecture_CreateSystem</code></td><td><code>EEC_System_t *EEC_Architecture_CreateSystem(EEC_Architecture_t *arch, const char *name);</code></td></tr><tr><td><code>EEC_System_CreateComponent</code></td><td><code>EEC_Component_t *EEC_System_CreateComponent(EEC_System_t *system, const char *name);</code></td></tr><tr><td><code>EEC_Component_CreateSensor</code></td><td><code>EEC_Sensor_t *EEC_Component_CreateSensor(EEC_Component_t *component, const char *name);</code></td></tr><tr><td><code>EEC_Component_CreateActuator</code></td><td><code>EEC_Actuator_t *EEC_Component_CreateActuator(EEC_Component_t *component, const char *name);</code></td></tr><tr><td><code>EEC_System_CreateSensor</code></td><td><code>EEC_Sensor_t *EEC_System_CreateSensor(EEC_System_t *system, const char *name);</code></td></tr><tr><td><code>EEC_System_CreateActuator</code></td><td><code>EEC_Actuator_t *EEC_System_CreateActuator(EEC_System_t *system, const char *name);</code></td></tr><tr><td><code>EEC_System_AddPlatform</code></td><td><code>bool EEC_System_AddPlatform(EEC_System_t *system, const char *platform);</code></td></tr><tr><td><code>EEC_System_AddBrand</code></td><td><code>bool EEC_System_AddBrand(EEC_System_t *system, EEC_Brand_t brand);</code></td></tr><tr><td><code>EEC_System_GetPlatforms</code></td><td><code>uint32_t EEC_System_GetPlatforms(const EEC_System_t *system, char out_platforms[][32], uint32_t max_count);</code></td></tr><tr><td><code>EEC_System_GetBrands</code></td><td><code>uint32_t EEC_System_GetBrands(const EEC_System_t *system, EEC_Brand_t *out_brands, uint32_t max_count);</code></td></tr><tr><td><code>EEC_System_PrintApplicability</code></td><td><code>void EEC_System_PrintApplicability(const EEC_System_t *system);</code></td></tr><tr><td><code>EEC_Brand_ToString</code></td><td><code>const char *EEC_Brand_ToString(EEC_Brand_t brand);</code></td></tr><tr><td><code>EEC_Sensor_CreatePin</code></td><td><code>EEC_DevicePin_t *EEC_Sensor_CreatePin(EEC_Sensor_t *sensor, uint32_t number, EEC_PinRole_t role, EEC_Signal_t *signal, EEC_PinInterface_t interface_type, const char *name);</code></td></tr><tr><td><code>EEC_Actuator_CreatePin</code></td><td><code>EEC_DevicePin_t *EEC_Actuator_CreatePin(EEC_Actuator_t *actuator, uint32_t number, EEC_PinRole_t role, EEC_Signal_t *signal, EEC_PinInterface_t interface_type, const char *name);</code></td></tr><tr><td><code>EEC_Sensor_CreateConnector</code></td><td><code>EEC_Connector_t *EEC_Sensor_CreateConnector( EEC_Sensor_t *sensor, const char *name, const char *part_number, EEC_ConnectorFamily_t family, EEC_ConnectorGender_t gender, uint8_t total_cavities );</code></td></tr><tr><td><code>EEC_Actuator_CreateConnector</code></td><td><code>EEC_Connector_t *EEC_Actuator_CreateConnector( EEC_Actuator_t *actuator, const char *name, const char *part_number, EEC_ConnectorFamily_t family, EEC_ConnectorGender_t gender, uint8_t total_cavities );</code></td></tr><tr><td><code>EEC_Ecu_CreateConnector</code></td><td><code>EEC_Connector_t *EEC_Ecu_CreateConnector( EEC_Ecu_t *ecu, const char *name, const char *part_number, EEC_ConnectorFamily_t family, EEC_ConnectorGender_t gender, uint8_t total_cavities );</code></td></tr><tr><td><code>EEC_Architecture_CreateEcu</code></td><td><code>EEC_Ecu_t *EEC_Architecture_CreateEcu(EEC_Architecture_t *arch, const char *name, const char *variant);</code></td></tr><tr><td><code>EEC_Ecu_CreatePin</code></td><td><code>EEC_EcuPin_t *EEC_Ecu_CreatePin( EEC_Ecu_t *ecu, uint32_t physical_number, const char *connector_name, const char *name, const char *main_group, EEC_PinRole_t role, EEC_PinInterface_t interface_type, uint32_t supported_capability_mask, uint32_t diagnostic_flags, const char *electrical, const char *sw_config );</code></td></tr><tr><td><code>EEC_EcuPin_AddFunction</code></td><td><code>bool EEC_EcuPin_AddFunction(EEC_EcuPin_t *pin, const char *function_name);</code></td></tr><tr><td><code>EEC_Ecu_AddCanAddress</code></td><td><code>bool EEC_Ecu_AddCanAddress(EEC_Ecu_t *ecu, uint8_t address);</code></td></tr><tr><td><code>EEC_Ecu_HasCanAddress</code></td><td><code>bool EEC_Ecu_HasCanAddress(const EEC_Ecu_t *ecu, uint8_t address);</code></td></tr><tr><td><code>EEC_Ecu_FindPin</code></td><td><code>EEC_EcuPin_t *EEC_Ecu_FindPin(EEC_Ecu_t *ecu, const char *connector_name, uint32_t physical_number);</code></td></tr><tr><td><code>EEC_Ecu_IsPinCompatible</code></td><td><code>bool EEC_Ecu_IsPinCompatible(const EEC_EcuPin_t *pin, const EEC_Signal_t *signal);</code></td></tr><tr><td><code>EEC_Ecu_ConnectSignalToPin</code></td><td><code>bool EEC_Ecu_ConnectSignalToPin(EEC_Ecu_t *ecu, const char *connector_name, uint32_t physical_number, EEC_Signal_t *signal);</code></td></tr><tr><td><code>EEC_Architecture_CreateBus</code></td><td><code>EEC_Bus_t *EEC_Architecture_CreateBus(EEC_Architecture_t *arch, const char *name, EEC_BusType_t type);</code></td></tr><tr><td><code>EEC_Bus_ConnectEcu</code></td><td><code>int EEC_Bus_ConnectEcu(EEC_Bus_t *bus, EEC_Ecu_t *ecu, uint8_t port_index);</code></td></tr><tr><td><code>EEC_Bus_AddSignal</code></td><td><code>int EEC_Bus_AddSignal(EEC_Bus_t *bus, EEC_Signal_t *signal);</code></td></tr><tr><td><code>EEC_Bus_ConnectSystemSignals</code></td><td><code>int EEC_Bus_ConnectSystemSignals(EEC_Bus_t *bus, const EEC_System_t *system);</code></td></tr><tr><td><code>EEC_Ecu_CountCanPorts</code></td><td><code>uint8_t EEC_Ecu_CountCanPorts(const EEC_Ecu_t *ecu);</code></td></tr><tr><td><code>EEC_Ecu_CountEthernetPorts</code></td><td><code>uint8_t EEC_Ecu_CountEthernetPorts(const EEC_Ecu_t *ecu);</code></td></tr><tr><td><code>EEC_Architecture_CheckObsolete</code></td><td><code>uint32_t EEC_Architecture_CheckObsolete(const EEC_Architecture_t *arch);</code></td></tr><tr><td><code>EEC_Pin_SupplyCompatible</code></td><td><code>bool EEC_Pin_SupplyCompatible(const EEC_EcuPin_t *ecu_pin, const EEC_DevicePin_t *device_pin);</code></td></tr></tbody></table></div>
+<h3>EEC_connect.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_System_connect_to_ecus</code></td><td><code>int EEC_System_connect_to_ecus(EEC_System_t *system, EEC_Ecu_t *const *ecus, uint32_t ecu_count, FILE *trace);</code></td></tr><tr><td><code>EEC_System_connect_to_ecus_strict</code></td><td><code>int EEC_System_connect_to_ecus_strict(EEC_System_t *system, EEC_Ecu_t *const *ecus, uint32_t ecu_count, const EEC_StrictConnectPolicy_t *policy, FILE *trace);</code></td></tr><tr><td><code>EEC_System_MapToEcu</code></td><td><code>int EEC_System_MapToEcu(EEC_System_t *system, EEC_Ecu_t *ecu, FILE *trace);</code></td></tr><tr><td><code>EEC_Architecture_AutoMapAll</code></td><td><code>int EEC_Architecture_AutoMapAll(EEC_Architecture_t *arch, EEC_Ecu_t *const *ecus, uint32_t ecu_count, FILE *trace);</code></td></tr><tr><td><code>EEC_Architecture_AutoMapSmart</code></td><td><code>int EEC_Architecture_AutoMapSmart(EEC_Architecture_t *arch, EEC_Ecu_t *const *ecus, uint32_t ecu_count, FILE *trace);</code></td></tr><tr><td><code>EEC_System_EnableAutoMapping</code></td><td><code>void EEC_System_EnableAutoMapping(EEC_System_t *system, bool enable);</code></td></tr></tbody></table></div>
+<h3>EEC_verify.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_Verify_architecture</code></td><td><code>int EEC_Verify_architecture(const EEC_Architecture_t *arch, FILE *report);</code></td></tr><tr><td><code>EEC_Report_pin_allocation</code></td><td><code>int EEC_Report_pin_allocation(const EEC_Architecture_t *arch, FILE *report);</code></td></tr></tbody></table></div>
+<h3>EEC_library.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_Library_ExportSystem</code></td><td><code>int EEC_Library_ExportSystem(const EEC_System_t *system, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ExportSensor</code></td><td><code>int EEC_Library_ExportSensor(const EEC_Sensor_t *sensor, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ExportActuator</code></td><td><code>int EEC_Library_ExportActuator(const EEC_Actuator_t *actuator, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ExportSignalGroup</code></td><td><code>int EEC_Library_ExportSignalGroup(EEC_Signal_t *const *signals, uint32_t count, const char *name, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ExportEcu</code></td><td><code>int EEC_Library_ExportEcu(const EEC_Ecu_t *ecu, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ExportBundle</code></td><td><code>int EEC_Library_ExportBundle(const EEC_Architecture_t *arch, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ImportSystem</code></td><td><code>EEC_System_t *EEC_Library_ImportSystem(EEC_Architecture_t *arch, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ImportSensor</code></td><td><code>EEC_Sensor_t *EEC_Library_ImportSensor(EEC_Architecture_t *arch, EEC_Component_t *component, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ImportActuator</code></td><td><code>EEC_Actuator_t *EEC_Library_ImportActuator(EEC_Architecture_t *arch, EEC_Component_t *component, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ImportSignalGroup</code></td><td><code>int EEC_Library_ImportSignalGroup(EEC_Architecture_t *arch, EEC_Sensor_t *target_sensor, EEC_Actuator_t *target_actuator, const char *filepath);</code></td></tr><tr><td><code>EEC_Library_ImportEcu</code></td><td><code>EEC_Ecu_t *EEC_Library_ImportEcu(EEC_Architecture_t *arch, const char *filepath, const char *instance_name);</code></td></tr><tr><td><code>EEC_Library_ImportBundle</code></td><td><code>int EEC_Library_ImportBundle(EEC_Architecture_t *arch, const char *filepath);</code></td></tr></tbody></table></div>
+<h3>EEC_export.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_Export_architecture_json</code></td><td><code>int EEC_Export_architecture_json(const EEC_Architecture_t *arch, const char *filename);</code></td></tr><tr><td><code>EEC_Export_physical_architecture_json</code></td><td><code>int EEC_Export_physical_architecture_json(const EEC_Architecture_t *arch, const char *filename);</code></td></tr><tr><td><code>EEC_Export_full_pinout_template_html</code></td><td><code>int EEC_Export_full_pinout_template_html(const char *filename, const char *ecu_name, const char *variant);</code></td></tr></tbody></table></div>
+<h3>EEC_estimation.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_Estimation_Run</code></td><td><code>int EEC_Estimation_Run(const char *platform_path, const char *library_dir, const char *output_json);</code></td></tr></tbody></table></div>
+<h3>EEC_agco.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_Agco_CreateEcuSmall</code></td><td><code>EEC_Ecu_t *EEC_Agco_CreateEcuSmall(EEC_Architecture_t *arch, const char *ecu_name, uint8_t can_address_count, ...);</code></td></tr><tr><td><code>EEC_Agco_CreateEcuMedium</code></td><td><code>EEC_Ecu_t *EEC_Agco_CreateEcuMedium(EEC_Architecture_t *arch, const char *ecu_name, uint8_t can_address_count, ...);</code></td></tr><tr><td><code>EEC_Agco_CreateEcuLarge</code></td><td><code>EEC_Ecu_t *EEC_Agco_CreateEcuLarge(EEC_Architecture_t *arch, const char *ecu_name, uint8_t can_address_count, ...);</code></td></tr></tbody></table></div>
+<h3>EEC_pin_helpers.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_Pin_PopulateProvidedFromData</code></td><td><code>void EEC_Pin_PopulateProvidedFromData(EEC_EcuPin_t *pin, const char *name, const char *group, const char *electrical, const char *supply_enum_token, float voltage_nominal, float current_max_a, const char *ground_name, const char *ground_class_str);</code></td></tr></tbody></table></div>
+<h3>EEC_log.h</h3><div class="tablewrap"><table><thead><tr><th>Function</th><th>Prototype</th></tr></thead><tbody><tr><td><code>EEC_Log_Init</code></td><td><code>int EEC_Log_Init(const char *filename);</code></td></tr><tr><td><code>EEC_Log_Close</code></td><td><code>void EEC_Log_Close(void);</code></td></tr><tr><td><code>EEC_Log_Write</code></td><td><code>void EEC_Log_Write(const char *level, const char *message);</code></td></tr><tr><td><code>EEC_Log_Printf</code></td><td><code>void EEC_Log_Printf(const char *level, const char *fmt, ...);</code></td></tr></tbody></table></div>
+</section>
+
+<section id="source-inventory">
+<h2>18. Source inventory</h2>
+<p class="lead">Files scanned for this documentation package.</p>
+<div class="tablewrap"><table><thead><tr><th>Source file</th><th>Lines</th><th>Public APIs</th><th>Examples</th></tr></thead><tbody><tr><td><code>main.c</code></td><td>187</td><td>0</td><td></td></tr><tr><td><code>EEC_types.h</code></td><td>408</td><td>23</td><td><code>const char *EEC_SensorSupply_ToString(EEC_SensorSupplyType_t s)</code>, <code>EEC_SensorSupplyType_t EEC_SensorSupply_Parse(const char *str)</code>, <code>const char *EEC_SensorGround_ToString(EEC_SensorGroundType_t g)</code>, <code>EEC_SensorGroundType_t EEC_SensorGround_Parse(const char *str)</code>, <code>const char *EEC_Signal_TypeString(EEC_SignalType_t type)</code></td></tr><tr><td><code>EEC_types.c</code></td><td>405</td><td>0</td><td></td></tr><tr><td><code>EEC_architecture.h</code></td><td>674</td><td>37</td><td><code>EEC_Architecture_t *EEC_Architecture_Create(const char *name)</code>, <code>void EEC_Architecture_Destroy(EEC_Architecture_t *arch)</code>, <code>void EEC_Architecture_SetName(EEC_Architecture_t *arch, const char *name)</code>, <code>EEC_Signal_t *EEC_Architecture_CreateSignalEx(</code>, <code>EEC_System_t *EEC_Architecture_CreateSystem(EEC_Architecture_t *arch, const char *name)</code></td></tr><tr><td><code>EEC_architecture.c</code></td><td>1152</td><td>0</td><td></td></tr><tr><td><code>EEC_connect.h</code></td><td>117</td><td>6</td><td><code>int EEC_System_connect_to_ecus(EEC_System_t *system, EEC_Ecu_t *const *ecus, uint32_t ecu_count, FILE *trace)</code>, <code>int EEC_System_connect_to_ecus_strict(EEC_System_t *system, EEC_Ecu_t *const *ecus, uint32_t ecu_count, const EEC_StrictConnectPolicy_t *policy, FILE *trace)</code>, <code>int EEC_System_MapToEcu(EEC_System_t *system, EEC_Ecu_t *ecu, FILE *trace)</code>, <code>int EEC_Architecture_AutoMapAll(EEC_Architecture_t *arch, EEC_Ecu_t *const *ecus, uint32_t ecu_count, FILE *trace)</code>, <code>int EEC_Architecture_AutoMapSmart(EEC_Architecture_t *arch, EEC_Ecu_t *const *ecus, uint32_t ecu_count, FILE *trace)</code></td></tr><tr><td><code>EEC_connect.c</code></td><td>795</td><td>0</td><td></td></tr><tr><td><code>EEC_verify.h</code></td><td>36</td><td>2</td><td><code>int EEC_Verify_architecture(const EEC_Architecture_t *arch, FILE *report)</code>, <code>int EEC_Report_pin_allocation(const EEC_Architecture_t *arch, FILE *report)</code></td></tr><tr><td><code>EEC_verify.c</code></td><td>955</td><td>0</td><td></td></tr><tr><td><code>EEC_library.h</code></td><td>147</td><td>12</td><td><code>int EEC_Library_ExportSystem(const EEC_System_t *system, const char *filepath)</code>, <code>int EEC_Library_ExportSensor(const EEC_Sensor_t *sensor, const char *filepath)</code>, <code>int EEC_Library_ExportActuator(const EEC_Actuator_t *actuator, const char *filepath)</code>, <code>int EEC_Library_ExportSignalGroup(EEC_Signal_t *const *signals, uint32_t count,</code>, <code>int EEC_Library_ExportEcu(const EEC_Ecu_t *ecu, const char *filepath)</code></td></tr><tr><td><code>EEC_library.c</code></td><td>2056</td><td>0</td><td></td></tr><tr><td><code>EEC_export.h</code></td><td>43</td><td>3</td><td><code>int EEC_Export_architecture_json(const EEC_Architecture_t *arch, const char *filename)</code>, <code>int EEC_Export_physical_architecture_json(const EEC_Architecture_t *arch, const char *filename)</code>, <code>int EEC_Export_full_pinout_template_html(const char *filename, const char *ecu_name, const char *variant)</code></td></tr><tr><td><code>EEC_export.c</code></td><td>600</td><td>0</td><td></td></tr><tr><td><code>EEC_estimation.h</code></td><td>132</td><td>1</td><td><code>int EEC_Estimation_Run(const char *platform_path,</code></td></tr><tr><td><code>EEC_estimation.c</code></td><td>954</td><td>0</td><td></td></tr><tr><td><code>EEC_agco.h</code></td><td>43</td><td>3</td><td><code>EEC_Ecu_t *EEC_Agco_CreateEcuSmall(EEC_Architecture_t *arch, const char *ecu_name, uint8_t can_address_count, ...)</code>, <code>EEC_Ecu_t *EEC_Agco_CreateEcuMedium(EEC_Architecture_t *arch, const char *ecu_name, uint8_t can_address_count, ...)</code>, <code>EEC_Ecu_t *EEC_Agco_CreateEcuLarge(EEC_Architecture_t *arch, const char *ecu_name, uint8_t can_address_count, ...)</code></td></tr><tr><td><code>EEC_agco.c</code></td><td>317</td><td>0</td><td></td></tr><tr><td><code>EEC_pin_helpers.h</code></td><td>35</td><td>1</td><td><code>void EEC_Pin_PopulateProvidedFromData(EEC_EcuPin_t *pin,</code></td></tr><tr><td><code>EEC_pin_helpers.c</code></td><td>135</td><td>0</td><td></td></tr><tr><td><code>EEC_log.h</code></td><td>49</td><td>4</td><td><code>int EEC_Log_Init(const char *filename)</code>, <code>void EEC_Log_Close(void)</code>, <code>void EEC_Log_Write(const char *level, const char *message)</code>, <code>void EEC_Log_Printf(const char *level, const char *fmt, ...)</code></td></tr><tr><td><code>EEC_log.c</code></td><td>49</td><td>0</td><td></td></tr></tbody></table></div>
+</section>
+</div>
+<footer class="footer">Generated from available source files and artifacts in the current workspace. The API prefix <code>EEC_</code> remains unchanged for C compatibility.</footer>
+</main></div><script>
+function q(s){return document.querySelector(s)}function qa(s){return [...document.querySelectorAll(s)]}function copyCode(btn){const pre=btn.closest('pre');navigator.clipboard.writeText(pre.innerText.replace('Copy','').trim());btn.textContent='Copied';setTimeout(()=>btn.textContent='Copy',1200)}qa('pre').forEach(p=>{let b=document.createElement('button');b.className='copy';b.textContent='Copy';b.onclick=()=>copyCode(b);p.prepend(b)});q('#search')?.addEventListener('input',e=>{const v=e.target.value.toLowerCase();qa('section,.card').forEach(el=>{if(!v){el.style.outline='';return}const hit=el.innerText.toLowerCase().includes(v);el.style.outline=hit?'1px solid rgba(96,165,250,.45)':''})});qa('.tabbtn').forEach(b=>b.addEventListener('click',()=>{const group=b.dataset.group;qa('.tabbtn[data-group="'+group+'"]').forEach(x=>x.classList.remove('active'));qa('.tabpane[data-group="'+group+'"]').forEach(x=>x.classList.remove('active'));b.classList.add('active');q('#'+b.dataset.target).classList.add('active')}));
+</script></body></html>

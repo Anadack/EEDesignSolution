@@ -1,0 +1,9 @@
+{
+  "schema_version": "eec-system-viewer-config-2.0",
+  "title": "E/E Architect Design — System Configuration & ECU I/O Viewer",
+  "output_dir": "generated_doc/system_viewer",
+  "output_html": "index.html",
+  "input_candidates": ["library/systems", "systems", "."],
+  "include_globs": ["*.json", "*.eec-system-*.json", "*.shared.json", "*.generator.json"],
+  "exclude_globs": ["*.bak", "*.patch", "manifest.json", "*summary*.json", "*report*.json", "*validation*.json"]
+}

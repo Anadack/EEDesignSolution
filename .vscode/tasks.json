@@ -1,0 +1,165 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+
+		// ─────────────────────────────────────────────────────────────────
+		// PIPELINE  (Ctrl+Shift+B)
+		//   Step 1 — Compile C framework (gcc)
+		//   Step 2 — Run app → refresh generated_doc/exports/ JSON files
+		//   Step 3 — Architecture HTML reports (11 generators)
+		//   Step 4 — Documentation suite (14 generators)
+		//   Step 5 — Standalone reports (estimation, overview, config viewer)
+		// ─────────────────────────────────────────────────────────────────
+		{
+			"label": "🚀 Run Full Pipeline  [Ctrl+Shift+B]",
+			"detail": "Compile → run app → all HTML reports (arch + doc suite + extras)",
+			"type": "shell",
+			"command": "bash",
+			"args": [ "${workspaceFolder}/run.sh" ],
+			"windows": {
+				"command": "powershell",
+				"args": [ "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\run.ps1" ]
+			},
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": { "kind": "build", "isDefault": true },
+			"problemMatcher": [ "$gcc" ],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
+
+		// ─────────────────────────────────────────────────────────────────
+		// PARTIAL PIPELINES
+		// ─────────────────────────────────────────────────────────────────
+		{
+			"label": "📄 Reports only  (skip build + run)",
+			"detail": "Regenerate all HTML reports using existing generated_doc/exports/ — no recompile",
+			"type": "shell",
+			"command": "bash",
+			"args": [ "${workspaceFolder}/run.sh", "--skip-build", "--skip-run" ],
+			"windows": {
+				"command": "powershell",
+				"args": [ "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\run.ps1", "-SkipBuild", "-SkipRun" ]
+			},
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "dedicated", "clear": true }
+		},
+		{
+			"label": "⚙️ Compile + export only  (skip reports)",
+			"detail": "Compile C framework and run app to refresh generated_doc/exports/ — skip HTML generation",
+			"type": "shell",
+			"command": "bash",
+			"args": [ "${workspaceFolder}/run.sh", "--skip-run" ],
+			"windows": {
+				"command": "powershell",
+				"args": [ "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\run.ps1", "-SkipRun" ]
+			},
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": "build",
+			"problemMatcher": [ "$gcc" ],
+			"presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "dedicated", "clear": true }
+		},
+
+		// ─────────────────────────────────────────────────────────────────
+		// UTILITIES
+		// ─────────────────────────────────────────────────────────────────
+		{
+			"label": "🧹 Clean  (remove app + generated files)",
+			"detail": "Delete compiled binary and all generated JSON/HTML exports",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-c",
+				"rm -f app app.exe run.log verification_report.txt pin_allocation_report.txt && rm -rf generated_doc/ && echo '[OK] Cleaned'"
+			],
+			"windows": {
+				"command": "powershell",
+				"args": [
+					"-Command",
+					"Remove-Item -Force -ErrorAction SilentlyContinue app, app.exe, run.log, verification_report.txt, pin_allocation_report.txt; Remove-Item -Recurse -Force -ErrorAction SilentlyContinue generated_doc; Write-Host '[OK] Cleaned'"
+				]
+			},
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": { "echo": true, "reveal": "always", "focus": false, "panel": "shared", "clear": false }
+		},
+
+		{
+			"label": "📦 Package Release  [Ctrl+Shift+R]",
+			"detail": "Bundle all generated HTML/JSON docs into releases/EE_Architect_Design_release_*.zip with manifest",
+			"type": "shell",
+			"command": "python3",
+			"args": [ "${workspaceFolder}/tools/scripts/package_release.py", "--root", "${workspaceFolder}" ],
+			"windows": { "command": "python" },
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "dedicated",
+				"clear": false
+			}
+		},
+
+		// ─────────────────────────────────────────────────────────────────
+		// VALIDATION & TESTS
+		// ─────────────────────────────────────────────────────────────────
+		{
+			"label": "🧾 Validate ECU JSONs",
+			"detail": "Validate all ECU JSON files in library/ecus/",
+			"type": "shell",
+			"command": "python3",
+			"args": [
+				"${workspaceFolder}/tools/scripts/validate_ecu_json.py",
+				"${workspaceFolder}/library/ecus/*"
+			],
+			"windows": { "command": "python" },
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": "test",
+			"problemMatcher": [],
+			"presentation": { "echo": true, "reveal": "always", "focus": false, "panel": "shared" }
+		},
+		{
+			"label": "🧪 Run ECU JSON tests",
+			"detail": "Run Python unittest suite (discover from workspace root)",
+			"type": "shell",
+			"command": "python3",
+			"args": [ "-m", "unittest", "discover", "-v" ],
+			"windows": { "command": "python" },
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": "test",
+			"problemMatcher": [],
+			"presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "dedicated" }
+		},
+		{
+			"label": "✅ CI: Validate + Test",
+			"detail": "Validate ECU JSONs then run full unittest suite",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-c",
+				"python3 ${workspaceFolder}/tools/scripts/validate_ecu_json.py ${workspaceFolder}/library/ecus/* && python3 -m unittest discover -v"
+			],
+			"windows": {
+				"command": "powershell",
+				"args": [
+					"-Command",
+					"python ${workspaceFolder}/tools/scripts/validate_ecu_json.py ${workspaceFolder}/library/ecus/*; if ($LASTEXITCODE -eq 0) { python -m unittest discover -v }"
+				]
+			},
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": { "kind": "test", "isDefault": true },
+			"problemMatcher": [],
+			"presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "dedicated", "clear": true }
+		}
+	]
+}

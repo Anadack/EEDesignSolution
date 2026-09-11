@@ -1,0 +1,39 @@
+VERSION ""
+
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: AEC_REAR_HITCH_01 AEC_TRAILER_01
+
+BO_ 2364603648 HitchStatus: 5 AEC_REAR_HITCH_01
+ SG_ Hitch_Position : 0|16@1+ (0.01,0) [0|100] "%" Vector__XXX
+ SG_ Draft_Force : 16|16@1+ (1,0) [0|65535] "" Vector__XXX
+ SG_ Hitch_State : 32|8@1+ (1,0) [0|7] "" Vector__XXX
+

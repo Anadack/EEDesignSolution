@@ -1,0 +1,680 @@
+#!/usr/bin/env python3
+"""Bus diagram — uses arch['buses'] as primary source (named buses with ECU nodes).
+
+Falls back to pin-based inference only when no buses are defined in the export.
+This ensures one ECU appears once per bus, not once per differential pin pair.
+"""
+from __future__ import annotations
+from typing import Any
+from collections import Counter, defaultdict
+from eec_report_common import *
+
+
+def bus_rows_from_topology(arch: dict[str, Any], cfg: dict[str, Any]) -> list[dict[str, Any]]:
+    """Derive rows from arch['buses'] — ground truth for bus topology."""
+    allowed = {str(x).upper() for x in cfg.get("bus_interfaces", [])}
+    raw_buses = arch.get("buses", [])
+    if not isinstance(raw_buses, list) or not raw_buses:
+        return []
+    ecu_by_name = {str(e.get("name", "")): e for e in (arch.get("ecus") or []) if isinstance(e, dict)}
+    rows = []
+    for bus in raw_buses:
+        if not isinstance(bus, dict):
+            continue
+        btype = normalize_token(str(bus.get("type", bus.get("bus_type", ""))))
+        if not btype or (allowed and btype not in allowed):
+            continue
+        bname = str(bus.get("name", btype))
+        bitrate = int(bus.get("bitrate", 0) or 0)
+        signals = [str(s) for s in (bus.get("signals") or []) if s]
+        for node in (bus.get("nodes") or []):
+            if not isinstance(node, dict):
+                continue
+            ecu_name = str(node.get("ecu", ""))
+            port = str(node.get("port_index", ""))
+            ecu = ecu_by_name.get(ecu_name, {})
+            rows.append({
+                "bus": bname,
+                "interface": btype,
+                "ecu": ecu_name,
+                "variant": str(ecu.get("variant", "")),
+                "port": port,
+                "bitrate": f'{bitrate // 1000} kbit/s' if bitrate and bitrate < 1_000_000 else f'{bitrate // 1_000_000} Mbit/s' if bitrate >= 1_000_000 else "—",
+                "signals": str(len(signals)),
+                "can_ids": ", ".join(str(a) for a in (ecu.get("can_addresses") or []) if a) or "—",
+            })
+    return rows
+
+
+def bus_rows_from_pins(arch: dict[str, Any], cfg: dict[str, Any]) -> list[dict[str, Any]]:
+    """Fallback: infer bus participation from ECU pins when buses[] is absent."""
+    allowed = {str(x).upper() for x in cfg.get("bus_interfaces", [])}
+    excluded = {str(x).upper() for x in cfg.get("excluded_bus_interfaces", [])}
+    rows = []
+    for ecu, pin in iter_ecu_pins(arch):
+        sig = pin.get("signal")
+        iface = normalize_token(signal_interface(sig, pin.get("type", "")))
+        if not iface or iface in excluded:
+            continue
+        if allowed and iface not in allowed:
+            continue
+        rows.append({
+            "bus": iface,
+            "interface": iface,
+            "signal": signal_name(sig) or str(pin.get("signal_name", "")),
+            "ecu": str(ecu.get("name", "")),
+            "variant": str(ecu.get("variant", "")),
+            "connector": str(pin.get("connector", "")),
+            "pin": str(pin.get("physical_number", pin.get("number", ""))),
+            "role": str(pin.get("role", "")),
+            "port": "—", "bitrate": "—", "signals": "—", "can_ids": "—",
+        })
+    return rows
+
+
+def main() -> int:
+    parser = standard_arg_parser("Generate v4 Bus Diagram HTML from buses[] topology.")
+    args = parser.parse_args()
+    cfg = load_config(Path(args.config) if args.config else None)
+    root = resolve_root(args.root)
+    src, arch = load_architecture_from_args(args, cfg, physical=True)
+
+    rows = bus_rows_from_topology(arch, cfg)
+    using_topology = bool(rows)
+    if not rows:
+        rows = bus_rows_from_pins(arch, cfg)
+
+    source_str = str(src.relative_to(root) if src.is_relative_to(root) else src)
+    source_note = ("from buses[] topology" if using_topology
+                   else "inferred from ECU pin interface types (no buses[] in export)")
+
+    data = {
+        "source": source_str,
+        "using_topology": using_topology,
+        "source_note": source_note,
+        "rows": rows,
+    }
+
+    data_json = json.dumps(data, ensure_ascii=False)
+
+    html_content = f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Bus Diagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{{
+  --bg:#0d0f14;
+  --surface:#131720;
+  --raised:#1a1f2e;
+  --hover:#1f2538;
+  --active:#242b42;
+  --b0:rgba(255,255,255,.06);
+  --b1:rgba(255,255,255,.10);
+  --b2:rgba(255,255,255,.16);
+  --tp:#e8ecf4;
+  --ts:#8993a8;
+  --tm:#5a6278;
+  --ta:#60a5fa;
+  --accent:#3b82f6;
+  --accent-dim:rgba(59,130,246,.15);
+  --r-sm:6px;
+  --r-md:10px;
+  --r-lg:16px;
+}}
+*{{box-sizing:border-box;margin:0;padding:0}}
+html,body{{min-height:100vh;background:var(--bg);color:var(--tp)}}
+body{{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5}}
+button,input,select{{font:inherit;color:inherit}}
+
+/* ── Topbar ── */
+.topbar{{
+  position:sticky;top:0;z-index:100;
+  background:#0d0f14cc;backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--b0);
+  padding:0 28px;
+  display:flex;align-items:center;gap:24px;
+  height:52px;
+}}
+.topbar-brand{{display:flex;align-items:center;gap:10px;flex-shrink:0}}
+.topbar-icon{{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;letter-spacing:-.02em;
+}}
+.topbar-title{{font-size:14px;font-weight:700;color:var(--tp);letter-spacing:-.01em}}
+.topbar-subtitle{{font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace;margin-top:1px}}
+.topbar-kpis{{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}}
+.topbar-kpi{{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:var(--r-sm);
+  background:var(--raised);border:1px solid var(--b0);
+  font-size:11px;
+}}
+.topbar-kpi .label{{color:var(--tm);font-size:10px;font-weight:500}}
+.topbar-kpi .value{{color:var(--tp);font-weight:700;font-family:'JetBrains Mono',monospace}}
+
+/* ── App body ── */
+.app-body{{max-width:1480px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:20px}}
+
+/* ── Source panel ── */
+.source-panel{{
+  background:var(--surface);border:1px solid var(--b0);border-radius:var(--r-lg);
+  padding:16px 20px;display:flex;align-items:flex-start;gap:12px;
+}}
+.source-icon{{font-size:18px;margin-top:1px;flex-shrink:0}}
+.source-label{{font-size:11px;color:var(--tm);margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}}
+.source-path{{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ta);word-break:break-all}}
+.source-note{{font-size:11px;color:var(--ts);margin-top:4px}}
+.source-note .mode-pill{{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;margin-right:4px;
+}}
+.mode-pill.topology{{background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.3)}}
+.mode-pill.inferred{{background:rgba(245,158,11,.12);color:#fcd34d;border:1px solid rgba(245,158,11,.25)}}
+
+/* ── Filter bar ── */
+.filter-bar{{
+  background:var(--surface);border:1px solid var(--b0);border-radius:var(--r-md);
+  padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+}}
+.filter-label{{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tm);flex-shrink:0}}
+.toggle-group{{display:flex;gap:4px;flex-wrap:wrap}}
+.toggle-btn{{
+  padding:5px 11px;border-radius:var(--r-sm);border:1px solid var(--b1);
+  background:var(--raised);color:var(--ts);cursor:pointer;
+  font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  transition:all .12s;
+}}
+.toggle-btn:hover{{border-color:var(--b2);color:var(--tp)}}
+.toggle-btn.active{{background:var(--accent-dim);border-color:var(--accent);color:#93c5fd}}
+.filter-sep{{width:1px;height:24px;background:var(--b1);flex-shrink:0}}
+.ecu-input{{
+  padding:6px 10px;background:var(--raised);border:1px solid var(--b1);
+  border-radius:var(--r-sm);color:var(--tp);outline:none;
+  transition:border-color .15s;min-width:220px;font-size:12px;
+}}
+.ecu-input:focus{{border-color:var(--accent)}}
+.ecu-input::placeholder{{color:var(--tm)}}
+.filter-count{{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm)}}
+
+/* ── Interface pill ── */
+.iface-pill{{
+  display:inline-flex;align-items:center;
+  padding:2px 8px;border-radius:4px;
+  font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  border:1px solid transparent;white-space:nowrap;
+}}
+
+/* ── Bus diagram (topology mode) ── */
+.bus-section{{
+  background:var(--surface);border:1px solid var(--b0);border-radius:var(--r-lg);
+  overflow:hidden;
+}}
+.bus-section.hidden{{display:none}}
+.bus-header{{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 20px 12px;border-bottom:1px solid var(--b0);
+}}
+.bus-name{{font-size:14px;font-weight:700;color:var(--tp);letter-spacing:-.01em}}
+.bus-meta{{font-size:11px;color:var(--tm);margin-left:4px}}
+.bus-body{{padding:0 20px 20px}}
+
+/* Backbone + ECU connectors */
+.backbone-wrap{{
+  position:relative;
+  padding:28px 0 0;
+  margin:4px 0 0;
+}}
+.backbone-bar{{
+  height:6px;border-radius:3px;
+  background:linear-gradient(90deg,var(--accent),rgba(59,130,246,.4));
+  box-shadow:0 0 12px rgba(59,130,246,.3);
+  position:relative;
+  margin:0 12px;
+}}
+.ecu-row{{
+  display:flex;gap:0;flex-wrap:nowrap;
+  overflow-x:auto;
+  padding:0 12px;
+  padding-bottom:4px;
+}}
+.ecu-node{{
+  display:flex;flex-direction:column;align-items:center;
+  min-width:140px;max-width:200px;flex:1 1 140px;
+  position:relative;
+}}
+/* vertical line from backbone down to box */
+.ecu-node::before{{
+  content:'';
+  width:2px;height:24px;
+  background:var(--accent);
+  opacity:.5;
+  flex-shrink:0;
+}}
+.ecu-box{{
+  width:calc(100% - 16px);
+  background:var(--raised);border:1px solid var(--b1);border-radius:var(--r-md);
+  padding:10px 12px;
+  transition:border-color .15s,background .15s;
+  cursor:default;
+}}
+.ecu-box:hover{{border-color:var(--accent);background:var(--hover)}}
+.ecu-node.hidden{{display:none}}
+.ecu-name{{font-size:12px;font-weight:700;color:var(--tp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ecu-variant{{font-size:10px;color:var(--tm);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ecu-attrs{{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}}
+.attr-badge{{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;
+  font-family:'JetBrains Mono',monospace;
+  background:var(--active);border:1px solid var(--b0);color:var(--ts);
+  white-space:nowrap;
+}}
+.attr-badge .attr-label{{color:var(--tm);font-size:8.5px;margin-right:1px}}
+.can-ids{{font-size:9.5px;color:var(--tm);margin-top:6px;font-family:'JetBrains Mono',monospace;word-break:break-all}}
+
+/* ── Table (pin-fallback mode) ── */
+.fallback-banner{{
+  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);
+  border-radius:var(--r-md);padding:12px 16px;
+  display:flex;align-items:center;gap:10px;font-size:12px;color:#fcd34d;
+}}
+.table-card{{
+  background:var(--surface);border:1px solid var(--b0);border-radius:var(--r-lg);
+  overflow:hidden;
+}}
+.table-toolbar{{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  padding:12px 16px;border-bottom:1px solid var(--b0);
+}}
+.table-scroll{{overflow:auto;max-height:72vh}}
+table{{width:100%;border-collapse:collapse;font-size:12px}}
+th{{
+  position:sticky;top:0;background:var(--raised);z-index:1;
+  padding:9px 14px;text-align:left;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--tm);border-bottom:1px solid var(--b1);
+  cursor:pointer;white-space:nowrap;user-select:none;
+}}
+th:hover{{background:var(--active);color:var(--ts)}}
+th .sort-arrow{{margin-left:4px;opacity:.4}}
+th.sorted-asc .sort-arrow::after{{content:'▲';opacity:1}}
+th.sorted-desc .sort-arrow::after{{content:'▼';opacity:1}}
+th .sort-arrow::after{{content:'⇅'}}
+td{{
+  padding:8px 14px;border-bottom:1px solid var(--b0);
+  vertical-align:top;color:var(--ts);
+}}
+tr:last-child td{{border-bottom:none}}
+tbody tr:hover td{{background:rgba(255,255,255,.025);color:var(--tp)}}
+tr.row-hidden{{display:none}}
+
+/* ── CSV export btn ── */
+.csv-btn{{
+  padding:6px 12px;background:var(--raised);border:1px solid var(--b1);
+  border-radius:var(--r-sm);color:var(--ts);cursor:pointer;
+  font-size:11px;font-weight:600;transition:all .12s;
+}}
+.csv-btn:hover{{border-color:var(--b2);color:var(--tp)}}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{{width:4px;height:4px}}
+::-webkit-scrollbar-track{{background:transparent}}
+::-webkit-scrollbar-thumb{{background:var(--b1);border-radius:2px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-icon">B</div>
+    <div>
+      <div class="topbar-title">Bus Diagram</div>
+      <div class="topbar-subtitle" id="topbar-subtitle"></div>
+    </div>
+  </div>
+  <div class="topbar-kpis" id="topbar-kpis"></div>
+</header>
+<div class="app-body">
+  <div class="source-panel">
+    <div class="source-icon">&#x1F5C2;</div>
+    <div>
+      <div class="source-label">Source</div>
+      <div class="source-path" id="source-path"></div>
+      <div class="source-note" id="source-note"></div>
+    </div>
+  </div>
+  <div class="filter-bar" id="filter-bar"></div>
+  <div id="main-content"></div>
+</div>
+<script>
+var DATA = {data_json};
+
+// ── Interface color palette ──
+var IFACE_COLORS = {{
+  ANALOG:     {{bg:'rgba(245,158,11,.12)', color:'#fbbf24', border:'rgba(245,158,11,.3)'}},
+  DIGITAL:    {{bg:'rgba(16,185,129,.12)',  color:'#34d399', border:'rgba(16,185,129,.3)'}},
+  CAN:        {{bg:'rgba(34,211,238,.12)',  color:'#22d3ee', border:'rgba(34,211,238,.3)'}},
+  PWM:        {{bg:'rgba(249,115,22,.12)',  color:'#fb923c', border:'rgba(249,115,22,.3)'}},
+  FREQ:       {{bg:'rgba(139,92,246,.12)',  color:'#a78bfa', border:'rgba(139,92,246,.3)'}},
+  POWER:      {{bg:'rgba(52,211,153,.12)',  color:'#34d399', border:'rgba(52,211,153,.3)'}},
+  GROUND:     {{bg:'rgba(107,114,128,.12)', color:'#9ca3af', border:'rgba(107,114,128,.3)'}},
+  RESISTANCE: {{bg:'rgba(100,116,139,.12)', color:'#94a3b8', border:'rgba(100,116,139,.3)'}},
+  LIN:        {{bg:'rgba(167,139,250,.12)', color:'#c4b5fd', border:'rgba(167,139,250,.3)'}},
+}};
+function ifaceColor(iface) {{
+  return IFACE_COLORS[iface] || {{bg:'rgba(148,163,184,.1)',color:'#94a3b8',border:'rgba(148,163,184,.25)'}};
+}}
+function ifacePill(iface) {{
+  var c = ifaceColor(iface);
+  return '<span class="iface-pill" style="background:'+c.bg+';color:'+c.color+';border-color:'+c.border+'">'+esc(iface)+'</span>';
+}}
+function accentForIface(iface) {{
+  var c = ifaceColor(iface);
+  return c.color;
+}}
+
+// ── Escape HTML ──
+function esc(s) {{
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}}
+
+// ── Group rows by bus ──
+function groupBy(rows, key) {{
+  var groups = {{}};
+  var order = [];
+  rows.forEach(function(r) {{
+    var k = r[key]||'';
+    if (!groups[k]) {{ groups[k]=[]; order.push(k); }}
+    groups[k].push(r);
+  }});
+  return {{groups:groups, order:order}};
+}}
+
+// ── Unique values ──
+function unique(rows, key) {{
+  var seen = {{}}, out = [];
+  rows.forEach(function(r) {{ var v=r[key]||''; if (!seen[v]) {{ seen[v]=1; out.push(v); }} }});
+  return out.sort();
+}}
+
+// ── State ──
+var activeBuses = {{}};   // bus name → true/false
+var ecuFilter = '';
+var sortCol = -1;
+var sortAsc = true;
+
+// ── Render topbar ──
+function renderTopbar() {{
+  var rows = DATA.rows;
+  var buses = unique(rows,'bus');
+  var ecus  = unique(rows,'ecu');
+  var note  = DATA.using_topology ? 'topology mode' : 'pin-inferred mode';
+  document.getElementById('topbar-subtitle').textContent = note;
+  document.getElementById('source-path').textContent = DATA.source;
+
+  var modeClass = DATA.using_topology ? 'topology' : 'inferred';
+  var modeText  = DATA.using_topology ? 'buses[] topology' : 'pin-inferred';
+  document.getElementById('source-note').innerHTML =
+    '<span class="mode-pill '+modeClass+'">'+modeText+'</span>' + esc(DATA.source_note);
+
+  var kpis = [
+    {{label:'Buses',  value: buses.length}},
+    {{label:'ECUs',   value: ecus.length}},
+    {{label:'Nodes',  value: rows.length}},
+  ];
+  document.getElementById('topbar-kpis').innerHTML = kpis.map(function(k) {{
+    return '<div class="topbar-kpi"><span class="label">'+esc(k.label)+'</span><span class="value">'+k.value+'</span></div>';
+  }}).join('');
+}}
+
+// ── Render filter bar ──
+function renderFilterBar() {{
+  var rows = DATA.rows;
+  var buses = unique(rows,'bus');
+  // init state
+  buses.forEach(function(b) {{ activeBuses[b] = true; }});
+
+  var html = '<span class="filter-label">Bus</span>';
+  html += '<div class="toggle-group" id="bus-toggles">';
+  buses.forEach(function(b) {{
+    var iface = (rows.find(function(r){{return r.bus===b;}})||{{}}).interface||b;
+    var c = ifaceColor(iface);
+    html += '<button class="toggle-btn active" data-bus="'+esc(b)+'" style="border-color:'+c.border+';color:'+c.color+';background:'+c.bg+'" onclick="toggleBus(this,\''+esc(b)+'\')">'+ esc(b) +'</button>';
+  }});
+  html += '</div>';
+  html += '<div class="filter-sep"></div>';
+  html += '<input class="ecu-input" placeholder="Filter ECU…" oninput="setEcuFilter(this.value)"/>';
+  html += '<span class="filter-count" id="filter-count"></span>';
+
+  document.getElementById('filter-bar').innerHTML = html;
+  updateFilterCount();
+}}
+
+function toggleBus(btn, bus) {{
+  activeBuses[bus] = !activeBuses[bus];
+  if (activeBuses[bus]) {{
+    btn.classList.add('active');
+  }} else {{
+    btn.classList.remove('active');
+    var rows = DATA.rows;
+    var iface = (rows.find(function(r){{return r.bus===bus;}})||{{}}).interface||bus;
+    var c = ifaceColor(iface);
+    btn.style.background='var(--raised)';
+    btn.style.color='var(--ts)';
+    btn.style.borderColor='var(--b1)';
+  }}
+  applyFilters();
+}}
+
+function setEcuFilter(v) {{
+  ecuFilter = v.trim().toLowerCase();
+  applyFilters();
+}}
+
+function updateFilterCount() {{
+  var el = document.getElementById('filter-count');
+  if (!el) return;
+  var total = DATA.rows.length;
+  var vis = DATA.rows.filter(function(r) {{
+    return activeBuses[r.bus] && (!ecuFilter || r.ecu.toLowerCase().includes(ecuFilter));
+  }}).length;
+  el.textContent = vis + ' / ' + total + ' nodes';
+}}
+
+// ── Apply filters (topology mode) ──
+function applyFilters() {{
+  if (DATA.using_topology) {{
+    // show/hide bus sections
+    document.querySelectorAll('.bus-section').forEach(function(sec) {{
+      var bus = sec.dataset.bus;
+      sec.classList.toggle('hidden', !activeBuses[bus]);
+    }});
+    // show/hide ecu nodes
+    document.querySelectorAll('.ecu-node').forEach(function(node) {{
+      var ecu = node.dataset.ecu||'';
+      var bus = node.dataset.bus||'';
+      var visible = activeBuses[bus] && (!ecuFilter || ecu.toLowerCase().includes(ecuFilter));
+      node.classList.toggle('hidden', !visible);
+    }});
+  }} else {{
+    // table mode: filter rows
+    document.querySelectorAll('#fallback-table tbody tr').forEach(function(tr) {{
+      var bus = tr.dataset.bus||'';
+      var ecu = tr.dataset.ecu||'';
+      var vis = activeBuses[bus] && (!ecuFilter || ecu.toLowerCase().includes(ecuFilter));
+      tr.classList.toggle('row-hidden', !vis);
+    }});
+  }}
+  updateFilterCount();
+}}
+
+// ── Render topology diagram ──
+function renderTopology() {{
+  var rows = DATA.rows;
+  var g = groupBy(rows,'bus');
+  var html = '';
+
+  g.order.forEach(function(bus) {{
+    var items = g.groups[bus];
+    var iface = (items[0]||{{}}).interface||bus;
+    var accent = accentForIface(iface);
+
+    html += '<div class="bus-section" data-bus="'+esc(bus)+'">';
+    html += '<div class="bus-header">';
+    html += '<span class="bus-name">'+esc(bus)+'</span>';
+    html += ifacePill(iface);
+    html += '<span class="bus-meta">'+items.length+' ECU node'+(items.length!==1?'s':'')+'</span>';
+    // bitrate from first row (all nodes share the same bus bitrate)
+    var bitrate = (items[0]||{{}}).bitrate||'';
+    if (bitrate && bitrate!=='—') {{
+      html += '<span class="bus-meta" style="margin-left:auto;font-family:\'JetBrains Mono\',monospace;color:var(--ta)">'+esc(bitrate)+'</span>';
+    }}
+    html += '</div>';
+
+    html += '<div class="bus-body">';
+    html += '<div class="backbone-wrap">';
+    html += '<div class="backbone-bar" style="background:linear-gradient(90deg,'+accent+','+accent+'44)"></div>';
+    html += '<div class="ecu-row">';
+
+    items.forEach(function(r) {{
+      html += '<div class="ecu-node" data-ecu="'+esc(r.ecu)+'" data-bus="'+esc(bus)+'">';
+      html += '<div class="ecu-box">';
+      html += '<div class="ecu-name">'+esc(r.ecu||'—')+'</div>';
+      if (r.variant && r.variant!=='None' && r.variant!=='') {{
+        html += '<div class="ecu-variant">'+esc(r.variant)+'</div>';
+      }}
+      html += '<div class="ecu-attrs">';
+      if (r.port && r.port!=='—' && r.port!=='') {{
+        html += '<span class="attr-badge"><span class="attr-label">PORT</span>'+esc(r.port)+'</span>';
+      }}
+      if (r.signals && r.signals!=='—' && r.signals!=='0') {{
+        html += '<span class="attr-badge"><span class="attr-label">SIG</span>'+esc(r.signals)+'</span>';
+      }}
+      html += '</div>';
+      if (r.can_ids && r.can_ids!=='—') {{
+        html += '<div class="can-ids">CAN: '+esc(r.can_ids)+'</div>';
+      }}
+      html += '</div>'; // ecu-box
+      html += '</div>'; // ecu-node
+    }});
+
+    html += '</div>'; // ecu-row
+    html += '</div>'; // backbone-wrap
+    html += '</div>'; // bus-body
+    html += '</div>'; // bus-section
+  }});
+
+  document.getElementById('main-content').innerHTML = html;
+}}
+
+// ── Render pin-fallback table ──
+var fallbackSortCol = -1;
+var fallbackSortAsc = true;
+
+function renderFallback() {{
+  var rows = DATA.rows;
+
+  var banner = '<div class="fallback-banner">&#9888; Bus topology not available — showing pin-inferred connections</div>';
+
+  var cols = [
+    {{key:'bus',       label:'Bus'}},
+    {{key:'ecu',       label:'ECU'}},
+    {{key:'variant',   label:'Variant'}},
+    {{key:'signal',    label:'Signal'}},
+    {{key:'connector', label:'Connector'}},
+    {{key:'pin',       label:'Pin'}},
+    {{key:'role',      label:'Role'}},
+  ];
+
+  var thead = '<tr>'+cols.map(function(c,i) {{
+    return '<th onclick="sortFallback('+i+')" data-col="'+i+'"><span>'+esc(c.label)+'</span><span class="sort-arrow"></span></th>';
+  }}).join('')+'</tr>';
+
+  var tbody = rows.map(function(r) {{
+    var cells = cols.map(function(c) {{
+      var v = r[c.key]||'';
+      if (c.key==='bus'||c.key==='interface') {{
+        return '<td>'+ifacePill(v||'—')+'</td>';
+      }}
+      return '<td>'+esc(v||'—')+'</td>';
+    }}).join('');
+    return '<tr data-bus="'+esc(r.bus)+'" data-ecu="'+esc(r.ecu)+'">'+cells+'</tr>';
+  }}).join('');
+
+  var toolbar = '<div class="table-toolbar">'
+    +'<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tm)">'+rows.length+' rows</span>'
+    +'<button class="csv-btn" onclick="exportFallbackCSV()">&#8595; CSV</button>'
+    +'</div>';
+
+  var tableHtml = '<div class="table-card">'
+    + toolbar
+    +'<div class="table-scroll"><table id="fallback-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>'
+    +'</div>';
+
+  document.getElementById('main-content').innerHTML = banner + tableHtml;
+}}
+
+function sortFallback(colIdx) {{
+  if (fallbackSortCol===colIdx) {{ fallbackSortAsc=!fallbackSortAsc; }}
+  else {{ fallbackSortCol=colIdx; fallbackSortAsc=true; }}
+
+  var table = document.getElementById('fallback-table');
+  var tbody = table.tBodies[0];
+  var rows = Array.from(tbody.rows);
+
+  rows.sort(function(a,b) {{
+    var A = a.cells[colIdx]?a.cells[colIdx].innerText:'';
+    var B = b.cells[colIdx]?b.cells[colIdx].innerText:'';
+    var x=parseFloat(A), y=parseFloat(B);
+    var cmp = (!isNaN(x)&&!isNaN(y)) ? x-y : A.localeCompare(B);
+    return fallbackSortAsc ? cmp : -cmp;
+  }});
+  rows.forEach(function(r){{tbody.appendChild(r);}});
+
+  // update header arrows
+  Array.from(table.querySelectorAll('th')).forEach(function(th,i) {{
+    th.classList.remove('sorted-asc','sorted-desc');
+    if (i===colIdx) th.classList.add(fallbackSortAsc?'sorted-asc':'sorted-desc');
+  }});
+}}
+
+function exportFallbackCSV() {{
+  var table = document.getElementById('fallback-table');
+  var rows = Array.from(table.querySelectorAll('tr')).filter(function(r){{return !r.classList.contains('row-hidden');}});
+  var csv = rows.map(function(r){{
+    return Array.from(r.cells).map(function(c){{return '"'+c.innerText.replaceAll('"','""')+'"';}}).join(',');
+  }}).join('\\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{{type:'text/csv'}}));
+  a.download = 'bus_diagram.csv';
+  a.click();
+}}
+
+// ── Init ──
+(function() {{
+  renderTopbar();
+  renderFilterBar();
+  if (DATA.using_topology) {{
+    renderTopology();
+  }} else {{
+    renderFallback();
+  }}
+  applyFilters();
+}})();
+</script>
+</body></html>"""
+
+    out = get_output_file(root, cfg, "bus_diagram", args.output, args.outdir)
+    write_text(out, html_content)
+    print(out)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

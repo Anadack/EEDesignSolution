@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ECU Pinout - PT_ECU</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --border: #334155;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --err: #dc2626;
+      --info: #2563eb;
+      --chip: #334155;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    h1, h2, h3 { margin: 0 0 8px 0; }
+    p { margin: 0; color: var(--muted); }
+
+    .container {
+      padding: 24px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .card .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .card .value {
+      font-size: 26px;
+      font-weight: bold;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .toolbar input,
+    .toolbar select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+    }
+
+    .table-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1400px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #172033;
+      color: var(--text);
+      font-size: 13px;
+      text-align: left;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--chip);
+      font-size: 12px;
+      margin: 2px 4px 2px 0;
+      white-space: nowrap;
+    }
+
+    .ok { background: rgba(22,163,74,0.2); color: #86efac; }
+    .warn { background: rgba(217,119,6,0.2); color: #fdba74; }
+    .err { background: rgba(220,38,38,0.2); color: #fca5a5; }
+    .info { background: rgba(37,99,235,0.2); color: #93c5fd; }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; color: var(--muted); }
+
+    .details {
+      display: grid;
+      gap: 4px;
+    }
+
+    .section-title {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ECU Pinout - PT_ECU</h1>
+    <p>Variant: MEDIUM · Connector view with assignment, diagnostics, software configuration, and validation status</p>
+  </header>
+
+  <main class="container">
+    <section class="cards">
+      <div class="card">
+        <div class="label">Total Pins</div>
+        <div class="value">128</div>
+      </div>
+      <div class="card">
+        <div class="label">Assigned Pins</div>
+        <div class="value">42</div>
+      </div>
+      <div class="card">
+        <div class="label">Free Pins</div>
+        <div class="value">86</div>
+      </div>
+      <div class="card">
+        <div class="label">Diagnosable Pins</div>
+        <div class="value">51</div>
+      </div>
+      <div class="card">
+        <div class="label">Validation Errors</div>
+        <div class="value">3</div>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <input type="text" id="searchInput" placeholder="Search pin, signal, device, connector..." />
+      <select id="groupFilter">
+        <option value="">All Groups</option>
+        <option>AIV_5</option>
+        <option>SENT</option>
+        <option>PWM_HS_HC</option>
+        <option>CAN</option>
+        <option>LIN</option>
+      </select>
+      <select id="typeFilter">
+        <option value="">All Types</option>
+        <option>ANALOG</option>
+        <option>DIGITAL</option>
+        <option>PWM</option>
+        <option>SENT</option>
+        <option>CAN</option>
+      </select>
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option>valid</option>
+        <option>warning</option>
+        <option>error</option>
+      </select>
+      <select id="assignedFilter">
+        <option value="">Assigned + Free</option>
+        <option>assigned</option>
+        <option>free</option>
+      </select>
+    </section>
+
+    <section class="table-wrap">
+      <table id="pinTable">
+        <thead>
+          <tr>
+            <th>Connector</th>
+            <th>Pin #</th>
+            <th>Pin Name</th>
+            <th>Main Group</th>
+            <th>Alt Groups</th>
+            <th>Type</th>
+            <th>Direction</th>
+            <th>Electrical</th>
+            <th>Diagnostics</th>
+            <th>SW Config</th>
+            <th>Signal</th>
+            <th>Device Pin</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-group="AIV_5" data-type="ANALOG" data-status="valid" data-assigned="assigned">
+            <td>X1</td>
+            <td>42</td>
+            <td><strong>IN_AIV_07</strong></td>
+            <td><span class="badge info">AIV_5</span></td>
+            <td>
+              <span class="badge">AIV_16</span>
+              <span class="badge">AIV_RES</span>
+              <span class="badge">SENT</span>
+            </td>
+            <td><span class="badge info">ANALOG</span></td>
+            <td><span class="badge">INPUT</span></td>
+            <td>
+              <div class="details">
+                <div>0..5 V</div>
+                <div class="small">Imax 20 mA · ADC 12-bit</div>
+              </div>
+            </td>
+            <td>
+              <span class="badge ok">Open Load</span>
+              <span class="badge ok">Short GND</span>
+              <span class="badge ok">Short BAT</span>
+              <span class="badge ok">Range Check</span>
+            </td>
+            <td>
+              <span class="badge">Pull-Up</span>
+              <span class="badge">Pull-Down</span>
+              <span class="badge">Interrupt</span>
+              <span class="badge">Filter</span>
+            </td>
+            <td>
+              <div><strong>CoolantTemperature</strong></div>
+              <div class="small">degC · -40..150</div>
+            </td>
+            <td>
+              <div><strong>CoolantTempSensor_1.OUT_TEMP</strong></div>
+              <div class="small">Analog sensor output</div>
+            </td>
+            <td><span class="badge ok">valid</span></td>
+          </tr>
+
+          <tr data-group="PWM_HS_HC" data-type="PWM" data-status="warning" data-assigned="assigned">
+            <td>X2</td>
+            <td>17</td>
+            <td><strong>OUT_PWM_HS_HC_02</strong></td>
+            <td><span class="badge info">PWM_HS_HC</span></td>
+            <td>
+              <span class="badge">DO_HS_HC</span>
+            </td>
+            <td><span class="badge info">PWM</span></td>
+            <td><span class="badge">OUTPUT</span></td>
+            <td>
+              <div class="details">
+                <div>0..14 V</div>
+                <div class="small">100 Hz .. 2 kHz · High-side</div>
+              </div>
+            </td>
+            <td>
+              <span class="badge ok">Open Load</span>
+              <span class="badge ok">Overcurrent</span>
+              <span class="badge warn">Thermal Warn</span>
+            </td>
+            <td>
+              <span class="badge">Drive Strength</span>
+              <span class="badge">PWM Freq</span>
+            </td>
+            <td>
+              <div><strong>FanCommand</strong></div>
+              <div class="small">% · 0..100</div>
+            </td>
+            <td>
+              <div><strong>FanActuator_1.CTRL_PWM</strong></div>
+              <div class="small">PWM control input</div>
+            </td>
+            <td><span class="badge warn">warning</span></td>
+          </tr>
+
+          <tr data-group="CAN" data-type="CAN" data-status="valid" data-assigned="free">
+            <td>X3</td>
+            <td>5</td>
+            <td><strong>CAN1_H</strong></td>
+            <td><span class="badge info">CAN</span></td>
+            <td></td>
+            <td><span class="badge info">CAN</span></td>
+            <td><span class="badge">INOUT</span></td>
+            <td>
+              <div class="details">
+                <div>0..18 V monitor</div>
+                <div class="small">Differential bus line</div>
+              </div>
+            </td>
+            <td>
+              <span class="badge ok">Voltage Monitor</span>
+              <span class="badge ok">Comm Error</span>
+            </td>
+            <td>
+              <span class="badge">Wakeup</span>
+            </td>
+            <td>
+              <span class="muted">—</span>
+            </td>
+            <td>
+              <span class="muted">—</span>
+            </td>
+            <td><span class="badge ok">valid</span></td>
+          </tr>
+
+          <tr data-group="SENT" data-type="SENT" data-status="error" data-assigned="assigned">
+            <td>X1</td>
+            <td>44</td>
+            <td><strong>IN_SENT_02</strong></td>
+            <td><span class="badge info">SENT</span></td>
+            <td>
+              <span class="badge">AIV_5</span>
+              <span class="badge">AIV_16</span>
+            </td>
+            <td><span class="badge info">SENT</span></td>
+            <td><span class="badge">INPUT</span></td>
+            <td>
+              <div class="details">
+                <div>Digital pulse input</div>
+                <div class="small">SENT capable</div>
+              </div>
+            </td>
+            <td>
+              <span class="badge ok">Line Break</span>
+              <span class="badge ok">Plausibility</span>
+            </td>
+            <td>
+              <span class="badge">Interrupt</span>
+              <span class="badge">Filter</span>
+            </td>
+            <td>
+              <div><strong>OilPressure</strong></div>
+              <div class="small">bar · 0..10</div>
+            </td>
+            <td>
+              <div><strong>OilPressureSensor_1.OUT_ANALOG</strong></div>
+              <div class="small">Mismatch: analog output bound to SENT pin</div>
+            </td>
+            <td><span class="badge err">error</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const searchInput = document.getElementById("searchInput");
+    const groupFilter = document.getElementById("groupFilter");
+    const typeFilter = document.getElementById("typeFilter");
+    const statusFilter = document.getElementById("statusFilter");
+    const assignedFilter = document.getElementById("assignedFilter");
+    const rows = Array.from(document.querySelectorAll("#pinTable tbody tr"));
+
+    function applyFilters() {
+      const search = searchInput.value.toLowerCase().trim();
+      const group = groupFilter.value;
+      const type = typeFilter.value;
+      const status = statusFilter.value;
+      const assigned = assignedFilter.value;
+
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const rowGroup = row.dataset.group;
+        const rowType = row.dataset.type;
+        const rowStatus = row.dataset.status;
+        const rowAssigned = row.dataset.assigned;
+
+        const matchSearch = !search || text.includes(search);
+        const matchGroup = !group || rowGroup === group;
+        const matchType = !type || rowType === type;
+        const matchStatus = !status || rowStatus === status;
+        const matchAssigned = !assigned || rowAssigned === assigned;
+
+        row.style.display =
+          matchSearch && matchGroup && matchType && matchStatus && matchAssigned
+            ? ""
+            : "none";
+      });
+    }
+
+    [searchInput, groupFilter, typeFilter, statusFilter, assignedFilter]
+      .forEach(el => el.addEventListener("input", applyFilters));
+  </script>
+</body>
+</html>

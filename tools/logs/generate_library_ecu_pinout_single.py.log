@@ -1,0 +1,18 @@
+[ecu_pinout_single] Loading templates à
+  Templates: LARGE, MEDIUM, SMALL
+
+[ecu_pinout_single] Generating 6 ECU(s) à
+  [AEC_LARGE_01]  202 pins  [template:LARGE]  -> AEC_LARGE_01_pinout.html
+  [AEC_MEDIUM_01]  170 pins  [template:MEDIUM]  -> AEC_MEDIUM_01_pinout.html
+  [AEC_SMALL_01]  122 pins  [template:SMALL]  -> AEC_SMALL_01_pinout.html
+  [MD1CC878]  65 pins  [json-only]  -> MD1CC878_pinout.html
+  [RC5-6]  80 pins  [json-only]  -> RC5-6_pinout.html
+  [SRC14-34]  151 pins  [json-only]  -> SRC14-34_pinout.html
+
+[OK] 6 file(s) written:
+  C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\exports\AEC_LARGE_01_pinout.html
+  C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\exports\AEC_MEDIUM_01_pinout.html
+  C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\exports\AEC_SMALL_01_pinout.html
+  C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\exports\MD1CC878_pinout.html
+  C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\exports\RC5-6_pinout.html
+  C:\Users\at16987\OneDrive - AGCO Corp\ARCH_VERSION\AEC\EE_Composer\exports\SRC14-34_pinout.html

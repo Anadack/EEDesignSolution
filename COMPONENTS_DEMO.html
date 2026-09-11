@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Advanced UI Components Demo</title>
+<style>
+:root {
+  --dark-bg: #07111f;
+  --dark-surface1: #0f172a;
+  --dark-surface2: #131a2e;
+  --dark-surface3: #1a2240;
+  --dark-border0: #1e2848;
+  --dark-border1: #273250;
+  --dark-border2: #2d3a5c;
+  --text-primary: #e5edf9;
+  --text-secondary: #9aa8bd;
+  --text-dim: #5a6678;
+  --text-fade: #4a5668;
+  --accent-cyan: #2ee6ff;
+  --accent-purple: #b388ff;
+  --accent-green: #2ee6a0;
+  --io-ai: #60a5fa;
+  --io-di: #34d399;
+  --io-pwm: #c084fc;
+  --io-can: #fb7185;
+  --io-sup: #f97316;
+  --io-gnd: #94a3b8;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #07111f 0%, #0b1220 45%, #060a12 100%);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 20px;
+  line-height: 1.5;
+}
+
+.container { max-width: 1600px; margin: 0 auto; }
+h1 { font-size: 2rem; margin-top: 0; letter-spacing: -0.03em; }
+h2 { font-size: 1.3rem; margin-top: 2rem; color: var(--accent-cyan); }
+.section {
+  background: linear-gradient(135deg, rgba(15,23,42,0.8), rgba(13,21,36,0.7));
+  border: 1px solid var(--dark-border1);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+}
+
+/* KPI Tiles */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.kpi-tile {
+  background: var(--dark-surface3);
+  border: 1px solid var(--dark-border1);
+  border-radius: 16px;
+  padding: 14px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.kpi-tile::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+}
+.kpi-tile:hover {
+  border-color: var(--accent-cyan);
+  transform: translateY(-2px);
+}
+.kpi-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.kpi-value {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--accent-cyan);
+  letter-spacing: -0.04em;
+}
+.kpi-sub {
+  font-size: 0.8rem;
+  color: var(--text-fade);
+  margin-top: 4px;
+}
+
+/* I/O Grid */
+.io-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.io-tile {
+  border: 1px solid var(--dark-border1);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(23, 32, 51, 0.5);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.io-tile::after {
+  content: "";
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: var(--io-color);
+  opacity: 0.08;
+}
+.io-tile:hover {
+  border-color: var(--io-color);
+  background: rgba(23, 32, 51, 0.8);
+  transform: translateY(-1px);
+}
+.io-code {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--io-color);
+}
+.io-name {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.io-count {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--io-color);
+  margin-top: 6px;
+  letter-spacing: -0.04em;
+}
+
+/* Bar Chart */
+.bar-chart { display: grid; gap: 10px; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 40px;
+  gap: 8px;
+  align-items: center;
+}
+.bar-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.bar-track {
+  height: 8px;
+  background: var(--dark-border0);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--bar-color);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.bar-value {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: right;
+  color: var(--text-primary);
+}
+
+/* Flow Diagram */
+.flow-diagram {
+  display: grid;
+  grid-template-columns: 1fr 50px 1fr 50px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin: 20px 0;
+}
+.flow-box {
+  background: var(--dark-surface3);
+  border: 1px solid var(--dark-border1);
+  border-radius: 12px;
+  padding: 12px;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.flow-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.flow-content {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.flow-inputs { border-left: 3px solid var(--accent-cyan); }
+.flow-system { border: 1px solid var(--accent-cyan); }
+.flow-outputs { border-right: 3px solid var(--accent-purple); }
+.flow-arrow {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+/* Detail Panel */
+.detail-panel {
+  background: var(--dark-surface2);
+  border: 1px solid var(--dark-border1);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+.detail-header { margin-bottom: 12px; }
+.detail-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.detail-kind {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  background: var(--dark-surface3);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.detail-content { font-size: 0.85rem; }
+.detail-kv {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--dark-border0);
+}
+.detail-key { color: var(--text-dim); font-weight: 600; }
+.detail-val { color: var(--text-primary); word-break: break-word; }
+
+/* Legend */
+.legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid var(--legend-color);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--legend-color);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(46, 230, 255, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid var(--accent-cyan);
+  margin: 2px;
+}
+
+/* 3-Column Layout Example */
+.layout-demo {
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 16px;
+  margin: 20px 0;
+}
+.panel-sidebar {
+  background: linear-gradient(180deg, rgba(17,24,39,0.94), rgba(15,23,42,0.92));
+  border: 1px solid var(--dark-border1);
+  border-radius: 12px;
+  padding: 16px;
+}
+.panel-main {
+  background: linear-gradient(180deg, rgba(15,23,42,0.68), rgba(13,21,36,0.64));
+  border: 1px solid var(--dark-border1);
+  border-radius: 12px;
+  padding: 18px;
+}
+.panel-details {
+  background: linear-gradient(180deg, rgba(17,24,39,0.94), rgba(15,23,42,0.92));
+  border: 1px solid var(--dark-border1);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.sidebar-title {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  font-weight: 800;
+}
+
+@media(max-width: 1200px) {
+  .layout-demo { grid-template-columns: 1fr; }
+  .flow-diagram { grid-template-columns: 1fr; }
+  .flow-arrow { display: none; }
+}
+
+@media(max-width: 900px) {
+  .io-grid { grid-template-columns: repeat(2, 1fr); }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9em;
+  color: var(--accent-cyan);
+}
+
+pre {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--dark-border1);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--accent-cyan);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎨 Advanced UI Components Demo</h1>
+  <p style="color: var(--text-secondary);">Tous les composants du système de design intégrés — zéro débordement, 100% écran utilisé</p>
+
+  <!-- KPI Example -->
+  <div class="section">
+    <h2>1️⃣ KPI Tiles (Carreaux de Métriques)</h2>
+    <p>Affiche des statistiques clés avec label, valeur et description</p>
+
+    <div class="kpi-row">
+      <div class="kpi-tile">
+        <div class="kpi-label">Total Signals</div>
+        <div class="kpi-value">250</div>
+        <div class="kpi-sub">Unique entries</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Mapped</div>
+        <div class="kpi-value">200</div>
+        <div class="kpi-sub">With ECU</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Unmapped</div>
+        <div class="kpi-value">50</div>
+        <div class="kpi-sub">Need assignment</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Systems</div>
+        <div class="kpi-value">12</div>
+        <div class="kpi-sub">Referenced</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Devices</div>
+        <div class="kpi-value">85</div>
+        <div class="kpi-sub">Using signals</div>
+      </div>
+    </div>
+
+    <pre><code>kpi_row([
+  ('Total Signals', 250, 'Unique entries'),
+  ('Mapped', 200, 'With ECU'),
+  ('Unmapped', 50, 'Need assignment'),
+  ('Systems', 12, 'Referenced'),
+  ('Devices', 85, 'Using signals')
+])</code></pre>
+  </div>
+
+  <!-- I/O Grid Example -->
+  <div class="section">
+    <h2>2️⃣ I/O Grid (Grille I/O avec couleurs sémantiques)</h2>
+    <p>Visualise le besoin de chaque type d'I/O avec couleur dédiée</p>
+
+    <div class="io-grid">
+      <div class="io-tile" style="--io-color: var(--io-can)">
+        <div class="io-code">CAN</div>
+        <div class="io-name">CAN channel</div>
+        <div class="io-count">8</div>
+      </div>
+      <div class="io-tile" style="--io-color: var(--io-pwm)">
+        <div class="io-code">PWM</div>
+        <div class="io-name">PWM output</div>
+        <div class="io-count">5</div>
+      </div>
+      <div class="io-tile" style="--io-color: var(--io-di)">
+        <div class="io-code">DI</div>
+        <div class="io-name">Digital input</div>
+        <div class="io-count">12</div>
+      </div>
+      <div class="io-tile" style="--io-color: var(--io-ai)">
+        <div class="io-code">AI</div>
+        <div class="io-name">Analog input</div>
+        <div class="io-count">3</div>
+      </div>
+      <div class="io-tile" style="--io-color: var(--io-sup)">
+        <div class="io-code">SUP</div>
+        <div class="io-name">Supply pins</div>
+        <div class="io-count">4</div>
+      </div>
+      <div class="io-tile" style="--io-color: var(--io-gnd)">
+        <div class="io-code">GND</div>
+        <div class="io-name">Ground pins</div>
+        <div class="io-count">4</div>
+      </div>
+    </div>
+
+    <pre><code>io_grid({
+  'CAN': 8,
+  'PWM': 5,
+  'DI': 12,
+  'AI': 3,
+  'SUP': 4,
+  'GND': 4
+})</code></pre>
+  </div>
+
+  <!-- Bar Chart Example -->
+  <div class="section">
+    <h2>3️⃣ Bar Chart (Graphique avec barres %)</h2>
+    <p>Affiche la distribution avec barres normalisées au max</p>
+
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">CAN</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="--bar-color: var(--io-can); width: 100%"></div>
+        </div>
+        <div class="bar-value">8</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">PWM</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="--bar-color: var(--io-pwm); width: 62.5%"></div>
+        </div>
+        <div class="bar-value">5</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">DI</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="--bar-color: var(--io-di); width: 100%"></div>
+        </div>
+        <div class="bar-value">12</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">AI</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="--bar-color: var(--io-ai); width: 25%"></div>
+        </div>
+        <div class="bar-value">3</div>
+      </div>
+    </div>
+
+    <pre><code>bar_chart({
+  'CAN': 8,
+  'PWM': 5,
+  'DI': 12,
+  'AI': 3
+})</code></pre>
+  </div>
+
+  <!-- Flow Diagram Example -->
+  <div class="section">
+    <h2>4️⃣ Flow Diagram (Inputs → System → Outputs)</h2>
+    <p>Visualise le flux de données d'un système</p>
+
+    <div class="flow-diagram">
+      <div class="flow-box flow-inputs">
+        <div class="flow-title">Inputs</div>
+        <div class="flow-content">
+          • Position sensor<br>
+          • Operator switch<br>
+          • Pressure feedback
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box flow-system">
+        <div class="flow-title">Hydraulic Control System</div>
+        <div class="flow-content">
+          Rear hitch control with closed-loop position feedback
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box flow-outputs">
+        <div class="flow-title">Outputs</div>
+        <div class="flow-content">
+          • Proportional valve<br>
+          • Status indicator<br>
+          • Fault relay
+        </div>
+      </div>
+    </div>
+
+    <pre><code>flow_diagram(
+  'Hydraulic Control System',
+  inputs=['Position sensor', 'Operator switch', 'Pressure feedback'],
+  system='Rear hitch control',
+  outputs=['Proportional valve', 'Status indicator', 'Fault relay'],
+  description='Closed-loop position feedback'
+)</code></pre>
+  </div>
+
+  <!-- Detail Panel Example -->
+  <div class="section">
+    <h2>5️⃣ Detail Panel (Détails au survol/clic)</h2>
+    <p>Affiche tous les détails + JSON preview</p>
+
+    <div class="detail-panel">
+      <div class="detail-header">
+        <h3>RearHitchPosition</h3>
+        <span class="detail-kind">SIGNAL</span>
+      </div>
+      <div class="detail-content">
+        <div class="detail-kv">
+          <div class="detail-key">Signal</div>
+          <div class="detail-val">RearHitchPosition</div>
+        </div>
+        <div class="detail-kv">
+          <div class="detail-key">Interface</div>
+          <div class="detail-val">ANALOG</div>
+        </div>
+        <div class="detail-kv">
+          <div class="detail-key">Unit</div>
+          <div class="detail-val">% (percentage)</div>
+        </div>
+        <div class="detail-kv">
+          <div class="detail-key">Range</div>
+          <div class="detail-val">0 — 100</div>
+        </div>
+        <div class="detail-kv">
+          <div class="detail-key">Priority</div>
+          <div class="detail-val">HIGH</div>
+        </div>
+        <div class="detail-kv">
+          <div class="detail-key">Safety</div>
+          <div class="detail-val">SAFETY_RELATED</div>
+        </div>
+      </div>
+    </div>
+
+    <pre><code>detail_panel(
+  title='RearHitchPosition',
+  kind='SIGNAL',
+  fields={
+    'Signal': 'RearHitchPosition',
+    'Interface': 'ANALOG',
+    'Unit': '% (percentage)',
+    'Range': '0 — 100',
+    'Priority': 'HIGH',
+    'Safety': 'SAFETY_RELATED'
+  },
+  json_data={...}
+)</code></pre>
+  </div>
+
+  <!-- Legend Example -->
+  <div class="section">
+    <h2>6️⃣ Legend (Légende des types I/O)</h2>
+
+    <div class="legend">
+      <span class="legend-item" style="--legend-color: var(--io-can)">CAN</span>
+      <span class="legend-item" style="--legend-color: var(--io-pwm)">PWM</span>
+      <span class="legend-item" style="--legend-color: var(--io-di)">DI</span>
+      <span class="legend-item" style="--legend-color: var(--io-ai)">AI</span>
+      <span class="legend-item" style="--legend-color: var(--io-sup)">SUP</span>
+      <span class="legend-item" style="--legend-color: var(--io-gnd)">GND</span>
+    </div>
+
+    <pre><code>legend(['CAN', 'PWM', 'DI', 'AI', 'SUP', 'GND'])</code></pre>
+  </div>
+
+  <!-- 3-Column Layout Example -->
+  <div class="section">
+    <h2>7️⃣ 3-Column Layout (Sidebar | Main | Details)</h2>
+    <p>Utilise 100% de la largeur d'écran, responsive</p>
+
+    <div class="layout-demo">
+      <div class="panel-sidebar">
+        <h3 class="sidebar-title">System Selector</h3>
+        <div style="background: var(--dark-surface3); border: 1px solid var(--dark-border1); border-radius: 8px; padding: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s;">
+          <strong style="color: var(--accent-cyan); display: block; margin-bottom: 4px;">Hydraulic Control</strong>
+          <div style="font-size: 0.75rem; color: var(--text-dim);">SL2 · HIGH · QM</div>
+        </div>
+        <div style="background: var(--dark-surface2); border: 1px solid var(--dark-border1); border-radius: 8px; padding: 10px;">
+          <strong style="display: block; margin-bottom: 4px;">PTO Speed Control</strong>
+          <div style="font-size: 0.75rem; color: var(--text-dim);">SL2 · HIGH · SAFETY_RELATED</div>
+        </div>
+      </div>
+
+      <div class="panel-main">
+        <h3 style="margin-top: 0; color: var(--accent-cyan);">Hydraulic Control System</h3>
+        <p style="color: var(--text-secondary); margin: 0 0 12px;">Rear hitch control with closed-loop position feedback and proportional valve.</p>
+
+        <div class="kpi-row">
+          <div class="kpi-tile">
+            <div class="kpi-label">Inputs</div>
+            <div class="kpi-value">3</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-label">Outputs</div>
+            <div class="kpi-value">2</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-label">Total Pins</div>
+            <div class="kpi-value">7</div>
+          </div>
+        </div>
+
+        <h4 style="color: var(--accent-cyan); margin-top: 16px;">I/O Demand</h4>
+        <div class="io-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="io-tile" style="--io-color: var(--io-ai);">
+            <div class="io-code">AI</div>
+            <div class="io-count">1</div>
+          </div>
+          <div class="io-tile" style="--io-color: var(--io-pwm);">
+            <div class="io-code">PWM</div>
+            <div class="io-count">1</div>
+          </div>
+          <div class="io-tile" style="--io-color: var(--io-sup);">
+            <div class="io-code">SUP</div>
+            <div class="io-count">1</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-details">
+        <h3 class="sidebar-title">Details</h3>
+        <div style="background: var(--dark-surface3); border: 1px solid var(--dark-border1); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 8px;">RearHitchPosition</strong>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px;">SIGNAL · ANALOG</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            <span class="badge" style="background: rgba(96, 165, 250, 0.12); color: #60a5fa; border-color: #60a5fa;">AI</span>
+          </div>
+        </div>
+
+        <div style="background: var(--dark-surface3); border: 1px solid var(--dark-border1); border-radius: 8px; padding: 12px;">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 8px;">HitchValvePWM</strong>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px;">SIGNAL · PWM</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            <span class="badge" style="background: rgba(192, 132, 252, 0.12); color: #c084fc; border-color: #c084fc;">PWM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <pre><code>main_layout(
+  sidebar=sidebar_section('System Selector', system_cards),
+  main=f'{kpi_html}{io_grid_html}{flow_html}',
+  details=detail_panel(selected_object)
+)</code></pre>
+  </div>
+
+  <!-- Summary -->
+  <div class="section">
+    <h2>✨ Résumé</h2>
+    <p>Tous ces composants sont <strong>générés automatiquement par Python</strong> à partir du fichier JSON du projet. Aucune valeur hard-codée — tout est configurable.</p>
+
+    <p><strong>Pour utiliser dans vos rapports :</strong></p>
+    <pre><code>from eec_ui_components import kpi_row, io_grid, flow_diagram, detail_panel
+
+# Dans votre script Python
+body = f"""
+{kpi_row([...])}
+{io_grid({...})}
+{flow_diagram(...)}
+{detail_panel(...)}
+"""
+
+out.write_text(html_page('Title', body, cfg), encoding='utf-8')</code></pre>
+
+    <p style="color: var(--text-fade); font-size: 0.9rem;">
+      💾 Fichier: <code>/home/user/EE_Architect_Design/COMPONENTS_DEMO.html</code><br>
+      🐍 Module: <code>tools/scripts/eec_ui_components.py</code>
+    </p>
+  </div>
+</div>
+
+</body>
+</html>

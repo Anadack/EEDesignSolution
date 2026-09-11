@@ -1,0 +1,84 @@
+========================================================================
+  E/E Architect Design — Pin Allocation Report
+========================================================================
+What:   Per-ECU and per-connector physical pin usage statistics.
+How:    Iterates all ECU pins, counts occupied vs total per connector
+        and per ECU, then computes allocation percentages.
+------------------------------------------------------------------------
+Name:     Imported Architecture
+Priority: LOW
+Safety:   QM
+
+AEC_CABIN_01: total=170 allocated=54 free=116 allocation=31.8%
+  Priority: LOW  Safety: QM
+  X1: total=112 allocated=42 free=70 allocation=37.5%
+  X2: total=48 allocated=12 free=36 allocation=25.0%
+  X3: total=2 allocated=0 free=2 allocation=0.0%
+  X4: total=2 allocated=0 free=2 allocation=0.0%
+  X5: total=2 allocated=0 free=2 allocation=0.0%
+  X6: total=4 allocated=0 free=4 allocation=0.0%
+
+AEC_DISPLAY_01: total=122 allocated=15 free=107 allocation=12.3%
+  Priority: LOW  Safety: QM
+  X1000: total=112 allocated=15 free=97 allocation=13.4%
+  X1001: total=2 allocated=0 free=2 allocation=0.0%
+  X1002: total=2 allocated=0 free=2 allocation=0.0%
+  X1003: total=4 allocated=0 free=4 allocation=0.0%
+  X1004: total=2 allocated=0 free=2 allocation=0.0%
+
+AEC_ENGINE_01: total=202 allocated=17 free=185 allocation=8.4%
+  Priority: LOW  Safety: QM
+  X1: total=112 allocated=17 free=95 allocation=15.2%
+  X2: total=48 allocated=0 free=48 allocation=0.0%
+  X3: total=32 allocated=0 free=32 allocation=0.0%
+  X4: total=4 allocated=0 free=4 allocation=0.0%
+  X5: total=2 allocated=0 free=2 allocation=0.0%
+  X6: total=2 allocated=0 free=2 allocation=0.0%
+  X7: total=2 allocated=0 free=2 allocation=0.0%
+
+AEC_TRANSMISSION_01: total=170 allocated=0 free=170 allocation=0.0%
+  Priority: LOW  Safety: QM
+  X1: total=112 allocated=0 free=112 allocation=0.0%
+  X2: total=48 allocated=0 free=48 allocation=0.0%
+  X3: total=2 allocated=0 free=2 allocation=0.0%
+  X4: total=2 allocated=0 free=2 allocation=0.0%
+  X5: total=2 allocated=0 free=2 allocation=0.0%
+  X6: total=4 allocated=0 free=4 allocation=0.0%
+
+AEC_REAR_HITCH_01: total=202 allocated=0 free=202 allocation=0.0%
+  Priority: LOW  Safety: QM
+  X1: total=112 allocated=0 free=112 allocation=0.0%
+  X2: total=48 allocated=0 free=48 allocation=0.0%
+  X3: total=32 allocated=0 free=32 allocation=0.0%
+  X4: total=4 allocated=0 free=4 allocation=0.0%
+  X5: total=2 allocated=0 free=2 allocation=0.0%
+  X6: total=2 allocated=0 free=2 allocation=0.0%
+  X7: total=2 allocated=0 free=2 allocation=0.0%
+
+AEC_TRAILER_01: total=122 allocated=0 free=122 allocation=0.0%
+  Priority: LOW  Safety: QM
+  X1000: total=112 allocated=0 free=112 allocation=0.0%
+  X1001: total=2 allocated=0 free=2 allocation=0.0%
+  X1002: total=2 allocated=0 free=2 allocation=0.0%
+  X1003: total=4 allocated=0 free=4 allocation=0.0%
+  X1004: total=2 allocated=0 free=2 allocation=0.0%
+
+TOTAL: total=988 allocated=86 free=902 allocation=8.7%
+
+Systems:
+  HYDAC_Selected_Sensor_Examples: level=SL1  priority=MEDIUM  safety=QM  signals=36
+  Example_System_with_selected_elobau_angle_sensors: level=SL1  priority=MEDIUM  safety=QM  signals=26
+  Example_HYDAC_Coil_Topologies_System: level=SL2  priority=HIGH  safety=QM  signals=4
+  Example_System_with_Bosch_Rexroth_Coil_Actuators: level=SL2  priority=HIGH  safety=QM  signals=8
+  BRAKE_SYSTEM: level=SL1  priority=HIGH  safety=QM  signals=8
+  Rear_Hydraulic_Hitch_System: level=SL2  priority=HIGH  safety=AgPL_B  signals=10
+  Cabin_HVAC_and_Comfort_System: level=SL1  priority=MEDIUM  safety=QM  signals=0
+  Engine_Control_Software: level=SL0  priority=LOW  safety=QM  signals=0
+  Transmission_Control_Software: level=SL0  priority=LOW  safety=QM  signals=0
+  Engine_Diagnostic_Software: level=SL0  priority=LOW  safety=QM  signals=0
+  Rear_Hitch_Control_Software: level=SL0  priority=LOW  safety=QM  signals=0
+  Cabin_Display_Software: level=SL0  priority=LOW  safety=QM  signals=0
+
+========================================================================
+RESULT: 6 ECU(s), 988 total pin(s), 86 allocated, 902 free (8.7% used)
+========================================================================

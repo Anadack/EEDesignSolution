@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EE_Composer — System JSON Editor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <header>
+    <h1>EE_Composer — System JSON Editor</h1>
+    <p class="muted">Create a system, add devices (sensors/actuators), add pins, then export JSON.</p>
+  </header>
+
+  <main>
+    <section id="system-section">
+      <h2>System</h2>
+      <label>Name: <input id="system-name" class="type-target" placeholder="MySystem"></label>
+      <label>Version: <input id="system-version" value="1.0"></label>
+      <label>Priority: <input id="system-priority" class="type-target" placeholder="EEC_PRIORITY_LOW"></label>
+      <label>Safety: <input id="system-safety" class="type-target" placeholder="EEC_SAFETY_QM"></label>
+      <label>System level: <input id="system-level" type="number" value="1"></label>
+      <div class="controls">
+        <button id="add-component">Add Component</button>
+        <button id="export-json">Export JSON</button>
+        <button id="download-sample">Download Sample Template</button>
+      </div>
+    </section>
+
+    <section id="components-section">
+      <h2>Components</h2>
+      <div id="components"></div>
+    </section>
+
+    <section id="types-section">
+      <h2>Discovered Types</h2>
+      <p class="muted">Focus any text field (it will be highlighted), then click a token below to insert its value into that field.</p>
+      <div id="types-status">Loading types.json…</div>
+      <div id="types-list"></div>
+    </section>
+
+    <section id="output-section">
+      <h2>Preview</h2>
+      <pre id="json-preview"></pre>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+#!/usr/bin/env python3
+"""Generate a professional, interactive Wiring Diagram HTML report."""
+from __future__ import annotations
+import json
+import datetime
+from pathlib import Path
+from eec_report_common import (
+    standard_arg_parser, load_config, resolve_root,
+    load_architecture_from_args, get_output_file, write_text,
+    collect_allocation_rows, normalize_token, esc,
+)
+
+IFACE_COLORS = {
+    "ANALOG": "#f59e0b", "DIGITAL": "#3b82f6", "PWM": "#8b5cf6",
+    "CAN": "#06b6d4", "FREQ": "#ec4899", "POWER": "#dc2626",
+    "GROUND": "#6b7280", "RESISTANCE": "#14b8a6",
+}
+DEFAULT_IFACE_COLOR = "#94a3b8"
+
+_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+:root{
+  --bg:#0d0f14;--card:#131720;--border:rgba(255,255,255,.10);--shadow:0 4px 24px rgba(0,0,0,.4);
+  --ha:#0f172a;--hb:#1e3a5f;--text:#e8ecf4;--muted:#8993a8;
+  --r:12px;--rs:7px;--tr:170ms cubic-bezier(.4,0,.2,1);
+  --mapped:#22c55e;--unmapped:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter','Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.10);border-radius:2px}
+.site-header{background:linear-gradient(135deg,var(--ha),var(--hb));color:#fff;padding:38px 32px 34px;position:relative;overflow:hidden}
+.site-header::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 70% 40%,rgba(59,130,246,.2),transparent 60%)}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(148,163,184,.85);margin-bottom:10px}
+h1{font-size:clamp(1.6rem,3.5vw,2.6rem);font-weight:900;letter-spacing:-.03em;line-height:1.1}
+.subtitle{margin-top:8px;font-size:14px;color:rgba(148,163,184,.8)}
+.generated{margin-top:12px;font-size:11px;color:rgba(100,116,139,.65)}
+.kpi-strip{display:flex;gap:10px;flex-wrap:wrap;padding:0 32px;margin-top:-22px;margin-bottom:4px;position:relative;z-index:10}
+.kpi-card{background:#131720;border:1px solid rgba(255,255,255,.10);border-radius:var(--r);padding:13px 18px;box-shadow:0 4px 24px rgba(0,0,0,.4);min-width:120px;flex:1;max-width:200px}
+.kpi-val{font-size:2rem;font-weight:900;letter-spacing:-.04em;line-height:1}
+.kpi-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+.filter-bar{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.95);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.06);padding:11px 32px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.filter-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap}
+.fb{border:1px solid rgba(255,255,255,.10);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;background:#1a1f2e;color:#8993a8;transition:all var(--tr);white-space:nowrap;font-family:inherit}
+.fb:hover{border-color:rgba(255,255,255,.20);color:#e8ecf4}.fb.active{color:#fff!important;border-color:transparent!important}
+.search-wrap{display:flex;align-items:center;gap:6px;margin-left:auto}
+.search-input{border:1px solid rgba(255,255,255,.10);border-radius:var(--rs);padding:5px 12px;font-size:13px;font-family:inherit;background:#1a1f2e;color:#e8ecf4;outline:none;width:200px;transition:border-color var(--tr)}
+.search-input:focus{border-color:#3b82f6}
+.btn-export{border:1px solid #3b82f6;border-radius:var(--rs);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;background:#3b82f6;color:#fff;transition:all var(--tr);font-family:inherit}
+.btn-export:hover{background:#2563eb;border-color:#2563eb}
+.fb-reset{border:1px solid rgba(255,255,255,.10);border-radius:var(--rs);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:#1a1f2e;color:#8993a8;transition:all var(--tr);font-family:inherit}
+.fb-reset:hover{background:#1f2538;color:#e8ecf4}
+.main{padding:24px 32px 40px}
+.table-wrap{background:#131720;border:1px solid rgba(255,255,255,.10);border-radius:var(--r);box-shadow:0 4px 24px rgba(0,0,0,.4);overflow:hidden}
+.table-toolbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);background:#1a1f2e}
+.row-count{font-size:12px;color:var(--muted);font-weight:500}
+.wiring-table{width:100%;border-collapse:collapse;font-size:12px}
+.wiring-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#5a6278;border-bottom:2px solid rgba(255,255,255,.10);background:#1a1f2e;cursor:pointer;user-select:none;white-space:nowrap}
+.wiring-table th:hover{background:#242b42}
+.wiring-table th.sort-asc::after{content:" ↑"}
+.wiring-table th.sort-desc::after{content:" ↓"}
+.wiring-table td{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;color:#8993a8}
+.wiring-table tbody tr:hover td{background:rgba(255,255,255,.025);color:#e8ecf4}
+.wiring-table tr.row-hidden{display:none}
+.wiring-table tr.status-UNMAPPED td:first-child{border-left:3px solid #ef4444}
+.wiring-table tr.status-MAPPED td:first-child{border-left:3px solid #22c55e}
+.iface-pill{display:inline-flex;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap}
+.status-badge{display:inline-flex;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;border:1px solid;white-space:nowrap}
+.status-badge.status-MAPPED{color:#86efac;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.25)}
+.status-badge.status-UNMAPPED{color:#fca5a5;background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px}
+.no-results{padding:50px;text-align:center;color:#5a6278;font-size:13px;font-style:italic}
+.site-footer{text-align:center;padding:20px 32px;color:#5a6278;font-size:12px;border-top:1px solid rgba(255,255,255,.06)}
+@media(max-width:900px){.kpi-strip,.filter-bar,.main{padding-left:16px;padding-right:16px}.site-header{padding:26px 16px 22px}.wiring-table{font-size:11px}.wiring-table td,.wiring-table th{padding:6px 8px}}
+"""
+
+_JS = r"""
+(function(){
+var D=__DATA__;
+function ic(k){return D.iface_colors[k]||D.default_iface_color}
+
+var flt={system:new Set(),iface:new Set(),ecu:new Set(),status:new Set(),q:''};
+var sortCol=null,sortDir=1;
+
+function matches(row){
+  var q=flt.q.toLowerCase();
+  if(q&&row.dataset.search.toLowerCase().indexOf(q)===-1)return false;
+  if(flt.system.size&&!flt.system.has(row.dataset.system))return false;
+  if(flt.iface.size&&!flt.iface.has(row.dataset.iface))return false;
+  if(flt.ecu.size&&!flt.ecu.has(row.dataset.ecu))return false;
+  if(flt.status.size&&!flt.status.has(row.dataset.status))return false;
+  return true;
+}
+
+function applyFilters(){
+  var rows=document.querySelectorAll('.wiring-row');
+  var vis=0;
+  rows.forEach(function(r){
+    var show=matches(r);
+    r.classList.toggle('row-hidden',!show);
+    if(show)vis++;
+  });
+  var cnt=document.getElementById('row-count');
+  if(cnt)cnt.textContent=vis+' / '+rows.length+' routes';
+  var nr=document.getElementById('no-results');
+  if(nr)nr.style.display=vis===0?'block':'none';
+}
+
+function tog(btn,cat,val,colorFn){
+  if(flt[cat].has(val)){flt[cat].delete(val);btn.classList.remove('active');btn.style.cssText='';}
+  else{flt[cat].add(val);btn.classList.add('active');var c=colorFn(val);btn.style.background=c;btn.style.borderColor=c;btn.style.color='#fff';}
+  applyFilters();
+}
+
+function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
+
+function grp(bar,label,items,cat,colorFn){
+  if(!items.length)return;
+  var g=el('div','filter-group');
+  g.appendChild(el('span','filter-label',label+':'));
+  var all=el('button','fb active','ALL');
+  all.style.cssText='background:#0f172a;color:#fff;border-color:#0f172a';
+  all.addEventListener('click',function(){flt[cat].clear();g.querySelectorAll('.fb:not(.fb-all)').forEach(function(b){b.classList.remove('active');b.style.cssText='';});all.style.cssText='background:#0f172a;color:#fff;border-color:#0f172a';applyFilters();});
+  all.classList.add('fb-all');g.appendChild(all);
+  items.forEach(function(v){
+    var b=el('button','fb',String(v));
+    b.addEventListener('click',function(){all.style.cssText='';tog(b,cat,v,colorFn);if(flt[cat].size===0){all.style.cssText='background:#0f172a;color:#fff;border-color:#0f172a';}});
+    g.appendChild(b);
+  });
+  bar.appendChild(g);
+}
+
+function buildFilterBar(){
+  var bar=document.getElementById('filter-bar');
+  grp(bar,'System',D.systems,'system',function(){return '#1e3a5f'});
+  grp(bar,'Interface',D.ifaces,'iface',ic);
+  grp(bar,'ECU',D.ecus,'ecu',function(){return '#6366f1'});
+  var statusColor={MAPPED:'#22c55e',UNMAPPED:'#ef4444'};
+  grp(bar,'Status',D.statuses,'status',function(s){return statusColor[s]||'#64748b'});
+  var sw=el('div','search-wrap');
+  var si=el('input','search-input');si.type='text';si.placeholder='Search signals, ECUs, pins…';
+  si.addEventListener('input',function(){flt.q=si.value;applyFilters();});
+  sw.appendChild(si);
+  var exp=el('button','btn-export','&#8595; CSV');
+  exp.addEventListener('click',exportCsv);
+  sw.appendChild(exp);
+  var rst=el('button','fb-reset','Reset');
+  rst.addEventListener('click',function(){Object.keys(flt).forEach(function(k){if(flt[k] instanceof Set)flt[k].clear();else flt[k]='';});si.value='';bar.querySelectorAll('.fb').forEach(function(b){b.classList.remove('active');b.style.cssText='';});bar.querySelectorAll('.fb-all').forEach(function(b){b.style.cssText='background:#0f172a;color:#fff;border-color:#0f172a';});applyFilters();});
+  sw.appendChild(rst);
+  bar.appendChild(sw);
+}
+
+function sortTable(col){
+  if(sortCol===col){sortDir=-sortDir;}else{sortCol=col;sortDir=1;}
+  var tbody=document.getElementById('wiring-tbody');
+  var rows=Array.from(tbody.querySelectorAll('.wiring-row'));
+  rows.sort(function(a,b){
+    var av=a.dataset[col]||'';var bv=b.dataset[col]||'';
+    return sortDir*av.localeCompare(bv);
+  });
+  rows.forEach(function(r){tbody.appendChild(r);});
+  document.querySelectorAll('.wiring-table th').forEach(function(th){th.classList.remove('sort-asc','sort-desc');});
+  var th=document.querySelector('[data-sort="'+col+'"]');
+  if(th)th.classList.add(sortDir===1?'sort-asc':'sort-desc');
+  applyFilters();
+}
+
+function buildTable(){
+  var main=document.getElementById('main-section');
+  var wrap=el('div','table-wrap');
+  var toolbar=el('div','table-toolbar');
+  var cnt=el('span','row-count',D.rows.length+' / '+D.rows.length+' routes');
+  cnt.id='row-count';toolbar.appendChild(cnt);
+  wrap.appendChild(toolbar);
+  var tbl=el('table','wiring-table');
+  var cols=[
+    {key:'system',label:'System'},{key:'component',label:'Component'},
+    {key:'device',label:'Device'},{key:'device_pin',label:'Device Pin'},
+    {key:'signal',label:'Signal'},{key:'iface',label:'Interface'},
+    {key:'role',label:'D.Role'},{key:'ecu',label:'ECU'},
+    {key:'ecu_connector',label:'ECU Conn.'},{key:'ecu_pin',label:'ECU Pin'},
+    {key:'ecu_role',label:'ECU Role'},{key:'status',label:'Status'}
+  ];
+  var thead=document.createElement('thead');
+  var tr=document.createElement('tr');
+  cols.forEach(function(c){
+    var th=el('th',null,c.label);th.dataset.sort=c.key;
+    th.addEventListener('click',function(){sortTable(c.key);});
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr);tbl.appendChild(thead);
+  var tbody=document.createElement('tbody');tbody.id='wiring-tbody';
+  D.rows.forEach(function(row){
+    var tr=el('tr','wiring-row status-'+(row.status||'UNMAPPED'));
+    tr.dataset.system=row.system||'';tr.dataset.iface=row.iface||'';
+    tr.dataset.ecu=row.ecu||'UNASSIGNED';tr.dataset.status=row.status||'UNMAPPED';
+    tr.dataset.search=[row.system,row.component,row.device,row.device_pin,row.signal,row.iface,row.role,row.ecu,row.ecu_connector,row.ecu_pin,row.ecu_role].join(' ');
+    var cells=[
+      row.system,row.component,row.device,
+      '<span class="mono">'+esc2(row.device_pin)+'</span>',
+      '<strong>'+esc2(row.signal)+'</strong>',
+      '<span class="iface-pill" style="background:'+ic(row.iface)+'">'+esc2(row.iface)+'</span>',
+      row.role,row.ecu,
+      '<span class="mono">'+esc2(row.ecu_connector)+'</span>',
+      '<span class="mono">'+esc2(row.ecu_pin)+'</span>',
+      row.ecu_role,
+      '<span class="status-badge status-'+esc2(row.status)+'">'+esc2(row.status)+'</span>'
+    ];
+    cells.forEach(function(c,i){
+      var td=document.createElement('td');
+      if(typeof c==='string'&&(c.startsWith('<')||c.indexOf('&')!==-1)){td.innerHTML=c;}
+      else{td.textContent=c||'';}
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  var nr=el('tr');nr.innerHTML='<td colspan="12" class="no-results">No routes match the current filters.</td>';nr.id='no-results';nr.style.display='none';
+  tbody.appendChild(nr);
+  tbl.appendChild(tbody);wrap.appendChild(tbl);main.appendChild(wrap);
+}
+
+function esc2(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function exportCsv(){
+  var header=['System','Component','Device','Device Pin','Signal','Interface','Role','ECU','ECU Connector','ECU Pin','ECU Role','Status'];
+  var rows=Array.from(document.querySelectorAll('.wiring-row:not(.row-hidden)'));
+  var lines=[header.join(',')];
+  rows.forEach(function(row){
+    var tds=row.querySelectorAll('td');
+    var vals=Array.from(tds).map(function(td){return '"'+(td.textContent||'').replace(/"/g,'""')+'"';});
+    lines.push(vals.slice(0,12).join(','));
+  });
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wiring_diagram.csv';a.click();
+}
+
+function render(){
+  buildFilterBar();buildTable();applyFilters();
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',render);}else{render();}
+})();
+"""
+
+_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>__CSS__</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="eyebrow">E/E Architecture Design &mdash; Agricultural Machinery</div>
+  <h1>Wiring Diagram</h1>
+  <div class="subtitle">__SUBTITLE__</div>
+  <div class="generated">Generated __GEN__ &bull; Source: __SRC__</div>
+</header>
+<div class="kpi-strip">__KPIS__</div>
+<div id="filter-bar" class="filter-bar"></div>
+<main class="main" id="main-section"></main>
+<footer class="site-footer">E/E Architect Design &mdash; Wiring Diagram &bull; __GEN__</footer>
+<script>__JS__</script>
+</body>
+</html>"""
+
+
+def _kpi(val: int | str, label: str, color: str) -> str:
+    return (f'<div class="kpi-card"><div class="kpi-val" style="color:{color}">{val}</div>'
+            f'<div class="kpi-lbl">{label}</div></div>')
+
+
+def _build_data(arch: dict, cfg: dict) -> dict:
+    raw_rows = collect_allocation_rows(arch, cfg) or []
+
+    systems: set[str] = set()
+    ifaces: set[str] = set()
+    ecus: set[str] = set()
+    statuses: set[str] = set()
+    mapped_count = 0
+
+    rows_out = []
+    for r in raw_rows:
+        sys = str(r.get("system") or "")
+        iface = normalize_token(r.get("interface") or "")
+        ecu = str(r.get("ecu") or "UNASSIGNED")
+        status = str(r.get("status") or "UNMAPPED").upper()
+        if sys:
+            systems.add(sys)
+        if iface:
+            ifaces.add(iface)
+        if ecu and ecu != "UNASSIGNED":
+            ecus.add(ecu)
+        statuses.add(status)
+        if status == "MAPPED":
+            mapped_count += 1
+
+        rows_out.append({
+            "system": sys,
+            "component": str(r.get("component") or ""),
+            "device": str(r.get("device") or ""),
+            "device_pin": str(r.get("device_pin") or ""),
+            "signal": str(r.get("signal") or ""),
+            "iface": iface,
+            "role": str(r.get("role") or ""),
+            "ecu": str(r.get("ecu") or ""),
+            "ecu_connector": str(r.get("ecu_connector") or ""),
+            "ecu_pin": str(r.get("ecu_pin") or ""),
+            "ecu_role": str(r.get("ecu_role") or ""),
+            "status": status,
+        })
+
+    total = len(rows_out)
+    unmapped = total - mapped_count
+    pct = round(mapped_count * 100 / total) if total else 0
+
+    return {
+        "arch_name": str(arch.get("name") or "Architecture"),
+        "rows": rows_out,
+        "systems": sorted(systems),
+        "ifaces": sorted(ifaces),
+        "ecus": sorted(ecus),
+        "statuses": sorted(statuses),
+        "iface_colors": IFACE_COLORS,
+        "default_iface_color": DEFAULT_IFACE_COLOR,
+        "kpi": {
+            "total": total,
+            "mapped": mapped_count,
+            "unmapped": unmapped,
+            "pct": pct,
+        },
+    }
+
+
+def main() -> int:
+    parser = standard_arg_parser("Generate professional Wiring Diagram HTML report.")
+    args = parser.parse_args()
+    cfg = load_config(Path(args.config) if args.config else None)
+    root = resolve_root(args.root)
+
+    src, arch = load_architecture_from_args(args, cfg, physical=True)
+    try:
+        src_label = str(src.relative_to(root))
+    except ValueError:
+        src_label = str(src)
+
+    data = _build_data(arch, cfg)
+    kpi = data["kpi"]
+    generated = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    kpis = (
+        _kpi(kpi["total"], "Total Routes", "#3b82f6") +
+        _kpi(kpi["mapped"], "Mapped", "#22c55e") +
+        _kpi(kpi["unmapped"], "Unmapped", "#ef4444") +
+        _kpi(f"{kpi['pct']}%", "Coverage", "#f59e0b")
+    )
+    subtitle = (f"Architecture: {data['arch_name']} · {kpi['total']} signal routes · "
+                f"{kpi['pct']}% mapped to ECUs")
+
+    data_json = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+
+    content = _TEMPLATE
+    content = content.replace("__TITLE__", esc(f"Wiring Diagram — {data['arch_name']}"))
+    content = content.replace("__CSS__", _CSS)
+    content = content.replace("__JS__", _JS.replace("__DATA__", data_json))
+    content = content.replace("__SUBTITLE__", esc(subtitle))
+    content = content.replace("__GEN__", esc(generated))
+    content = content.replace("__SRC__", esc(src_label))
+    content = content.replace("__KPIS__", kpis)
+
+    out = get_output_file(root, cfg, "wiring", args.output, args.outdir)
+    write_text(out, content)
+    print(out)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,10 @@
+{
+  "name": "E/E Architect Design Demo Platform",
+  "systems": [
+    "2X0000000",
+    "BOSCH-REXROTH-COIL-EXAMPLE",
+    "ELOBAU-ANGLE-SENSOR-CATALOG",
+    "EX-HYD-COIL-TOPO",
+    "SYS-HYDAC-SENSOR-LIB"
+  ]
+}

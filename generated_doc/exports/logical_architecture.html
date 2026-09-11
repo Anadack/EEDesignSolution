@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Logical Architecture — EE_Architecture</title>
+<style>@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+:root{
+  --bg:#0d0f14; --card:#131720; --card-border:rgba(255,255,255,.10);
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+  --header-from:#131720; --header-to:#1a1f2e;
+  --text:#e8ecf4; --muted:#8993a8;
+  --sensor-accent:#0d9488; --actuator-accent:#d97706;
+  --accent:#3b82f6; --accent-text:#60a5fa;
+  --radius:14px; --radius-sm:8px;
+  --tr:180ms cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter','Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.10);border-radius:2px}
+.site-header{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);color:#fff;padding:40px 32px 36px;position:relative;overflow:hidden;}
+.site-header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(59,130,246,.18) 0%,transparent 65%);}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(148,163,184,.9);margin-bottom:10px;}
+.site-header h1{font-size:clamp(1.7rem,4vw,2.8rem);font-weight:900;letter-spacing:-.03em;line-height:1.1}
+.subtitle{margin-top:8px;font-size:15px;color:rgba(148,163,184,.85);max-width:70ch}
+.generated{margin-top:14px;font-size:11px;color:rgba(100,116,139,.7)}
+.kpi-strip{display:flex;gap:12px;flex-wrap:wrap;padding:0 32px;margin-top:-24px;margin-bottom:4px;position:relative;z-index:10;}
+.kpi-card{background:#131720;border:1px solid rgba(255,255,255,.10);border-radius:var(--radius);padding:14px 20px;box-shadow:0 4px 24px rgba(0,0,0,.4);min-width:130px;flex:1;max-width:220px;}
+.kpi-val{font-size:2rem;font-weight:900;letter-spacing:-.04em;line-height:1}
+.kpi-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+.filter-bar{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.06);padding:12px 32px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;}
+.filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.filter-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap}
+.fb{border:1px solid rgba(255,255,255,.10);border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;background:#1a1f2e;color:#8993a8;transition:all var(--tr);white-space:nowrap;font-family:inherit;}
+.fb:hover{border-color:rgba(255,255,255,.20);color:#e8ecf4}
+.fb-reset{margin-left:auto;border:1px solid rgba(255,255,255,.10);border-radius:var(--radius-sm);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;background:#1a1f2e;color:#8993a8;transition:all var(--tr);font-family:inherit;}
+.fb-reset:hover{background:#1f2538;color:#e8ecf4}
+.main{padding:24px 32px 40px}
+.system-section{margin-bottom:28px}
+.system-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border-radius:var(--radius) var(--radius) 0 0;padding:14px 20px;border:1px solid rgba(255,255,255,.08);}
+.system-name{font-size:1rem;font-weight:800;letter-spacing:-.01em}
+.system-meta{font-size:11px;color:rgba(148,163,184,.8);margin-left:4px}
+.system-body{display:grid;grid-template-columns:1fr 200px 1fr;gap:0;border:1px solid rgba(255,255,255,.10);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden;background:#131720;}
+.sensors-col{background:rgba(13,148,136,.08);border-right:1px solid rgba(255,255,255,.10)}
+.actuators-col{background:rgba(217,119,6,.08);border-left:1px solid rgba(255,255,255,.10)}
+.col-header{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.10);}
+.sensors-col .col-header{color:#0d9488}
+.actuators-col .col-header{color:#d97706}
+.center-col{background:linear-gradient(180deg,#0f172a 0%,#1e3a5f 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 12px;color:#fff;text-align:center;}
+.center-name{font-size:13px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+.center-sub{font-size:10px;color:rgba(148,163,184,.7);margin-top:4px}
+.center-counts{display:flex;gap:8px;margin-top:10px;}
+.center-count{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:4px 10px;text-align:center;}
+.cc-val{font-weight:800;font-size:14px}
+.cc-lbl{font-size:9px;color:rgba(148,163,184,.7);text-transform:uppercase;letter-spacing:.05em}
+.device-list{padding:8px}
+.device-card{background:#1a1f2e;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.10);margin-bottom:6px;overflow:hidden;transition:box-shadow var(--tr);}
+.device-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.sensors-col .device-card{border-left:3px solid #0d9488}
+.actuators-col .device-card{border-left:3px solid #d97706}
+.device-card-header{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;user-select:none;}
+.device-card-header:hover{background:rgba(255,255,255,.03)}
+.device-toggle{color:var(--muted);font-size:12px;transition:transform var(--tr);flex-shrink:0}
+.device-card.open .device-toggle{transform:rotate(90deg)}
+.device-name{font-size:12px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e8ecf4}
+.device-pin-count{font-size:11px;font-weight:600;color:#8993a8;background:rgba(255,255,255,.06);border-radius:999px;padding:2px 8px;flex-shrink:0;}
+.device-signals{padding:0 10px 8px;display:none}
+.device-card.open .device-signals{display:block}
+.signal-row{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:11px;}
+.signal-row:last-child{border-bottom:none}
+.signal-row.hidden{display:none}
+.pill-iface{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;white-space:nowrap;}
+.signal-name{font-family:'JetBrains Mono',Consolas,monospace;font-size:10.5px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e8ecf4;}
+.badge{display:inline-flex;align-items:center;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;border:1px solid;flex-shrink:0;white-space:nowrap;}
+.badge-role{background:rgba(255,255,255,.06);color:#8993a8;border-color:rgba(255,255,255,.10)}
+.badge-range{background:rgba(255,255,255,.06);color:#8993a8;border-color:rgba(255,255,255,.10);font-family:'JetBrains Mono',monospace}
+.no-device{padding:20px;text-align:center;color:#5a6278;font-size:12px;font-style:italic;}
+.all-hidden-msg{padding:10px;text-align:center;color:#5a6278;font-size:11px;font-style:italic;display:none;}
+.site-footer{text-align:center;padding:24px 32px;color:#5a6278;font-size:12px;border-top:1px solid rgba(255,255,255,.06);}
+.empty-state{text-align:center;padding:64px 32px;color:var(--muted);}
+.empty-state h2{font-size:1.2rem;font-weight:700;color:var(--text);margin-bottom:8px}
+@media(max-width:900px){
+  .system-body{grid-template-columns:1fr}
+  .sensors-col{border-right:none;border-bottom:1px solid rgba(255,255,255,.10)}
+  .actuators-col{border-left:none;border-top:1px solid rgba(255,255,255,.10)}
+  .center-col{border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
+  .kpi-strip,.filter-bar,.main{padding-left:16px;padding-right:16px}
+  .site-header{padding:28px 16px 24px}
+}</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="eyebrow">E/E Architecture Design &mdash; Agricultural Machinery</div>
+  <h1>Logical Architecture</h1>
+  <div class="subtitle">Architecture: EE_Architecture · 4 systems · 21 devices · 74 signal pins</div>
+  <div class="generated">Generated 2026-09-11 12:10 &nbsp;&bull;&nbsp; Source: generated_doc\exports\example_architecture.json</div>
+</header>
+<div class="kpi-strip">
+<div class="kpi-card"><div class="kpi-val" style="color:#3b82f6">4</div><div class="kpi-lbl">Systems</div></div><div class="kpi-card"><div class="kpi-val" style="color:#0d9488">21</div><div class="kpi-lbl">Devices</div></div><div class="kpi-card"><div class="kpi-val" style="color:#8b5cf6">74</div><div class="kpi-lbl">Signal Pins</div></div><div class="kpi-card"><div class="kpi-val" style="color:#f59e0b">7</div><div class="kpi-lbl">Interfaces</div></div>
+</div>
+<div id="app"></div>
+<footer class="site-footer">
+  E/E Architect Design &mdash; Logical Architecture Report &bull; 2026-09-11 12:10
+</footer>
+<script>(function(){
+"use strict";
+var DATA={"arch_name":"EE_Architecture","systems":[{"name":"HYDAC_Selected_Sensor_Examples","safety":"QM","priority":"MEDIUM","sl":"SL1","take_rate":0.0,"mandatory":false,"location":"","pn":"","sensors":[{"name":"HYDAC_HAT1200_Angle_Analogue_4_20mA_3Pin_MappingReady","signals":[{"name":"HAT1200_SUPPLY_9_36V","iface":"POWER","role":"SUPPLY","safety":"AGPL_B","priority":"MEDIUM","range":"9 - 36 VOLT"},{"name":"HAT1200_0V","iface":"GROUND","role":"GROUND","safety":"AGPL_B","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"HAT1200_Angle_4_20mA","iface":"CURRENT","role":"OUTPUT","safety":"AGPL_B","priority":"MEDIUM","range":"0 - 360 DEGREE"}],"count":3},{"name":"HYDAC_HAT3800_Angle_CANopen_M12_5Pin","signals":[{"name":"CAN_SHLD","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"CAN_VPLUS_9_36V","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"MEDIUM","range":"9 - 36 VOLT"},{"name":"CAN_GND","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"CAN_H","iface":"CAN","role":"INOUT","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"CAN_L","iface":"CAN","role":"INOUT","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"}],"count":5},{"name":"HYDAC_HDA4300_Pressure_40bar_A_4_20mA_2Wire","signals":[{"name":"HDA4300_LOOP_SUPPLY_PLUS","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"MEDIUM","range":"8 - 30 VOLT"},{"name":"HDA4300_Pressure_4_20mA","iface":"CURRENT","role":"OUTPUT","safety":"QM","priority":"MEDIUM","range":"0 - 40 BAR"}],"count":2},{"name":"HYDAC_HDA4300_Pressure_40bar_B_0_10V_3Wire","signals":[{"name":"HDA4300_SUPPLY_24V","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"MEDIUM","range":"12 - 30 VOLT"},{"name":"HDA4300_0V","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"HDA4300_Pressure_0_10V","iface":"ANALOG","role":"OUTPUT","safety":"QM","priority":"MEDIUM","range":"0 - 40 BAR"}],"count":3},{"name":"HYDAC_ETS4100_Temperature_A_4_20mA_2Wire_Probe_050","signals":[{"name":"ETS4100_LOOP_SUPPLY_PLUS","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"MEDIUM","range":"8 - 32 VOLT"},{"name":"ETS4100_Temperature_4_20mA","iface":"CURRENT","role":"OUTPUT","safety":"QM","priority":"MEDIUM","range":"-25 - 100 CELSIUS"}],"count":2},{"name":"HYDAC_ETS4100_Temperature_B_0_10V_3Wire_Probe_050","signals":[{"name":"ETS4100_SUPPLY_24V","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"MEDIUM","range":"12 - 32 VOLT"},{"name":"ETS4100_0V","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"ETS4100_Temperature_0_10V","iface":"ANALOG","role":"OUTPUT","safety":"QM","priority":"MEDIUM","range":"-25 - 100 CELSIUS"}],"count":3},{"name":"HYDAC_EDS410_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","signals":[{"name":"EDS410_SUPPLY_PLUS","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"MEDIUM","range":"8 - 42 VOLT"},{"name":"EDS410_OUT2_PNP","iface":"DIGITAL","role":"OUTPUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 BOOLEAN"},{"name":"EDS410_0V","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"EDS410_OUT1_PNP","iface":"DIGITAL","role":"OUTPUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 BOOLEAN"}],"count":4},{"name":"HYDAC_EDS810_PressureSwitch_100bar_PNP_2Outputs_M12_4Pin","signals":[{"name":"EDS810_SUPPLY_PLUS","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"MEDIUM","range":"8 - 36 VOLT"},{"name":"EDS810_OUT2_PNP","iface":"DIGITAL","role":"OUTPUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 BOOLEAN"},{"name":"EDS810_0V","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"EDS810_OUT1_PNP","iface":"DIGITAL","role":"OUTPUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 BOOLEAN"}],"count":4},{"name":"HYDAC_HLT700_LinearPosition_CANopen_5Pin_Template","signals":[{"name":"HLT700_CAN_SHLD","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 1 NONE"},{"name":"HLT700_CAN_VPLUS","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"MEDIUM","range":"9 - 36 VOLT"},{"name":"HLT700_CAN_GND","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"HLT700_CAN_H","iface":"CAN","role":"INOUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 NONE"},{"name":"HLT700_CAN_L","iface":"CAN","role":"INOUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 NONE"}],"count":5},{"name":"HYDAC_HIT1500_Inclination_CANopen_J1939_5Pin_Template","signals":[{"name":"HIT1500_CAN_SHLD","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 1 NONE"},{"name":"HIT1500_CAN_VPLUS","iface":"POWER","role":"SUPPLY","safety":"AGPL_B","priority":"MEDIUM","range":"9 - 36 VOLT"},{"name":"HIT1500_CAN_GND","iface":"GROUND","role":"GROUND","safety":"AGPL_B","priority":"MEDIUM","range":"0 - 0 NONE"},{"name":"HIT1500_CAN_H","iface":"CAN","role":"INOUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 NONE"},{"name":"HIT1500_CAN_L","iface":"CAN","role":"INOUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 NONE"}],"count":5}],"actuators":[]},{"name":"Example_HYDAC_Coil_Topologies_System","safety":"QM","priority":"HIGH","sl":"SL2","take_rate":0.0,"mandatory":false,"location":"","pn":"EX-HYDAC-COIL-TOPO","sensors":[],"actuators":[{"name":"HYDAC_PROP_12PG_5_6_32_1329_PN4059964_HS_LS","signals":[{"name":"HYDAC_4059964_CoilCommand_HS","iface":"PWM","role":"INPUT","safety":"QM","priority":"MEDIUM","range":"0 - 100 PERCENT"},{"name":"HYDAC_4059964_CoilReturn_LS","iface":"PWM","role":"INPUT","safety":"QM","priority":"MEDIUM","range":"0 - 100 PERCENT"}],"count":2},{"name":"HYDAC_DIR_12DG_32_1329_UL_V0_PN2610160_HS_GND","signals":[{"name":"HYDAC_2610160_CoilCommand_HS","iface":"DIGITAL","role":"INPUT","safety":"QM","priority":"MEDIUM","range":"0 - 1 BOOLEAN"},{"name":"HYDAC_2610160_POWER_GND","iface":"GROUND","role":"GROUND","safety":"QM","priority":"MEDIUM","range":"0 - 0 NONE"}],"count":2}]},{"name":"Example_System_with_Bosch_Rexroth_Coil_Actuators","safety":"QM","priority":"HIGH","sl":"SL2","take_rate":0.0,"mandatory":false,"location":"","pn":"RE18325-90-example","sensors":[],"actuators":[{"name":"Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN","signals":[{"name":"DirCoilCmd_HS","iface":"DIGITAL","role":"INPUT","safety":"QM","priority":"HIGH","range":"0 - 1 BOOLEAN"},{"name":"POWER_GND","iface":"GROUND","role":"GROUND","safety":"QM","priority":"HIGH","range":"0 - 0 NONE"}],"count":2},{"name":"Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SIDE","signals":[{"name":"DirCoilCmd_HS","iface":"DIGITAL","role":"INPUT","safety":"QM","priority":"HIGH","range":"0 - 1 BOOLEAN"},{"name":"DirCoilReturn_LS","iface":"DIGITAL","role":"INPUT","safety":"QM","priority":"HIGH","range":"0 - 1 BOOLEAN"}],"count":2},{"name":"Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN","signals":[{"name":"PropCoilCurrentCmd_HS","iface":"PWM","role":"INPUT","safety":"QM","priority":"HIGH","range":"0 - 0.8 AMPERE"},{"name":"POWER_GND","iface":"GROUND","role":"GROUND","safety":"QM","priority":"HIGH","range":"0 - 0 NONE"}],"count":2},{"name":"Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_LOW_S","signals":[{"name":"PropCoilCurrentCmd_HS","iface":"PWM","role":"INPUT","safety":"QM","priority":"HIGH","range":"0 - 0.8 AMPERE"},{"name":"PropCoilReturn_LS","iface":"PWM","role":"INPUT","safety":"QM","priority":"HIGH","range":"0 - 0.8 AMPERE"}],"count":2}]},{"name":"Example_System_with_selected_elobau_angle_sensors","safety":"QM","priority":"MEDIUM","sl":"SL1","take_rate":0.0,"mandatory":false,"location":"","pn":"","sensors":[{"name":"elobau_424SD11D_DH_120deg","signals":[{"name":"elobau_424SD11D_DH_120deg_GND1","iface":"GROUND","role":"GROUND","safety":"AGPL_B","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424SD11D_DH_120deg_UB1","iface":"POWER","role":"SUPPLY","safety":"AGPL_B","priority":"HIGH","range":"9 - 32 VOLT"},{"name":"elobau_424SD11D_DH_120deg_ANGLE_4_20MA_OUT1","iface":"CURRENT","role":"OUTPUT","safety":"AGPL_B","priority":"HIGH","range":"0 - 120 DEGREE"},{"name":"elobau_424SD11D_DH_120deg_GND2","iface":"GROUND","role":"GROUND","safety":"AGPL_B","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424SD11D_DH_120deg_UB2","iface":"POWER","role":"SUPPLY","safety":"AGPL_B","priority":"HIGH","range":"9 - 32 VOLT"},{"name":"elobau_424SD11D_DH_120deg_SWITCH_OUT2_HIGH_SIDE","iface":"DIGITAL","role":"OUTPUT","safety":"AGPL_B","priority":"HIGH","range":"0 - 1 BOOLEAN"}],"count":6},{"name":"elobau_424SD16D_DS_120deg","signals":[{"name":"elobau_424SD16D_DS_120deg_GND1","iface":"GROUND","role":"GROUND","safety":"AGPL_B","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424SD16D_DS_120deg_UB1","iface":"POWER","role":"SUPPLY","safety":"AGPL_B","priority":"HIGH","range":"4.5 - 5.5 VOLT"},{"name":"elobau_424SD16D_DS_120deg_ANGLE_0_5_4_5V_RATIOMETRIC_OUT1","iface":"ANALOG","role":"OUTPUT","safety":"AGPL_B","priority":"HIGH","range":"0 - 120 DEGREE"},{"name":"elobau_424SD16D_DS_120deg_GND2","iface":"GROUND","role":"GROUND","safety":"AGPL_B","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424SD16D_DS_120deg_UB2","iface":"POWER","role":"SUPPLY","safety":"AGPL_B","priority":"HIGH","range":"4.5 - 5.5 VOLT"},{"name":"elobau_424SD16D_DS_120deg_SWITCH_OUT2_PUSH_PULL","iface":"DIGITAL","role":"OUTPUT","safety":"AGPL_B","priority":"HIGH","range":"0 - 1 BOOLEAN"}],"count":6},{"name":"elobau_424A_4_20MA_120deg","signals":[{"name":"elobau_424A_4_20MA_120deg_SUPPLY","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"HIGH","range":"9 - 32 VOLT"},{"name":"elobau_424A_4_20MA_120deg_GND","iface":"GROUND","role":"GROUND","safety":"QM","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424A_4_20MA_120deg_ANGLE_4_20MA","iface":"CURRENT","role":"OUTPUT","safety":"QM","priority":"HIGH","range":"0 - 120 DEGREE"}],"count":3},{"name":"elobau_424R_0_5_4_5V_parallel_120deg","signals":[{"name":"elobau_424R_0_5_4_5V_parallel_120deg_GND1","iface":"GROUND","role":"GROUND","safety":"AGPL_B","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_UB1","iface":"POWER","role":"SUPPLY","safety":"AGPL_B","priority":"HIGH","range":"9 - 32 VOLT"},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT1","iface":"ANALOG","role":"OUTPUT","safety":"AGPL_B","priority":"HIGH","range":"0 - 120 DEGREE"},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_GND2","iface":"GROUND","role":"GROUND","safety":"AGPL_B","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_UB2","iface":"POWER","role":"SUPPLY","safety":"AGPL_B","priority":"HIGH","range":"9 - 32 VOLT"},{"name":"elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT2","iface":"ANALOG","role":"OUTPUT","safety":"AGPL_B","priority":"HIGH","range":"0 - 120 DEGREE"}],"count":6},{"name":"elobau_424C_360deg_CANopen","signals":[{"name":"elobau_424C_360deg_CANopen_SHIELD","iface":"GROUND","role":"GROUND","safety":"QM","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424C_360deg_CANopen_SUPPLY_9_32V","iface":"POWER","role":"SUPPLY","safety":"QM","priority":"HIGH","range":"9 - 32 VOLT"},{"name":"elobau_424C_360deg_CANopen_GND","iface":"GROUND","role":"GROUND","safety":"QM","priority":"HIGH","range":"0 - 0 NONE"},{"name":"elobau_424C_360deg_CANopen_CAN_H","iface":"CAN","role":"INOUT","safety":"QM","priority":"HIGH","range":"0 - 1 NONE"},{"name":"elobau_424C_360deg_CANopen_CAN_L","iface":"CAN","role":"INOUT","safety":"QM","priority":"HIGH","range":"0 - 1 NONE"}],"count":5}],"actuators":[]}],"iface_list":["ANALOG","CAN","CURRENT","DIGITAL","GROUND","POWER","PWM"],"safety_list":["QM","AGPL_B"],"prio_list":["MEDIUM","HIGH"],"iface_colors":{"ANALOG":"#f59e0b","ANALOG_INPUT":"#f59e0b","DIGITAL":"#3b82f6","DIGITAL_INPUT":"#3b82f6","DIGITAL_OUTPUT":"#ef4444","PWM":"#8b5cf6","CAN":"#06b6d4","FREQUENCY":"#ec4899","POWER":"#dc2626","SUPPLY":"#dc2626","GROUND":"#6b7280","RESISTANCE":"#14b8a6"},"safety_colors":{"QM":"#22c55e","AGPL_A":"#84cc16","AGPL_B":"#eab308","AGPL_C":"#f97316","AGPL_D":"#ef4444"},"priority_colors":{"LOW":"#64748b","MEDIUM":"#3b82f6","HIGH":"#f59e0b","CRITICAL":"#ef4444"},"default_iface_color":"#64748b","kpi":{"systems":4,"devices":21,"signals":74,"ifaces":7}};
+var IC=DATA.iface_colors;
+var DC=DATA.default_iface_color;
+var SM={QM:'#22c55e',AGPL_A:'#84cc16',AGPL_B:'#eab308',AGPL_C:'#f97316',AGPL_D:'#ef4444'};
+var PM={LOW:'#64748b',MEDIUM:'#3b82f6',HIGH:'#f59e0b',CRITICAL:'#ef4444'};
+function ic(k){return IC[k]||DC;}
+function sc(k){return SM[k]||'#64748b';}
+function pc(k){return PM[k]||'#64748b';}
+var active={iface:new Set(),safety:new Set(),priority:new Set()};
+function passes(row){
+  var d=row.dataset;
+  if(active.iface.size&&!active.iface.has(d.iface))return false;
+  if(active.safety.size&&!active.safety.has(d.safety))return false;
+  if(active.priority.size&&!active.priority.has(d.prio))return false;
+  return true;
+}
+function applyFilters(){
+  document.querySelectorAll('.device-card').forEach(function(card){
+    var rows=card.querySelectorAll('.signal-row');
+    var vis=0;
+    rows.forEach(function(r){var ok=passes(r);r.classList.toggle('hidden',!ok);if(ok)vis++;});
+    card.style.opacity=vis||!rows.length?'':'.4';
+    var m=card.querySelector('.all-hidden-msg');
+    if(m)m.style.display=(!vis&&rows.length)?'block':'none';
+  });
+}
+function E(tag,cls,html){
+  var e=document.createElement(tag);
+  if(cls)e.className=cls;
+  if(html!==undefined)e.innerHTML=html;
+  return e;
+}
+function T(s){return document.createTextNode(String(s==null?'':s));}
+function pill(iface){
+  var s=E('span','pill-iface');s.style.background=ic(iface);s.appendChild(T(iface||'?'));return s;
+}
+function badge(text,cls,color){
+  var s=E('span','badge '+cls);
+  if(color){s.style.color=color;s.style.borderColor=color+'44';s.style.background=color+'1a';}
+  s.appendChild(T(text));return s;
+}
+function sigRow(sig){
+  var r=E('div','signal-row');
+  r.dataset.iface=sig.iface||'';r.dataset.safety=sig.safety||'';r.dataset.prio=sig.priority||'';
+  r.appendChild(pill(sig.iface));
+  r.appendChild(Object.assign(E('span','signal-name'),{textContent:sig.name||'?'}));
+  if(sig.role)r.appendChild(badge(sig.role,'badge-role'));
+  if(sig.range)r.appendChild(badge(sig.range,'badge-range'));
+  if(sig.safety)r.appendChild(badge(sig.safety,'badge badge-safety',sc(sig.safety)));
+  if(sig.priority)r.appendChild(badge(sig.priority,'badge badge-priority',pc(sig.priority)));
+  return r;
+}
+function devCard(dev){
+  var card=E('div','device-card');
+  var hdr=E('div','device-card-header');
+  var tog=E('span','device-toggle','&#9658;');
+  hdr.appendChild(tog);
+  hdr.appendChild(Object.assign(E('span','device-name'),{textContent:dev.name}));
+  hdr.appendChild(Object.assign(E('span','device-pin-count'),{textContent:dev.count+' pins'}));
+  card.appendChild(hdr);
+  var body=E('div','device-signals');
+  if(!dev.signals||!dev.signals.length){
+    body.appendChild(Object.assign(E('div','no-device'),{textContent:'No signal records'}));
+  }else{
+    dev.signals.forEach(function(s){body.appendChild(sigRow(s));});
+    body.appendChild(Object.assign(E('div','all-hidden-msg'),{textContent:'All signals hidden by filters'}));
+  }
+  card.appendChild(body);
+  hdr.addEventListener('click',function(){card.classList.toggle('open');});
+  return card;
+}
+function devList(devs,empty){
+  var wrap=E('div','device-list');
+  if(!devs||!devs.length){wrap.appendChild(Object.assign(E('div','no-device'),{textContent:empty}));return wrap;}
+  devs.forEach(function(d){wrap.appendChild(devCard(d));});
+  return wrap;
+}
+function colorBadge(text,colorFn){
+  var c=colorFn(text);
+  var s=E('span','badge');
+  s.style.color=c;s.style.borderColor=c+'44';s.style.background=c+'1a';
+  s.appendChild(T(text));return s;
+}
+function sysSection(sys){
+  var wrap=E('div','system-section');
+  /* header */
+  var hdr=E('div','system-header');
+  hdr.appendChild(Object.assign(E('span','system-name'),{textContent:sys.name}));
+  if(sys.safety)hdr.appendChild(colorBadge(sys.safety,sc));
+  if(sys.priority)hdr.appendChild(colorBadge(sys.priority,pc));
+  if(sys.sl)hdr.appendChild(Object.assign(E('span','badge badge-role'),{textContent:sys.sl}));
+  var meta=[];
+  if(sys.take_rate!=null)meta.push('TR: '+(sys.take_rate*100).toFixed(0)+'%');
+  if(sys.mandatory)meta.push('MANDATORY');
+  if(sys.location)meta.push(sys.location);
+  if(sys.pn)meta.push(sys.pn);
+  if(meta.length)hdr.appendChild(Object.assign(E('span','system-meta'),{textContent:meta.join(' · ')}));
+  wrap.appendChild(hdr);
+  /* 3-col body */
+  var body=E('div','system-body');
+  /* sensors */
+  var sc2=E('div','sensors-col');
+  var sh=E('div','col-header');sh.innerHTML='&#9650; Sensors <span style="color:#64748b;font-weight:500">('+sys.sensors.length+')</span>';
+  sc2.appendChild(sh);sc2.appendChild(devList(sys.sensors,'No sensors'));
+  body.appendChild(sc2);
+  /* center */
+  var cc=E('div','center-col');
+  cc.appendChild(Object.assign(E('div','center-name'),{textContent:sys.name}));
+  if(sys.sl)cc.appendChild(Object.assign(E('div','center-sub'),{textContent:sys.sl}));
+  var cnts=E('div','center-counts');
+  function cnt(v,lbl){var d=E('div','center-count');d.innerHTML='<div class="cc-val">'+v+'</div><div class="cc-lbl">'+lbl+'</div>';return d;}
+  cnts.appendChild(cnt(sys.sensors.length,'Sensors'));
+  cnts.appendChild(cnt(sys.actuators.length,'Actuators'));
+  cc.appendChild(cnts);
+  body.appendChild(cc);
+  /* actuators */
+  var ac=E('div','actuators-col');
+  var ah=E('div','col-header');ah.innerHTML='&#9660; Actuators <span style="color:#64748b;font-weight:500">('+sys.actuators.length+')</span>';
+  ac.appendChild(ah);ac.appendChild(devList(sys.actuators,'No actuators'));
+  body.appendChild(ac);
+  wrap.appendChild(body);
+  return wrap;
+}
+function filterBar(){
+  var bar=E('div','filter-bar');
+  function group(label,items,cat,colorFn){
+    var g=E('div','filter-group');
+    g.appendChild(Object.assign(E('span','filter-label'),{textContent:label+':'}));
+    var allBtn=E('button','fb');
+    allBtn.textContent='ALL';
+    allBtn.style.cssText='background:#0f172a;color:#fff;border-color:#0f172a';
+    function resetAll(){
+      active[cat].clear();
+      g.querySelectorAll('.fb.item-btn').forEach(function(b){b.style.background='';b.style.color='';b.style.borderColor='';b.classList.remove('active');});
+      allBtn.style.cssText='background:#0f172a;color:#fff;border-color:#0f172a';
+      applyFilters();
+    }
+    allBtn.addEventListener('click',resetAll);
+    g.appendChild(allBtn);
+    items.forEach(function(val){
+      var col=colorFn(val);
+      var btn=E('button','fb item-btn');
+      btn.textContent=val;
+      btn.addEventListener('click',function(){
+        allBtn.style.cssText='';
+        if(active[cat].has(val)){
+          active[cat].delete(val);
+          btn.style.background='';btn.style.color='';btn.style.borderColor='';btn.classList.remove('active');
+        }else{
+          active[cat].add(val);
+          btn.style.background=col;btn.style.color='#fff';btn.style.borderColor=col;btn.classList.add('active');
+        }
+        if(!active[cat].size){allBtn.style.cssText='background:#0f172a;color:#fff;border-color:#0f172a';}
+        applyFilters();
+      });
+      g.appendChild(btn);
+    });
+    return g;
+  }
+  bar.appendChild(group('Interface',DATA.iface_list,'iface',ic));
+  bar.appendChild(group('Safety',DATA.safety_list,'safety',sc));
+  bar.appendChild(group('Priority',DATA.prio_list,'priority',pc));
+  var rst=E('button','fb-reset');rst.textContent='Reset Filters';
+  rst.addEventListener('click',function(){
+    ['iface','safety','priority'].forEach(function(cat){active[cat].clear();});
+    bar.querySelectorAll('.item-btn').forEach(function(b){b.style.background='';b.style.color='';b.style.borderColor='';b.classList.remove('active');});
+    bar.querySelectorAll('.fb:not(.item-btn)').forEach(function(b){b.style.cssText='background:#0f172a;color:#fff;border-color:#0f172a';});
+    applyFilters();
+  });
+  bar.appendChild(rst);
+  return bar;
+}
+function render(){
+  var root=document.getElementById('app');
+  if(!root)return;
+  root.appendChild(filterBar());
+  var main=E('div','main');
+  if(!DATA.systems||!DATA.systems.length){
+    var es=E('div','empty-state');
+    es.appendChild(Object.assign(E('h2'),{textContent:'No systems found'}));
+    es.appendChild(Object.assign(E('p'),{textContent:'Architecture export contains no system definitions.'}));
+    main.appendChild(es);
+  }else{
+    DATA.systems.forEach(function(s){main.appendChild(sysSection(s));});
+  }
+  root.appendChild(main);
+}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',render):render();
+})();</script>
+</body>
+</html>

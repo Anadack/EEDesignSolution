@@ -1,0 +1,466 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import json
+from eec_report_common import *
+
+
+def build_html(data: dict, title: str) -> str:
+    json_blob = json.dumps(data, ensure_ascii=False)
+    return f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{esc(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{{
+  --bg:#0d0f14;--surface:#131720;--raised:#1a1f2e;--hover:#1f2538;--active:#242b42;
+  --b0:rgba(255,255,255,.06);--b1:rgba(255,255,255,.10);--b2:rgba(255,255,255,.16);
+  --tp:#e8ecf4;--ts:#8993a8;--tm:#5a6278;--ta:#60a5fa;
+  --accent:#3b82f6;--accent-dim:rgba(59,130,246,.15);
+  --ok:#22c55e;--err:#ef4444;
+  --r:6px;--rm:10px;--rl:16px;
+}}
+*{{box-sizing:border-box;margin:0;padding:0}}
+html,body{{height:100%;overflow:hidden}}
+body{{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tp);font-size:13px;display:flex;flex-direction:column}}
+button,input,select{{font:inherit;color:inherit}}
+
+/* ── topbar ─────────────────────────────────────────────── */
+.topbar{{
+  flex:0 0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:0 20px;height:56px;
+  background:var(--surface);border-bottom:1px solid var(--b1);
+  position:sticky;top:0;z-index:100;
+}}
+.topbar-logo{{display:flex;align-items:center;gap:10px;margin-right:4px}}
+.topbar-logo svg{{color:var(--accent)}}
+.topbar-title{{font-size:1rem;font-weight:700;letter-spacing:-.02em;white-space:nowrap}}
+.topbar-source{{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}}
+.kpi-strip{{display:flex;gap:6px;align-items:center;margin-left:auto;flex-wrap:wrap}}
+.kpi-pill{{
+  display:flex;flex-direction:column;align-items:center;
+  padding:4px 12px;border-radius:20px;
+  background:var(--raised);border:1px solid var(--b1);
+  min-width:72px;
+}}
+.kpi-pill .kp-label{{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--tm);line-height:1.2}}
+.kpi-pill .kp-val{{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--tp);line-height:1.2}}
+.kpi-pill.pill-mapped .kp-val{{color:#4ade80}}
+.kpi-pill.pill-unmapped .kp-val{{color:#f87171}}
+.kpi-pill.pill-cov .kp-val{{color:#60a5fa}}
+
+/* ── app body ────────────────────────────────────────────── */
+.app-body{{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}}
+
+/* ── filter bar ──────────────────────────────────────────── */
+.filterbar{{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  background:var(--surface);border:1px solid var(--b0);border-radius:var(--rm);
+  padding:10px 14px;
+}}
+.filterbar-group{{display:flex;align-items:center;gap:6px;flex-wrap:wrap}}
+.filterbar-label{{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--tm);white-space:nowrap}}
+.filter-btn{{
+  padding:4px 10px;border-radius:20px;border:1px solid var(--b1);
+  background:transparent;color:var(--ts);font-size:11px;font-weight:500;
+  cursor:pointer;transition:all .12s;white-space:nowrap;
+}}
+.filter-btn:hover{{background:var(--hover);color:var(--tp);border-color:var(--b2)}}
+.filter-btn.active{{background:var(--accent-dim);color:var(--ta);border-color:var(--accent)}}
+.search-input{{
+  flex:1;min-width:200px;max-width:320px;
+  padding:6px 12px;border-radius:var(--r);
+  background:var(--raised);border:1px solid var(--b1);color:var(--tp);outline:none;
+  transition:border-color .15s;
+}}
+.search-input:focus{{border-color:var(--accent)}}
+.search-input::placeholder{{color:var(--tm)}}
+.export-btn{{
+  padding:6px 14px;border-radius:var(--r);border:1px solid var(--b1);
+  background:var(--raised);color:var(--ts);cursor:pointer;font-size:11px;font-weight:600;
+  transition:all .12s;margin-left:auto;white-space:nowrap;
+}}
+.export-btn:hover{{background:var(--hover);color:var(--tp);border-color:var(--b2)}}
+
+/* ── table wrapper ───────────────────────────────────────── */
+.table-wrap{{
+  background:var(--surface);border:1px solid var(--b0);border-radius:var(--rl);
+  overflow:auto;flex:1;
+}}
+table{{width:100%;border-collapse:collapse;font-size:11.5px}}
+thead th{{
+  position:sticky;top:0;z-index:10;
+  background:var(--raised);padding:9px 12px;
+  text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--tm);
+  border-bottom:1px solid var(--b1);
+  cursor:pointer;white-space:nowrap;user-select:none;
+}}
+thead th:hover{{background:var(--active);color:var(--ts)}}
+thead th .sort-arrow{{margin-left:4px;opacity:.35;font-size:9px}}
+thead th.sort-asc .sort-arrow::after{{content:'▲'}}
+thead th.sort-desc .sort-arrow::after{{content:'▼'}}
+thead th:not(.sort-asc):not(.sort-desc) .sort-arrow::after{{content:'⇅'}}
+td{{
+  padding:7px 12px;border-bottom:1px solid var(--b0);
+  vertical-align:middle;color:var(--ts);
+}}
+tr:last-child td{{border-bottom:none}}
+tbody tr{{border-left:3px solid transparent;transition:background .1s}}
+tbody tr.row-mapped{{border-left-color:#22c55e}}
+tbody tr.row-unmapped{{border-left-color:#ef4444}}
+tbody tr:hover td{{background:rgba(255,255,255,.025);color:var(--tp)}}
+tbody tr[hidden]{{display:none!important}}
+
+/* signal name */
+.sig-name{{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--tp)}}
+
+/* interface pill */
+.iface-pill{{
+  display:inline-flex;align-items:center;
+  padding:2px 7px;border-radius:4px;
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;
+  white-space:nowrap;border:1px solid transparent;
+}}
+
+/* status badge */
+.status-badge{{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;white-space:nowrap;
+}}
+.status-badge.mapped{{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25)}}
+.status-badge.unmapped{{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)}}
+.status-badge .dot{{width:5px;height:5px;border-radius:50%;flex-shrink:0}}
+.status-badge.mapped .dot{{background:#22c55e}}
+.status-badge.unmapped .dot{{background:#ef4444}}
+
+/* row count footer */
+.table-footer{{
+  display:flex;align-items:center;justify-content:flex-end;
+  padding:8px 16px 6px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tm);
+  background:var(--surface);border-top:1px solid var(--b0);
+  border-radius:0 0 var(--rl) var(--rl);
+}}
+
+::-webkit-scrollbar{{width:5px;height:5px}}
+::-webkit-scrollbar-track{{background:transparent}}
+::-webkit-scrollbar-thumb{{background:var(--b1);border-radius:3px}}
+::-webkit-scrollbar-thumb:hover{{background:var(--b2)}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="9" height="9" rx="1.5"/><rect x="13" y="2" width="9" height="9" rx="1.5"/>
+      <rect x="2" y="13" width="9" height="9" rx="1.5"/><rect x="13" y="13" width="9" height="9" rx="1.5"/>
+    </svg>
+    <span class="topbar-title">Allocation Matrix</span>
+  </div>
+  <span class="topbar-source" id="src-label" title=""></span>
+  <div class="kpi-strip">
+    <div class="kpi-pill"><span class="kp-label">Total</span><span class="kp-val" id="kpi-total">—</span></div>
+    <div class="kpi-pill pill-mapped"><span class="kp-label">Mapped</span><span class="kp-val" id="kpi-mapped">—</span></div>
+    <div class="kpi-pill pill-unmapped"><span class="kp-label">Unmapped</span><span class="kp-val" id="kpi-unmapped">—</span></div>
+    <div class="kpi-pill pill-cov"><span class="kp-label">Coverage</span><span class="kp-val" id="kpi-cov">—</span></div>
+  </div>
+</header>
+
+<div class="app-body">
+  <div class="filterbar">
+    <div class="filterbar-group">
+      <span class="filterbar-label">System</span>
+      <div id="filter-system" class="filterbar-group"></div>
+    </div>
+    <div class="filterbar-group" style="margin-left:8px">
+      <span class="filterbar-label">Interface</span>
+      <div id="filter-iface" class="filterbar-group"></div>
+    </div>
+    <div class="filterbar-group" style="margin-left:8px">
+      <span class="filterbar-label">ECU</span>
+      <div id="filter-ecu" class="filterbar-group"></div>
+    </div>
+    <div class="filterbar-group" style="margin-left:8px">
+      <span class="filterbar-label">Status</span>
+      <div id="filter-status" class="filterbar-group">
+        <button class="filter-btn active" data-status="ALL">All</button>
+        <button class="filter-btn" data-status="MAPPED">Mapped</button>
+        <button class="filter-btn" data-status="UNMAPPED">Unmapped</button>
+      </div>
+    </div>
+    <input id="search-box" class="search-input" placeholder="Search signals, devices, ECUs…" style="margin-left:8px"/>
+    <button class="export-btn" id="export-btn">⬇ CSV</button>
+  </div>
+
+  <div class="table-wrap" id="table-outer">
+    <table id="alloc-table">
+      <thead>
+        <tr>
+          <th data-col="system">System<span class="sort-arrow"></span></th>
+          <th data-col="component">Component<span class="sort-arrow"></span></th>
+          <th data-col="device">Device<span class="sort-arrow"></span></th>
+          <th data-col="device_type">Type<span class="sort-arrow"></span></th>
+          <th data-col="device_connector">Dev Conn<span class="sort-arrow"></span></th>
+          <th data-col="device_cavity">Cavity<span class="sort-arrow"></span></th>
+          <th data-col="device_pin">Device Pin<span class="sort-arrow"></span></th>
+          <th data-col="signal">Signal/Net<span class="sort-arrow"></span></th>
+          <th data-col="interface">Interface<span class="sort-arrow"></span></th>
+          <th data-col="role">Dev Role<span class="sort-arrow"></span></th>
+          <th data-col="ecu">ECU<span class="sort-arrow"></span></th>
+          <th data-col="variant">Variant<span class="sort-arrow"></span></th>
+          <th data-col="ecu_connector">ECU Conn<span class="sort-arrow"></span></th>
+          <th data-col="ecu_pin">ECU Pin<span class="sort-arrow"></span></th>
+          <th data-col="ecu_pin_name">ECU Pin Name<span class="sort-arrow"></span></th>
+          <th data-col="ecu_role">ECU Role<span class="sort-arrow"></span></th>
+          <th data-col="ecu_type">ECU Type<span class="sort-arrow"></span></th>
+          <th data-col="status">Status<span class="sort-arrow"></span></th>
+        </tr>
+      </thead>
+      <tbody id="alloc-body"></tbody>
+    </table>
+    <div class="table-footer"><span id="row-count">0 rows</span></div>
+  </div>
+</div>
+
+<script>
+var DATA = {json_blob};
+
+// ── interface pill colors ───────────────────────────────────────────────────
+var IFACE_COLORS = {{
+  'ANALOG':    {{bg:'rgba(245,158,11,.15)',  color:'#f59e0b', border:'rgba(245,158,11,.35)'}},
+  'DIGITAL':   {{bg:'rgba(16,185,129,.15)',  color:'#10b981', border:'rgba(16,185,129,.35)'}},
+  'CAN':       {{bg:'rgba(34,211,238,.15)',  color:'#22d3ee', border:'rgba(34,211,238,.35)'}},
+  'PWM':       {{bg:'rgba(249,115,22,.15)',  color:'#f97316', border:'rgba(249,115,22,.35)'}},
+  'FREQ':      {{bg:'rgba(139,92,246,.15)',  color:'#8b5cf6', border:'rgba(139,92,246,.35)'}},
+  'POWER':     {{bg:'rgba(52,211,153,.15)',  color:'#34d399', border:'rgba(52,211,153,.35)'}},
+  'GROUND':    {{bg:'rgba(107,114,128,.15)', color:'#6b7280', border:'rgba(107,114,128,.35)'}},
+  'RESISTANCE':{{bg:'rgba(100,116,139,.15)', color:'#64748b', border:'rgba(100,116,139,.35)'}},
+  'LIN':       {{bg:'rgba(167,139,250,.15)', color:'#a78bfa', border:'rgba(167,139,250,.35)'}},
+}};
+var IFACE_DEFAULT = {{bg:'rgba(148,163,184,.1)', color:'#94a3b8', border:'rgba(148,163,184,.25)'}};
+
+function ifacePill(val) {{
+  var key = (val||'').toUpperCase().trim();
+  var c = IFACE_COLORS[key] || IFACE_DEFAULT;
+  return '<span class="iface-pill" style="background:'+c.bg+';color:'+c.color+';border-color:'+c.border+'">'
+       + escHtml(val||'—') + '</span>';
+}}
+
+function statusBadge(val) {{
+  var mapped = (val||'').toUpperCase() === 'MAPPED';
+  var cls = mapped ? 'mapped' : 'unmapped';
+  return '<span class="status-badge '+cls+'"><span class="dot"></span>'+escHtml(val||'')+'</span>';
+}}
+
+function escHtml(s) {{
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}}
+
+// ── state ───────────────────────────────────────────────────────────────────
+var rows = DATA.rows || [];
+var activeSystem = 'ALL';
+var activeIface  = 'ALL';
+var activeEcu    = 'ALL';
+var activeStatus = 'ALL';
+var searchQ = '';
+var sortCol = -1;
+var sortAsc = true;
+
+// column order matches thead
+var COLS = ['system','component','device','device_type','device_connector','device_cavity',
+            'device_pin','signal','interface','role','ecu','variant','ecu_connector',
+            'ecu_pin','ecu_pin_name','ecu_role','ecu_type','status'];
+
+// ── build filter sets ───────────────────────────────────────────────────────
+function uniqueVals(key) {{
+  var seen = {{}};
+  rows.forEach(function(r){{ var v = r[key]||''; if(v) seen[v]=1; }});
+  return Object.keys(seen).sort();
+}}
+
+function buildFilterButtons(containerId, values, getter, setter, defaultLabel) {{
+  var el = document.getElementById(containerId);
+  var allBtn = document.createElement('button');
+  allBtn.className = 'filter-btn active';
+  allBtn.textContent = 'All';
+  allBtn.dataset.val = 'ALL';
+  allBtn.addEventListener('click', function() {{
+    setter('ALL');
+    refreshFilters(containerId, 'ALL');
+    renderRows();
+  }});
+  el.appendChild(allBtn);
+  values.forEach(function(v) {{
+    var btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.textContent = v || '(none)';
+    btn.dataset.val = v;
+    btn.addEventListener('click', function() {{
+      setter(v);
+      refreshFilters(containerId, v);
+      renderRows();
+    }});
+    el.appendChild(btn);
+  }});
+}}
+
+function refreshFilters(containerId, activeVal) {{
+  document.querySelectorAll('#'+containerId+' .filter-btn').forEach(function(b) {{
+    b.classList.toggle('active', b.dataset.val === activeVal || b.dataset.status === activeVal);
+  }});
+}}
+
+// ── render ──────────────────────────────────────────────────────────────────
+function matchRow(r) {{
+  if(activeStatus !== 'ALL' && (r.status||'').toUpperCase() !== activeStatus) return false;
+  if(activeSystem !== 'ALL' && (r.system||'') !== activeSystem) return false;
+  if(activeIface  !== 'ALL' && (r.interface||'') !== activeIface)  return false;
+  if(activeEcu    !== 'ALL' && (r.ecu||'') !== activeEcu)    return false;
+  if(searchQ) {{
+    var txt = COLS.map(function(c){{return r[c]||''}}).join(' ').toLowerCase();
+    if(txt.indexOf(searchQ) === -1) return false;
+  }}
+  return true;
+}}
+
+function renderRows() {{
+  var tbody = document.getElementById('alloc-body');
+  var visible = rows.filter(matchRow);
+
+  if(sortCol >= 0) {{
+    var key = COLS[sortCol];
+    visible.sort(function(a,b) {{
+      var A = a[key]||'', B = b[key]||'';
+      var na = parseFloat(A), nb = parseFloat(B);
+      var cmp = (!isNaN(na)&&!isNaN(nb)) ? na-nb : A.localeCompare(B);
+      return sortAsc ? cmp : -cmp;
+    }});
+  }}
+
+  var html = '';
+  visible.forEach(function(r) {{
+    var cls = (r.status||'').toUpperCase()==='MAPPED' ? 'row-mapped' : 'row-unmapped';
+    html += '<tr class="'+cls+'">'
+      + '<td>'+escHtml(r.system)+'</td>'
+      + '<td>'+escHtml(r.component)+'</td>'
+      + '<td>'+escHtml(r.device)+'</td>'
+      + '<td>'+escHtml(r.device_type)+'</td>'
+      + '<td>'+escHtml(r.device_connector)+'</td>'
+      + '<td>'+escHtml(r.device_cavity)+'</td>'
+      + '<td>'+escHtml(r.device_pin)+'</td>'
+      + '<td><span class="sig-name">'+escHtml(r.signal)+'</span></td>'
+      + '<td>'+ifacePill(r.interface)+'</td>'
+      + '<td>'+escHtml(r.role)+'</td>'
+      + '<td>'+escHtml(r.ecu)+'</td>'
+      + '<td>'+escHtml(r.variant)+'</td>'
+      + '<td>'+escHtml(r.ecu_connector)+'</td>'
+      + '<td>'+escHtml(r.ecu_pin)+'</td>'
+      + '<td>'+escHtml(r.ecu_pin_name)+'</td>'
+      + '<td>'+escHtml(r.ecu_role)+'</td>'
+      + '<td>'+escHtml(r.ecu_type)+'</td>'
+      + '<td>'+statusBadge(r.status)+'</td>'
+      + '</tr>';
+  }});
+  tbody.innerHTML = html;
+  document.getElementById('row-count').textContent = visible.length + ' / ' + rows.length + ' rows';
+}}
+
+// ── sort ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('#alloc-table thead th').forEach(function(th, idx) {{
+  th.addEventListener('click', function() {{
+    if(sortCol === idx) {{ sortAsc = !sortAsc; }}
+    else {{ sortCol = idx; sortAsc = true; }}
+    document.querySelectorAll('#alloc-table thead th').forEach(function(h) {{
+      h.classList.remove('sort-asc','sort-desc');
+    }});
+    th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+    renderRows();
+  }});
+}});
+
+// ── status filter buttons (static, pre-rendered) ────────────────────────────
+document.querySelectorAll('#filter-status .filter-btn').forEach(function(btn) {{
+  btn.addEventListener('click', function() {{
+    activeStatus = btn.dataset.status;
+    document.querySelectorAll('#filter-status .filter-btn').forEach(function(b) {{
+      b.classList.toggle('active', b.dataset.status === activeStatus);
+    }});
+    renderRows();
+  }});
+}});
+
+// ── search ──────────────────────────────────────────────────────────────────
+document.getElementById('search-box').addEventListener('input', function() {{
+  searchQ = this.value.toLowerCase();
+  renderRows();
+}});
+
+// ── CSV export ───────────────────────────────────────────────────────────────
+document.getElementById('export-btn').addEventListener('click', function() {{
+  var visible = rows.filter(matchRow);
+  var header = COLS.join(',');
+  var csvRows = visible.map(function(r) {{
+    return COLS.map(function(c) {{ return '"'+(r[c]||'').replace(/"/g,'""')+'"'; }}).join(',');
+  }});
+  var csv = [header].concat(csvRows).join('\\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {{type:'text/csv'}}));
+  a.download = 'allocation_matrix.csv';
+  a.click();
+}});
+
+// ── KPI update ───────────────────────────────────────────────────────────────
+function updateKPIs() {{
+  var total   = rows.length;
+  var mapped  = rows.filter(function(r){{return (r.status||'').toUpperCase()==='MAPPED';}}).length;
+  var unmapped = total - mapped;
+  var cov = total > 0 ? Math.round(mapped/total*100) : 0;
+  document.getElementById('kpi-total').textContent   = total;
+  document.getElementById('kpi-mapped').textContent  = mapped;
+  document.getElementById('kpi-unmapped').textContent= unmapped;
+  document.getElementById('kpi-cov').textContent     = cov+'%';
+}}
+
+// ── init ─────────────────────────────────────────────────────────────────────
+(function init() {{
+  var srcEl = document.getElementById('src-label');
+  srcEl.textContent = DATA.source || '';
+  srcEl.title = DATA.source || '';
+
+  buildFilterButtons('filter-system', uniqueVals('system'),
+    function(){{return activeSystem;}}, function(v){{activeSystem=v;}});
+  buildFilterButtons('filter-iface', uniqueVals('interface'),
+    function(){{return activeIface;}},  function(v){{activeIface=v;}});
+  buildFilterButtons('filter-ecu', uniqueVals('ecu'),
+    function(){{return activeEcu;}},    function(v){{activeEcu=v;}});
+
+  updateKPIs();
+  renderRows();
+}})();
+</script>
+</body></html>"""
+
+
+def main() -> int:
+    parser = standard_arg_parser("Generate v4 generic allocation matrix HTML.")
+    args = parser.parse_args()
+    cfg = load_config(Path(args.config) if args.config else None)
+    root = resolve_root(args.root)
+    src, arch = load_architecture_from_args(args, cfg, physical=False)
+    rows = collect_allocation_rows(arch, cfg)
+    data = {
+        "source": str(src.relative_to(root) if src.is_relative_to(root) else src),
+        "rows": rows,
+    }
+    out = get_output_file(root, cfg, "allocation_matrix", args.output, args.outdir)
+    write_text(out, build_html(data, "Allocation Matrix"))
+    print(out)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

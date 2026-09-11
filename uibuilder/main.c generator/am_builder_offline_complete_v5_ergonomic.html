@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AM Builder — EE Architecture Offline Complete</title>
+<style>
+:root{
+  --bg:#0b1020;--panel:#121933;--panel2:#182142;--panel3:#0f1730;--text:#e8ecf8;--muted:#9aa6c7;
+  --accent:#6ea8fe;--accent2:#8b5cf6;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--border:rgba(255,255,255,.08)
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#0a1020,#0d1328 35%,#0b1020);color:var(--text)}
+.app{max-width:1860px;margin:0 auto;padding:18px}
+.card{background:rgba(18,25,51,.96);border:1px solid var(--border);border-radius:22px;padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.22)}
+.hero{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:14px}
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:16px;padding:12px}
+.stat .label{font-size:12px;color:var(--muted)}
+.stat .value{font-size:24px;font-weight:800;margin-top:5px}
+button,.file-label{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;text-align:center;transition:.15s ease}
+button:hover,.file-label:hover{transform:translateY(-1px)}
+.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.secondary{background:#24315e;color:#fff}
+.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.danger{background:rgba(239,68,68,.14);color:#fecaca;border:1px solid rgba(239,68,68,.24)}
+.ok{background:rgba(34,197,94,.14);color:#bbf7d0;border:1px solid rgba(34,197,94,.24)}
+.warn{background:rgba(245,158,11,.14);color:#fde68a;border:1px solid rgba(245,158,11,.24)}
+.small-btn{padding:7px 10px;font-size:12px;border-radius:10px}
+input,select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--panel3);color:var(--text);outline:none}
+input[type=file]{display:none}
+textarea{min-height:96px;resize:vertical}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:12px;color:var(--muted);font-weight:700}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+.top-actions{display:grid;gap:10px}
+.toolbar{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.quick-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tabs{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;margin-bottom:16px}
+.tab{padding:12px;border-radius:14px;background:#121933;border:1px solid var(--border);text-align:center;font-weight:800;color:var(--muted);cursor:pointer}
+.tab.active{color:#fff;background:linear-gradient(135deg,#1d2854,#25346c)}
+.layout{display:grid;grid-template-columns:780px 1fr;gap:16px}
+.items{display:grid;gap:10px;max-height:780px;overflow:auto;padding-right:4px}
+.item{background:var(--panel2);border:1px solid var(--border);border-radius:16px;padding:12px}
+.item-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.item-title{font-weight:800}
+.item-meta{color:var(--muted);font-size:12px;margin-top:6px}
+.item-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{background:rgba(110,168,254,.1);color:#bfd5ff;border:1px solid rgba(110,168,254,.25);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700}
+.code-wrap{background:#08101f;border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.code-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border);background:#0d1630}
+pre{margin:0;padding:16px;overflow:auto;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.55;color:#dbe8ff;min-height:820px}
+.issue{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0f1730}
+.issue.err{border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.08)}
+.issue.warn{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.08)}
+.search-grid{display:grid;grid-template-columns:1fr 220px;gap:10px}
+.banner{border:1px dashed rgba(110,168,254,.3);background:rgba(110,168,254,.06);padding:12px;border-radius:14px}
+.diagram-wrap{display:grid;gap:12px}
+.diagram-stage{overflow:auto;max-height:620px;border:1px solid var(--border);border-radius:12px;background:#fff;padding:8px}
+svg.diagram{background:#fff;display:block}
+svg text{font-family:Arial,sans-serif;font-size:12px;fill:#162033}
+.node rect{rx:10;ry:10;stroke:#8aa6d9;stroke-width:1.2}
+.node.system rect{fill:#e8f0ff}
+.node.group rect{fill:#f3ebff}
+.node.device rect{fill:#eafbf0}
+.node.signal rect{fill:#fff6df}
+.node.ecu rect{fill:#ffe9eb}
+.node.bus rect{fill:#e7f7ff}
+.node.message rect{fill:#f4f5f7}
+.edge{stroke:#6b7ea8;stroke-width:1.2;fill:none;marker-end:url(#arrow)}
+.drop-ok{outline:2px dashed rgba(34,197,94,.7)!important;background:rgba(34,197,94,.08)!important}
+.drop-bad{outline:2px dashed rgba(239,68,68,.7)!important;background:rgba(239,68,68,.08)!important}
+.dragging{opacity:.5}
+.dropzone{border:1px dashed rgba(110,168,254,.25);border-radius:12px;padding:10px;margin-top:8px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stack{display:grid;gap:10px}
+.library-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inline-help{font-size:12px;color:var(--muted)}
+.sort-buttons{display:flex;gap:6px;flex-wrap:wrap}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.highlight{box-shadow:0 0 0 2px rgba(110,168,254,.45) inset}
+
+.tree-wrap{display:grid;gap:10px}
+.tree{background:var(--panel2);border:1px solid var(--border);border-radius:16px;padding:12px;max-height:820px;overflow:auto}
+.tree ul{list-style:none;padding-left:18px;margin:6px 0}
+.tree li{margin:4px 0}
+.tree-node{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px}
+.tree-node.system{background:rgba(110,168,254,.08)}
+.tree-node.sa{background:rgba(34,197,94,.08)}
+.tree-node.signal{background:rgba(245,158,11,.08)}
+.tree-node.misc{background:rgba(139,92,246,.08)}
+.tree-node.drop-ok{outline:none}
+.tree-badge{font-size:11px;color:var(--muted)}
+.arch-layout{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}
+
+@media(max-width:1450px){
+  .hero,.layout{grid-template-columns:1fr}
+  .tabs{grid-template-columns:repeat(4,1fr)}
+  .stats{grid-template-columns:repeat(3,1fr)}
+}
+
+
+body{min-height:100vh}
+.app{max-width:1920px;padding:20px 20px 28px}
+.app-shell{display:grid;gap:16px}
+.topbar{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr);gap:16px;align-items:start}
+.hero-card{padding:22px}
+.hero-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:12px}
+.hero-copy h1{margin:0 0 8px;font-size:30px;line-height:1.08}
+.hero-copy p{margin:0;color:var(--muted);max-width:900px}
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.kpi-pill{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:12px;font-weight:800;color:#dbe8ff}
+.kpi-pill strong{color:#fff}
+.kpi-pill.issue{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.2)}
+.kpi-pill.ok-state{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.2)}
+.command-card{padding:18px;position:sticky;top:18px}
+.command-card details{background:transparent!important;border:0!important;padding:0!important}
+.command-card summary{list-style:none;display:flex;align-items:center;justify-content:space-between}
+.command-card summary::-webkit-details-marker{display:none}
+.command-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.command-title{font-size:18px;font-weight:900}
+.command-subtitle{font-size:12px;color:var(--muted)}
+.command-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stats{grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{padding:14px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;inset:auto -30px -30px auto;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 60%)}
+.stat .value{font-size:26px}
+.workspace{display:grid;grid-template-columns:280px minmax(0,1fr) minmax(360px,.84fr);gap:16px;align-items:start}
+.nav-card,.panel-card,.preview-card{min-height:calc(100vh - 210px)}
+.nav-card{padding:14px;position:sticky;top:18px}
+.nav-title{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.nav-title h2{margin:0;font-size:18px}
+.nav-title p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.tabs{display:grid;grid-template-columns:1fr;gap:8px;margin:0}
+.tab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 14px;text-align:left;font-size:14px;border-radius:16px;background:rgba(255,255,255,.03)}
+.tab:hover{border-color:rgba(110,168,254,.3);color:#fff}
+.tab-main{display:flex;flex-direction:column;gap:4px}
+.tab-main span{font-size:11px;color:var(--muted);font-weight:700}
+.tab-badge{min-width:34px;padding:5px 9px;border-radius:999px;background:rgba(110,168,254,.12);border:1px solid rgba(110,168,254,.2);font-size:11px;color:#dce8ff;text-align:center}
+.panel-card,.preview-card{padding:0;overflow:hidden}
+.panel-header,.preview-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 18px 14px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0))}
+.panel-header h2,.preview-header h2{margin:0;font-size:20px}
+.panel-header p,.preview-header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.panel-body{padding:18px}
+.panel-toolbar,.preview-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.preview-card{position:sticky;top:18px}
+.preview-card .code-wrap{border:none;border-radius:0;background:transparent}
+.preview-card .code-head{padding:0;background:transparent;border-bottom:none}
+.preview-meta{display:flex;gap:8px;flex-wrap:wrap}
+.preview-tag{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--border);font-size:11px;color:#dce8ff;font-weight:800}
+pre{min-height:calc(100vh - 320px);max-height:calc(100vh - 320px)}
+.quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+.search-grid{grid-template-columns:minmax(0,1fr) 220px}
+.inline-cluster{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted)}
+.export-dropdown summary{margin-bottom:12px}
+.floating-help{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--border)}
+.floating-help strong{display:block;margin-bottom:6px}
+.preview-actions-top{display:flex;gap:8px;flex-wrap:wrap}
+.panel-empty{padding:16px;border:1px dashed var(--border);border-radius:16px;color:var(--muted)}
+.status-note{font-size:12px;color:var(--muted)}
+@media(max-width:1600px){
+  .workspace{grid-template-columns:240px minmax(0,1fr) minmax(320px,.9fr)}
+  .stats{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:1300px){
+  .topbar,.workspace{grid-template-columns:1fr}
+  .nav-card,.preview-card,.command-card{position:static}
+  .nav-card,.panel-card,.preview-card{min-height:auto}
+  pre{min-height:520px;max-height:none}
+}
+@media(max-width:780px){
+  .app{padding:14px}
+  .hero-header,.command-header,.panel-header,.preview-header{flex-direction:column;align-items:flex-start}
+  .search-grid,.command-grid,.quick-actions,.form-grid,.grid-2,.library-grid,.arch-layout{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="app-shell">
+    <section class="topbar">
+      <div class="card hero-card">
+        <div class="hero-header">
+          <div class="hero-copy">
+            <h1>AM Builder — interface réorganisée</h1>
+            <p>Version ergonomique pour travailler plus vite&nbsp;: navigation workflow à gauche, zone d’édition centrale, prévisualisation persistante à droite, et commandes projet regroupées dans un seul centre d’action.</p>
+          </div>
+          <div class="hero-pills">
+            <div class="kpi-pill"><strong id="projectNamePill">My EE Architecture</strong></div>
+            <div class="kpi-pill" id="searchStatusPill">Recherche inactive</div>
+            <div class="kpi-pill ok-state" id="issueStatusPill">0 issue</div>
+          </div>
+        </div>
+        <div class="search-grid" style="margin-top:10px">
+          <div class="field">
+            <label>Recherche globale live</label>
+            <input id="globalSearch" placeholder="Rechercher un système, signal, device, ECU, bus, groupe..." />
+          </div>
+          <div class="field">
+            <label>Focus diagramme</label>
+            <select id="diagramFocus">
+              <option value="all">Tout</option>
+              <option value="systems">Systems</option>
+              <option value="devices">Devices</option>
+              <option value="signals">Signals</option>
+              <option value="ecus">ECUs</option>
+              <option value="buses">Buses</option>
+            </select>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Systèmes</div><div class="value" id="statSystems">0</div></div>
+          <div class="stat"><div class="label">Groupes</div><div class="value" id="statGroups">0</div></div>
+          <div class="stat"><div class="label">Devices</div><div class="value" id="statDevices">0</div></div>
+          <div class="stat"><div class="label">Signaux</div><div class="value" id="statSignals">0</div></div>
+          <div class="stat"><div class="label">ECU</div><div class="value" id="statEcus">0</div></div>
+          <div class="stat"><div class="label">Bus</div><div class="value" id="statBuses">0</div></div>
+          <div class="stat"><div class="label">Pins device</div><div class="value" id="statDevicePins">0</div></div>
+          <div class="stat"><div class="label">Bindings ECU</div><div class="value" id="statBindings">0</div></div>
+          <div class="stat"><div class="label">Msgs J1939</div><div class="value" id="statMessages">0</div></div>
+          <div class="stat"><div class="label">Issues</div><div class="value" id="statIssues">0</div></div>
+          <div class="stat"><div class="label">Objets bibliothèque</div><div class="value" id="statLibrary">0</div></div>
+          <div class="stat"><div class="label">Projets sauvegardés</div><div class="value" id="statProjects">0</div></div>
+        </div>
+      </div>
+
+      <aside class="card command-card top-actions">
+        <details open class="export-dropdown">
+          <summary>
+            <div>
+              <div class="command-title">Centre d’action projet</div>
+              <div class="command-subtitle">Imports, exports, sauvegardes et remise à zéro au même endroit.</div>
+            </div>
+            <span class="preview-tag">offline</span>
+          </summary>
+          <div class="stack" style="margin-top:10px">
+            <button class="primary" id="exportAllBtn">Exporter tous les fichiers</button>
+
+            <div class="command-grid">
+              <div class="field">
+                <label>Type d’export</label>
+                <select id="exportMenu">
+                  <option value="main">main.c</option>
+                  <option value="arch_json">framework JSON</option>
+                  <option value="state">editor state</option>
+                  <option value="makefile">Makefile</option>
+                  <option value="buildsh">build.sh</option>
+                  <option value="pinout">pinout HTML</option>
+                  <option value="report">validation report</option>
+                  <option value="dbc">DBC du groupe</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Groupe pour export DBC</label>
+                <select id="headerDbcGroup"></select>
+              </div>
+            </div>
+
+            <div class="command-grid">
+              <button class="secondary" id="runExportBtn">Exporter la sélection</button>
+              <button class="secondary" id="saveAllProjectObjectsBtn">Sauvegarder tous les objets</button>
+            </div>
+
+            <div class="quick-actions">
+              <label class="file-label ghost" for="importState">Importer editor state</label>
+              <input id="importState" type="file" accept="application/json" />
+              <label class="file-label ghost" for="importObjectFile">Importer objet JSON</label>
+              <input id="importObjectFile" type="file" accept="application/json" />
+              <button class="ghost" id="loadDemoBtn">Charger une démo</button>
+              <button class="danger" id="resetBtn">Réinitialiser</button>
+            </div>
+            <div class="floating-help">
+              <strong>Workflow conseillé</strong>
+              <div class="status-note">1. Définir l’architecture · 2. Renseigner systèmes / groups / devices · 3. Vérifier · 4. Exporter.</div>
+            </div>
+          </div>
+        </details>
+      </aside>
+    </section>
+
+    <section class="workspace">
+      <aside class="card nav-card">
+        <div class="nav-title">
+          <div>
+            <h2>Workflow</h2>
+            <p>Navigation par étape avec compteurs.</p>
+          </div>
+          <span class="preview-tag" id="activeTabPill">architecture</span>
+        </div>
+        <div class="tabs" id="tabs"></div>
+      </aside>
+
+      <section class="card panel-card">
+        <div class="panel-header">
+          <div>
+            <h2 id="workspaceTitle">Architecture</h2>
+            <p id="workspaceDescription">Zone d’édition de l’onglet actif.</p>
+          </div>
+          <div class="panel-toolbar">
+            <button class="ghost small-btn" id="jumpValidationBtn" type="button">Voir validation</button>
+            <button class="ghost small-btn" id="jumpExportsBtn" type="button">Aller aux exports</button>
+          </div>
+        </div>
+        <div class="panel-body" id="leftPanel"></div>
+      </section>
+
+      <aside class="card preview-card">
+        <div class="preview-header">
+          <div>
+            <h2 id="previewTitle">Prévisualisation</h2>
+            <p>Aperçu persistant de la sortie courante.</p>
+          </div>
+          <div class="preview-toolbar">
+            <span id="codeSummary" class="preview-tag">0 lignes</span>
+            <button class="ghost small-btn" id="copyPreviewBtn" type="button">Copier</button>
+          </div>
+        </div>
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="preview-meta">
+              <span class="preview-tag" id="previewModeTag">main.c</span>
+              <span class="preview-tag" id="previewContextTag">éditeur</span>
+            </div>
+          </div>
+          <pre id="codePreview"></pre>
+        </div>
+      </aside>
+    </section>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY='am_builder_offline_complete_v1';
+const DB_NAME='AM_BUILDER_EE_LOCAL_DB_OFFLINE';
+const DB_VERSION=1;
+const signalTypes=['DIGITAL','ANALOG','PWM','CAN','LIN','SENT','ETHERNET'];
+const signalUnits=['NONE','BOOLEAN','VOLT','AMPERE','HERTZ','PERCENT','RPM','CELSIUS','BAR'];
+const deviceTypes=['SENSOR','ACTUATOR','GATEWAY'];
+const pinRoles=['INPUT','OUTPUT','INOUT','SUPPLY','GROUND'];
+const ecuVariants=['SMALL','MEDIUM','LARGE'];
+const busTypes=['CAN','LIN','ETHERNET'];
+const canSpeeds=['125000','250000','500000','1000000'];
+const libraryTypes=['all','system','system_group','device','signal','ecu','bus','ecu_binding','project'];
+
+const state = {
+  architecture:{name:'My EE Architecture',notes:'',systems:[],systemGroups:[],devices:[],signals:[],ecus:[],buses:[],ecuBindings:[]},
+  activeTab:'architecture',
+  previewMode:'main',
+  previewDbcGroup:'',
+  previewTemplateType:'system',
+  previewLibraryItem:'',
+  librarySearch:'',
+  libraryType:'all',
+  libraryItems:[],
+  savedProjects:[],
+  globalSearch:'',
+  diagramFocus:'all',
+  dragPayload:null
+};
+
+const tabs = [
+  {id:'architecture',label:'Architecture'},
+  {id:'diagram',label:'Diagramme'},
+  {id:'imports',label:'Imports'},
+  {id:'library',label:'Library'},
+  {id:'systems',label:'Systems'},
+  {id:'groups',label:'Groups'},
+  {id:'devices',label:'Sensors_Actuators'},
+  {id:'signals',label:'Signals'},
+  {id:'ecus',label:'ECUs'},
+  {id:'buses',label:'Buses'},
+  {id:'validation',label:'Validation'},
+  {id:'exports',label:'Exports'}
+];
+
+const TEMPLATE_EXAMPLES = {
+  system:{object_type:'system',items:[{name:'BodySystem'},{name:'PowertrainSystem'}]},
+  system_group:{object_type:'system_group',items:[{name:'PowertrainGroup',system_names:['PowertrainSystem'],messages:[{name:'ET1',pgn:65262,priority:6,source_address:0,dlc:8,cycle_ms:100,signal_names:['CoolantTemperature']}]}]},
+  device:{object_type:'device',items:[{name:'CoolantTempSensor_1',type:'SENSOR',system_name:'PowertrainSystem',pins:[{name:'OUT_TEMP',number:1,role:'INPUT',signal_name:'CoolantTemperature'}]}]},
+  signal:{object_type:'signal',items:[{name:'CoolantTemperature',type:'ANALOG',unit:'CELSIUS',min:-40,max:150,resolution:0.1,scaling:1}]},
+  ecu:{object_type:'ecu',items:[{name:'AEC_SMALL_01',variant:'SMALL',can_addresses:['0x12','0x34']}]},
+  bus:{object_type:'bus',items:[{name:'MainCAN',type:'CAN',speed:'500000',ecu_names:['AEC_SMALL_01'],group_names:['PowertrainGroup']}]},
+  ecu_binding:{object_type:'ecu_binding',items:[{signal_name:'CoolantTemperature',ecu_name:'AEC_SMALL_01',connector:'X1',physical_pin:42,pin_name:'IN_AIV_07',group:'AIV_5',functions:'AIV_16, AIV_RES',role:'INPUT',status:'valid',electrical:'0..5 V, ADC 12-bit',diagnostics:'Open Load, Short GND',sw_config:'Pull-Up',device_pin_ref:'CoolantTempSensor_1::OUT_TEMP'}]},
+  full_architecture:{object_type:'full_architecture',architecture:{name:'Imported EE Architecture',notes:'',systems:[],systemGroups:[],devices:[],signals:[],ecus:[],buses:[],ecuBindings:[]}}
+};
+
+const el = id => document.getElementById(id);
+const uid = p => `${p}_${Math.random().toString(36).slice(2,10)}`;
+const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+const csv = s => String(s||'').split(',').map(v=>v.trim()).filter(Boolean);
+const uniq = arr => [...new Set(arr)];
+const text = s => String(s||'').toLowerCase();
+const q = () => text(state.globalSearch).trim();
+
+function matchesGlobalSearch(...values){
+  const needle=q();
+  if(!needle) return true;
+  return values.some(v => text(v).includes(needle));
+}
+
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.architecture)); }
+function loadState(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) state.architecture=JSON.parse(raw);}catch{} }
+
+function getSystem(id){ return state.architecture.systems.find(x=>x.id===id); }
+function getGroup(id){ return state.architecture.systemGroups.find(x=>x.id===id); }
+function getDevice(id){ return state.architecture.devices.find(x=>x.id===id); }
+function getSignal(id){ return state.architecture.signals.find(x=>x.id===id); }
+function getEcu(id){ return state.architecture.ecus.find(x=>x.id===id); }
+function countDevicePins(){ return state.architecture.devices.reduce((a,d)=>a+(d.pins?.length||0),0); }
+function countMessages(){ return state.architecture.systemGroups.reduce((a,g)=>a+((g.messages||[]).length),0); }
+
+function findDevicePin(ref){
+  if(!ref) return null;
+  const [devId,pinId]=ref.split('::');
+  const dev=getDevice(devId);
+  const pin=dev?.pins?.find(p=>p.id===pinId);
+  return (dev && pin) ? {dev,pin} : null;
+}
+
+function ensureSystemByName(name){
+  if(!name) return null;
+  let sys=state.architecture.systems.find(x=>text(x.name)===text(name));
+  if(!sys){ sys={id:uid('sys'),name}; state.architecture.systems.push(sys); }
+  return sys;
+}
+function ensureSignalByName(name,fallback={}){
+  if(!name) return null;
+  let sig=state.architecture.signals.find(x=>text(x.name)===text(name));
+  if(!sig){
+    let unit=String(fallback.unit||'NONE').toUpperCase();
+    if(!signalUnits.includes(unit)) unit='NONE';
+    sig={id:uid('sig'),name,type:fallback.type||'ANALOG',unit,min:Number(fallback.min||0),max:Number(fallback.max||0),resolution:Number(fallback.resolution||1),scaling:Number(fallback.scaling||1)};
+    state.architecture.signals.push(sig);
+  }
+  return sig;
+}
+function ensureGroupByName(name){
+  if(!name) return null;
+  let g=state.architecture.systemGroups.find(x=>text(x.name)===text(name));
+  if(!g){ g={id:uid('grp'),name,systemIds:[],messages:[]}; state.architecture.systemGroups.push(g); }
+  return g;
+}
+function ensureEcuByName(name,fallback={}){
+  if(!name) return null;
+  let ecu=state.architecture.ecus.find(x=>text(x.name)===text(name));
+  if(!ecu){ ecu={id:uid('ecu'),name,variant:fallback.variant||'SMALL',canAddresses:fallback.can_addresses||fallback.canAddresses||[]}; state.architecture.ecus.push(ecu); }
+  return ecu;
+}
+function ensureDeviceByName(name,fallback={}){
+  if(!name) return null;
+  let dev=state.architecture.devices.find(x=>text(x.name)===text(name));
+  if(!dev){
+    const sys=ensureSystemByName(fallback.system_name||fallback.system||'ImportedSystem');
+    dev={id:uid('dev'),name,type:fallback.type||'SENSOR',systemId:sys.id,pins:[]};
+    state.architecture.devices.push(dev);
+  }
+  return dev;
+}
+function ensureDevicePinByRef(ref){
+  if(!ref || !ref.includes('::')) return null;
+  const [deviceName,pinName]=ref.split('::');
+  const dev=ensureDeviceByName(deviceName,{});
+  let pin=(dev.pins||[]).find(p=>text(p.name)===text(pinName));
+  if(!pin){ pin={id:uid('dpin'),name:pinName,number:(dev.pins?.length||0)+1,role:'INPUT',signalId:''}; dev.pins.push(pin); }
+  return {dev,pin};
+}
+
+function openDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if(!db.objectStoreNames.contains('library_objects')){
+        const st=db.createObjectStore('library_objects',{keyPath:'id'});
+        st.createIndex('objectType','objectType',{unique:false});
+        st.createIndex('name','name',{unique:false});
+      }
+      if(!db.objectStoreNames.contains('saved_projects')){
+        const st=db.createObjectStore('saved_projects',{keyPath:'id'});
+        st.createIndex('name','name',{unique:false});
+      }
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function dbPut(storeName,value){
+  const db=await openDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(storeName,'readwrite');
+    tx.objectStore(storeName).put(value);
+    tx.oncomplete=()=>{db.close();resolve();};
+    tx.onerror=()=>{db.close();reject(tx.error);};
+  });
+}
+async function dbDelete(storeName,id){
+  const db=await openDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(storeName,'readwrite');
+    tx.objectStore(storeName).delete(id);
+    tx.oncomplete=()=>{db.close();resolve();};
+    tx.onerror=()=>{db.close();reject(tx.error);};
+  });
+}
+async function dbGetAll(storeName){
+  const db=await openDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(storeName,'readonly');
+    const req=tx.objectStore(storeName).getAll();
+    req.onsuccess=()=>{db.close();resolve(req.result||[]);};
+    req.onerror=()=>{db.close();reject(req.error);};
+  });
+}
+async function refreshLibraryState(){
+  state.libraryItems = await dbGetAll('library_objects');
+  state.savedProjects = await dbGetAll('saved_projects');
+  updateStats();
+  if(state.activeTab==='library') render();
+}
+function libraryRecord(objectType,name,payload,tags=[]){
+  return {id:`${objectType}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,objectType,name,tags,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),payload};
+}
+async function saveCurrentProjectToLibrary(){
+  await dbPut('saved_projects',{id:`project_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,name:state.architecture.name||'Unnamed Project',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),payload:structuredClone(state.architecture)});
+  await refreshLibraryState();
+  alert('Projet sauvegardé.');
+}
+async function saveObjectTypeToLibrary(typeName){
+  let items=[];
+  if(typeName==='system') items=state.architecture.systems.map(v=>({name:v.name,payload:v}));
+  if(typeName==='system_group') items=state.architecture.systemGroups.map(v=>({name:v.name,payload:v}));
+  if(typeName==='device') items=state.architecture.devices.map(v=>({name:v.name,payload:v}));
+  if(typeName==='signal') items=state.architecture.signals.map(v=>({name:v.name,payload:v}));
+  if(typeName==='ecu') items=state.architecture.ecus.map(v=>({name:v.name,payload:v}));
+  if(typeName==='bus') items=state.architecture.buses.map(v=>({name:v.name,payload:v}));
+  if(typeName==='ecu_binding') items=state.architecture.ecuBindings.map(v=>({name:`${getSignal(v.signalId)?.name||'Signal'} -> ${getEcu(v.ecuId)?.name||'ECU'} ${v.connector}/${v.physicalPin}`,payload:v}));
+  for(const it of items) await dbPut('library_objects', libraryRecord(typeName,it.name,it.payload,[typeName]));
+  await refreshLibraryState();
+  alert(`Objets ${typeName} sauvegardés.`);
+}
+function filteredLibraryItems(){
+  return state.libraryItems.filter(item=>{
+    const typeOk=state.libraryType==='all' || item.objectType===state.libraryType;
+    const needle=text(state.librarySearch).trim();
+    const localOk=!needle || text(item.name).includes(needle) || text(item.objectType).includes(needle) || text((item.tags||[]).join(' ')).includes(needle);
+    return typeOk && localOk && matchesGlobalSearch(item.name,item.objectType,(item.tags||[]).join(' '));
+  });
+}
+function cloneIntoProject(item){
+  const p=structuredClone(item.payload);
+  if(item.objectType==='system'){
+    if(!state.architecture.systems.some(x=>text(x.name)===text(p.name))) state.architecture.systems.push({...p,id:uid('sys')});
+  } else if(item.objectType==='signal'){
+    if(!state.architecture.signals.some(x=>text(x.name)===text(p.name))) state.architecture.signals.push({...p,id:uid('sig')});
+  } else if(item.objectType==='ecu'){
+    if(!state.architecture.ecus.some(x=>text(x.name)===text(p.name))) state.architecture.ecus.push({...p,id:uid('ecu')});
+  } else if(item.objectType==='device'){
+    let sys=getSystem(p.systemId); if(!sys){ sys=ensureSystemByName('ImportedSystem'); p.systemId=sys.id; }
+    if(!state.architecture.devices.some(x=>text(x.name)===text(p.name))){
+      p.id=uid('dev'); p.pins=(p.pins||[]).map(pin=>({...pin,id:uid('dpin')}));
+      state.architecture.devices.push(p);
+    }
+  } else if(item.objectType==='bus'){
+    if(!state.architecture.buses.some(x=>text(x.name)===text(p.name))) state.architecture.buses.push({...p,id:uid('bus')});
+  } else if(item.objectType==='system_group'){
+    if(!state.architecture.systemGroups.some(x=>text(x.name)===text(p.name))){
+      p.id=uid('grp'); p.messages=(p.messages||[]).map(m=>({...m,id:uid('msg')}));
+      state.architecture.systemGroups.push(p);
+    }
+  } else if(item.objectType==='ecu_binding'){
+    state.architecture.ecuBindings.push({...p,id:uid('bind')});
+  }
+  persistAndRender();
+}
+async function loadProjectFromLibrary(id){
+  const proj=state.savedProjects.find(p=>p.id===id);
+  if(proj){ state.architecture=structuredClone(proj.payload); persistAndRender(); }
+}
+async function deleteLibraryItem(id,isProject=false){
+  await dbDelete(isProject?'saved_projects':'library_objects',id);
+  await refreshLibraryState();
+}
+
+function normalizeImportedItems(data){
+  if(Array.isArray(data)) return {object_type:'unknown',items:data};
+  if(data && Array.isArray(data.items)) return {object_type:data.object_type||'unknown',items:data.items};
+  return data||{};
+}
+function importObjectFileData(raw){
+  const data=normalizeImportedItems(raw);
+  const typeName=text(data.object_type);
+  if(typeName==='full_architecture' && raw.architecture){ state.architecture=raw.architecture; persistAndRender(); return 'Architecture importée.'; }
+  const items=Array.isArray(data.items)?data.items:[];
+  if(!items.length) throw new Error('Aucun item importable trouvé.');
+  let imported=0;
+  if(typeName==='system'){
+    items.forEach(it=>{ if(it.name){ ensureSystemByName(it.name); imported++; }});
+  } else if(typeName==='signal'){
+    items.forEach(it=>{ if(it.name){ ensureSignalByName(it.name,it); imported++; }});
+  } else if(typeName==='device'){
+    items.forEach(it=>{
+      if(!it.name) return;
+      const sys=ensureSystemByName(it.system_name||it.system||'ImportedSystem');
+      let dev=state.architecture.devices.find(x=>text(x.name)===text(it.name));
+      if(!dev){ dev={id:uid('dev'),name:it.name,type:it.type||'SENSOR',systemId:sys.id,pins:[]}; state.architecture.devices.push(dev); }
+      (it.pins||[]).forEach(p=>{
+        let pin=(dev.pins||[]).find(x=>text(x.name)===text(p.name));
+        if(!pin){ pin={id:uid('dpin'),name:p.name,number:Number(p.number||((dev.pins?.length||0)+1)),role:p.role||'INPUT',signalId:''}; dev.pins.push(pin); }
+        if(p.signal_name){ const sig=ensureSignalByName(p.signal_name,p.signal||{}); pin.signalId=sig.id; }
+      });
+      imported++;
+    });
+  } else if(typeName==='ecu'){
+    items.forEach(it=>{ if(it.name){ ensureEcuByName(it.name,it); imported++; }});
+  } else if(typeName==='bus'){
+    items.forEach(it=>{
+      if(!it.name) return;
+      let bus=state.architecture.buses.find(x=>text(x.name)===text(it.name));
+      if(!bus){ bus={id:uid('bus'),name:it.name,type:it.type||'CAN',speed:it.speed||'',ecuIds:[],groupIds:[]}; state.architecture.buses.push(bus); }
+      bus.type=it.type||bus.type; bus.speed=it.speed||bus.speed;
+      bus.ecuIds=uniq([...(bus.ecuIds||[]),...((it.ecu_names||[]).map(n=>ensureEcuByName(n,{}).id))]);
+      bus.groupIds=uniq([...(bus.groupIds||[]),...((it.group_names||[]).map(n=>ensureGroupByName(n).id))]);
+      imported++;
+    });
+  } else if(typeName==='system_group'){
+    items.forEach(it=>{
+      if(!it.name) return;
+      const g=ensureGroupByName(it.name);
+      g.systemIds=uniq([...(g.systemIds||[]),...((it.system_names||[]).map(n=>ensureSystemByName(n).id))]);
+      g.messages ||= [];
+      (it.messages||[]).forEach(m=>{
+        if(!m.name) return;
+        if(g.messages.some(x=>text(x.name)===text(m.name))) return;
+        const signalIds=uniq((m.signal_names||[]).map(n=>ensureSignalByName(n,{type:'CAN',unit:'NONE'}).id));
+        g.messages.push({id:uid('msg'),name:m.name,pgn:Number(m.pgn||0),priority:Number(m.priority||6),sourceAddress:Number(m.source_address??m.sourceAddress??0),dlc:Number(m.dlc||8),cycleTime:Number(m.cycle_ms??m.cycleTime??100),signalIds});
+      });
+      imported++;
+    });
+  } else if(typeName==='ecu_binding'){
+    items.forEach(it=>{
+      const sig=ensureSignalByName(it.signal_name,{type:'ANALOG',unit:'NONE'});
+      const ecu=ensureEcuByName(it.ecu_name,{});
+      if(!sig||!ecu||!it.connector||!it.physical_pin) return;
+      const key=`${ecu.id}::${String(it.connector).toUpperCase()}::${Number(it.physical_pin)}`;
+      if(state.architecture.ecuBindings.some(b=>`${b.ecuId}::${String(b.connector).toUpperCase()}::${Number(b.physicalPin)}`===key)) return;
+      const ref=ensureDevicePinByRef(it.device_pin_ref);
+      if(ref) ref.pin.signalId=sig.id;
+      state.architecture.ecuBindings.push({id:uid('bind'),signalId:sig.id,ecuId:ecu.id,connector:it.connector,physicalPin:Number(it.physical_pin),pinName:it.pin_name||'',group:it.group||'',functions:it.functions||'',role:it.role||'',status:it.status||'valid',electrical:it.electrical||'',diagnostics:it.diagnostics||'',swConfig:it.sw_config||'',devicePinRef:ref?`${ref.dev.id}::${ref.pin.id}`:''});
+      imported++;
+    });
+  } else {
+    throw new Error('object_type non supporté.');
+  }
+  persistAndRender();
+  return `${imported} item(s) importé(s).`;
+}
+
+function signalBitLength(sig){
+  if(!sig) return 8;
+  if(sig.type==='DIGITAL') return 1;
+  if(sig.type==='PWM') return 16;
+  if(sig.type==='ANALOG') return 16;
+  if(sig.type==='CAN') return 8;
+  if(sig.type==='LIN') return 8;
+  if(sig.type==='SENT') return 16;
+  if(sig.type==='ETHERNET') return 32;
+  return 8;
+}
+function signalFactor(sig){ return Number(sig?.scaling||1)||1; }
+function signalOffset(){ return 0; }
+function j1939CanId(priority,pgn,sa){ return (((Number(priority||6)&0x7)<<26)|((Number(pgn||0)&0x3FFFF)<<8)|(Number(sa||0)&0xFF))>>>0; }
+function dbcExtendedId(priority,pgn,sa){ return (j1939CanId(priority,pgn,sa)|0x80000000)>>>0; }
+function pgnFromCanId(canId){ return ((Number(canId)>>>8)&0x3FFFF)>>>0; }
+function saFromCanId(canId){ return Number(canId)&0xFF; }
+function priorityFromCanId(canId){ return (Number(canId)>>>26)&0x7; }
+
+function frameworkExportJsonObj(){
+  return {
+    architecture:{
+      name:state.architecture.name,
+      notes:state.architecture.notes,
+      systems:state.architecture.systems.map(sys=>({
+        name:sys.name,
+        devices:state.architecture.devices.filter(dev=>dev.systemId===sys.id).map(dev=>({
+          name:dev.name,type:dev.type,
+          pins:(dev.pins||[]).map(pin=>({number:pin.number,name:pin.name,role:pin.role,signal:pin.signalId?getSignal(pin.signalId)?.name||null:null}))
+        }))
+      })),
+      system_groups:state.architecture.systemGroups.map(group=>({
+        name:group.name,
+        systems:(group.systemIds||[]).map(id=>getSystem(id)?.name).filter(Boolean),
+        j1939_messages:(group.messages||[]).map(msg=>({
+          name:msg.name,pgn:Number(msg.pgn||0),priority:Number(msg.priority||6),source_address:Number(msg.sourceAddress||0),dlc:Number(msg.dlc||8),cycle_ms:Number(msg.cycleTime||100),signals:(msg.signalIds||[]).map(id=>getSignal(id)?.name).filter(Boolean)
+        }))
+      })),
+      ecus:state.architecture.ecus.map(ecu=>({
+        name:ecu.name,variant:ecu.variant,can_addresses:ecu.canAddresses||[],
+        pins:state.architecture.ecuBindings.filter(b=>b.ecuId===ecu.id).map(b=>{
+          const sig=getSignal(b.signalId), ref=findDevicePin(b.devicePinRef);
+          return {connector:b.connector,physical_number:b.physicalPin,name:b.pinName||'',group:b.group||'',functions:csv(b.functions||''),role:b.role||'',type:sig?.type||'',electrical:csv(b.electrical||''),diagnostics:csv(b.diagnostics||''),sw_config:csv(b.swConfig||''),status:b.status||'valid',signal:sig?{name:sig.name,type:sig.type,unit:sig.unit,min:sig.min,max:sig.max,resolution:sig.resolution}:null,device_pin:ref?{name:ref.pin.name,description:ref.dev.name}:null};
+        })
+      })),
+      buses:state.architecture.buses.map(bus=>({name:bus.name,type:bus.type,speed:bus.speed||'',ecus:(bus.ecuIds||[]).map(id=>getEcu(id)?.name).filter(Boolean),groups:(bus.groupIds||[]).map(id=>getGroup(id)?.name).filter(Boolean)}))
+    }
+  };
+}
+function frameworkExportJson(){ return JSON.stringify(frameworkExportJsonObj(),null,2); }
+
+function validateArchitecture(){
+  const issues=[]; const push=(severity,text)=>issues.push({severity,text});
+  [['System',state.architecture.systems],['System group',state.architecture.systemGroups],['Device',state.architecture.devices],['Signal',state.architecture.signals],['ECU',state.architecture.ecus],['Bus',state.architecture.buses]].forEach(([label,list])=>{
+    const seen=new Set();
+    list.forEach(item=>{
+      const key=text(item.name).trim();
+      if(!key) push('error',`${label} sans nom.`);
+      else if(seen.has(key)) push('error',`Nom dupliqué pour ${label.toLowerCase()} : ${item.name}`);
+      else seen.add(key);
+    });
+  });
+  state.architecture.devices.forEach(dev=>{
+    if(!getSystem(dev.systemId)) push('error',`Le sensor_actuator ${dev.name} référence un système manquant.`);
+    const nums=new Set();
+    (dev.pins||[]).forEach(pin=>{
+      if(nums.has(pin.number)) push('warning',`Le sensor_actuator ${dev.name} a un pin number dupliqué ${pin.number}.`);
+      nums.add(pin.number);
+      if(pin.signalId && !getSignal(pin.signalId)) push('error',`Le pin ${pin.name} du device ${dev.name} référence un signal manquant.`);
+    });
+  });
+  state.architecture.systemGroups.forEach(group=>{
+    (group.systemIds||[]).forEach(id=>{ if(!getSystem(id)) push('error',`Le groupe ${group.name} référence un système manquant.`); });
+    const msgNames=new Set();
+    (group.messages||[]).forEach(msg=>{
+      if(!msg.name) push('error',`Le groupe ${group.name} contient un message sans nom.`);
+      const mn=text(msg.name);
+      if(mn){ if(msgNames.has(mn)) push('error',`Message dupliqué ${msg.name} dans ${group.name}.`); msgNames.add(mn); }
+      let bits=0;
+      const seenSig=new Set();
+      (msg.signalIds||[]).forEach(id=>{
+        if(!getSignal(id)) push('error',`Signal manquant dans message ${msg.name}.`);
+        if(seenSig.has(id)) push('error',`Signal dupliqué dans message ${msg.name}.`);
+        seenSig.add(id);
+        bits += signalBitLength(getSignal(id));
+      });
+      if(bits > Number(msg.dlc||8)*8) push('warning',`Le message ${msg.name} dépasse la taille DLC disponible.`);
+    });
+  });
+  const canMap=new Map();
+  state.architecture.ecus.forEach(ecu=>{
+    (ecu.canAddresses||[]).forEach(addr=>{
+      const key=String(addr).toUpperCase();
+      if(canMap.has(key)) push('error',`Adresse CAN dupliquée ${key} sur ${canMap.get(key)} et ${ecu.name}.`);
+      else canMap.set(key,ecu.name);
+    });
+  });
+  const pinKeys=new Set();
+  state.architecture.ecuBindings.forEach(b=>{
+    if(!getEcu(b.ecuId)) push('error',`Binding ${b.id} référence un ECU manquant.`);
+    if(!getSignal(b.signalId)) push('error',`Binding ${b.id} référence un signal manquant.`);
+    const key=`${b.ecuId}::${String(b.connector).toUpperCase()}::${b.physicalPin}`;
+    if(pinKeys.has(key)) push('error',`Binding dupliqué sur le même pin ECU : ${key}`);
+    else pinKeys.add(key);
+  });
+  return issues;
+}
+function validationReportText(){
+  const issues=validateArchitecture();
+  const lines=[`Architecture: ${state.architecture.name}`,`Systems: ${state.architecture.systems.length}`,`System groups: ${state.architecture.systemGroups.length}`,`Devices: ${state.architecture.devices.length}`,`Signals: ${state.architecture.signals.length}`,`ECUs: ${state.architecture.ecus.length}`,`Buses: ${state.architecture.buses.length}`,`Sensor_Actuator pins: ${countDevicePins()}`,`ECU bindings: ${state.architecture.ecuBindings.length}`,`J1939 messages: ${countMessages()}`,'',`Issue count: ${issues.length}`,''];
+  if(!issues.length) lines.push('STATUS: OK');
+  issues.forEach((i,idx)=>lines.push(`${idx+1}. [${i.severity.toUpperCase()}] ${i.text}`));
+  return lines.join('\n');
+}
+
+function estimateCanMessageBits(dlc){
+  const dataBits=Number(dlc||8)*8;
+  return Math.ceil((67+dataBits+16)*1.2);
+}
+function estimateBusLoad(bus){
+  if(!bus || bus.type!=='CAN' || !bus.speed) return {bitsPerSecond:0,loadPct:0,details:[]};
+  let bitsPerSecond=0;
+  const details=[];
+  (bus.groupIds||[]).map(getGroup).filter(Boolean).forEach(group=>{
+    (group.messages||[]).forEach(msg=>{
+      const cycle=Number(msg.cycleTime||100);
+      const frameBits=estimateCanMessageBits(msg.dlc||8);
+      const msgBps=cycle>0?(1000/cycle)*frameBits:0;
+      bitsPerSecond += msgBps;
+      details.push({group:group.name,message:msg.name,cycle,dlc:Number(msg.dlc||8),bitsPerSecond:msgBps});
+    });
+  });
+  return {bitsPerSecond,loadPct:Number(bus.speed)>0?(bitsPerSecond/Number(bus.speed))*100:0,details};
+}
+
+function groupToDbc(group){
+  if(!group) return '/* Aucun groupe sélectionné */';
+  const nodes=uniq((group.systemIds||[]).map(id=>getSystem(id)?.name).filter(Boolean).concat((state.architecture.ecus||[]).map(e=>e.name)));
+  const lines=['VERSION ""','','NS_ :','\tNS_DESC_','\tCM_','\tBA_DEF_','\tBA_','\tVAL_','\tCAT_DEF_','\tCAT_','\tFILTER','\tBA_DEF_DEF_','\tEV_DATA_','\tENVVAR_DATA_','\tSGTYPE_','\tSGTYPE_VAL_','\tBA_DEF_SGTYPE_','\tBA_SGTYPE_','\tSIG_TYPE_REF_','\tVAL_TABLE_','\tSIG_GROUP_','\tSIG_VALTYPE_','\tSIGTYPE_VALTYPE_','\tBO_TX_BU_','\tBA_DEF_REL_','\tBA_REL_','\tBA_DEF_DEF_REL_','\tBU_SG_REL_','\tBU_EV_REL_','\tBU_BO_REL_','\tSG_MUL_VAL_','','BS_:','','BU_: '+(nodes.join(' ')||'Vector__XXX'),''];
+  (group.messages||[]).forEach(msg=>{
+    const extId=dbcExtendedId(msg.priority,msg.pgn,msg.sourceAddress);
+    lines.push(`BO_ ${extId}: ${msg.name} ${Number(msg.dlc||8)} ${nodes[0]||'Vector__XXX'}`);
+    let startBit=0;
+    (msg.signalIds||[]).forEach(sigId=>{
+      const sig=getSignal(sigId); if(!sig) return;
+      const len=signalBitLength(sig);
+      lines.push(` SG_ ${sig.name} : ${startBit}|${len}@1+ (${signalFactor(sig)},${signalOffset(sig)}) [${Number(sig.min||0)}|${Number(sig.max||0)}] "${sig.unit==='NONE'?'':sig.unit}" Vector__XXX`);
+      startBit += len;
+    });
+    lines.push('');
+    lines.push(`CM_ BO_ ${extId} "J1939 PGN ${msg.pgn}, SA ${msg.sourceAddress}, Priority ${msg.priority}, Cycle ${msg.cycleTime||100} ms";`);
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+function parseDbc(textContent){
+  const messages=[]; let current=null;
+  const boRe=/^\s*BO_\s+(\d+)\s*:\s*([A-Za-z0-9_]+)\s+(\d+)\s+([A-Za-z0-9_]+)/;
+  const sgRe=/^\s*SG_\s+([A-Za-z0-9_]+)\s*:\s*(\d+)\|(\d+)@([01])([+-])\s+\(([0-9eE+.\-]+),([0-9eE+.\-]+)\)\s+\[([0-9eE+.\-]+)\|([0-9eE+.\-]+)\]\s+"([^"]*)"/;
+  textContent.split(/\r?\n/).forEach(line=>{
+    const bo=line.match(boRe);
+    if(bo){
+      const raw=Number(bo[1]), canId=raw & 0x1FFFFFFF;
+      current={name:bo[2],dlc:Number(bo[3]),node:bo[4],pgn:pgnFromCanId(canId),sourceAddress:saFromCanId(canId),priority:priorityFromCanId(canId),signals:[]};
+      messages.push(current); return;
+    }
+    const sg=line.match(sgRe);
+    if(sg && current){
+      current.signals.push({name:sg[1],startBit:Number(sg[2]),length:Number(sg[3]),factor:Number(sg[6]),offset:Number(sg[7]),min:Number(sg[8]),max:Number(sg[9]),unit:sg[10]||'NONE'});
+    }
+  });
+  return messages;
+}
+function importDbcToGroup(groupId,textContent){
+  const group=getGroup(groupId);
+  if(!group) return alert('Sélectionnez un groupe.');
+  const parsed=parseDbc(textContent);
+  if(!parsed.length) return alert('Aucun BO_/SG_ trouvé.');
+  parsed.forEach(msg=>{
+    if((group.messages||[]).some(m=>text(m.name)===text(msg.name))) return;
+    const signalIds=[];
+    msg.signals.forEach(sg=>{
+      const sig=ensureSignalByName(sg.name,{type:'CAN',unit:(sg.unit||'NONE').toUpperCase(),min:sg.min,max:sg.max,resolution:sg.factor||1,scaling:sg.factor||1});
+      if(sig && !signalIds.includes(sig.id)) signalIds.push(sig.id);
+    });
+    group.messages.push({id:uid('msg'),name:msg.name,pgn:msg.pgn,priority:msg.priority,sourceAddress:msg.sourceAddress,dlc:msg.dlc,cycleTime:100,signalIds});
+  });
+  persistAndRender();
+}
+
+function pinoutHtml(){
+  const arch=frameworkExportJsonObj().architecture;
+  const sections=arch.ecus.map(ecu=>{
+    const rows=ecu.pins.map(pin=>`<tr><td>${pin.connector||'—'}</td><td>${pin.physical_number||'—'}</td><td>${pin.name||'—'}</td><td>${pin.group||'—'}</td><td>${(pin.functions||[]).join(', ')||'—'}</td><td>${pin.type||'—'}</td><td>${pin.role||'—'}</td><td>${(pin.electrical||[]).join('<br>')||'—'}</td><td>${(pin.diagnostics||[]).join(', ')||'—'}</td><td>${(pin.sw_config||[]).join(', ')||'—'}</td><td>${pin.signal?pin.signal.name:'—'}</td><td>${pin.device_pin?pin.device_pin.name:'—'}</td><td>${pin.status||'free'}</td></tr>`).join('');
+    return `<section class="ecu"><h2>${ecu.name} <span>${ecu.variant}</span></h2><div class="meta">CAN: ${(ecu.can_addresses||[]).join(', ')||'none'}</div><table><thead><tr><th>Connector</th><th>Pin #</th><th>Pin Name</th><th>Main Group</th><th>Alt Groups</th><th>Type</th><th>Direction</th><th>Electrical</th><th>Diagnostics</th><th>SW Config</th><th>Signal</th><th>Device Pin</th><th>Status</th></tr></thead><tbody>${rows||'<tr><td colspan="13">No bindings for this ECU.</td></tr>'}</tbody></table></section>`;
+  }).join('');
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${arch.name} - Browser Pinout</title><style>body{font-family:Inter,Arial,sans-serif;background:#f7f9fc;color:#162033;margin:0;padding:20px}h1{margin:0 0 8px}.subtitle{color:#5f6c86;margin-bottom:20px}.ecu{background:white;border:1px solid #d9e1ef;border-radius:16px;padding:16px;margin-bottom:18px}.ecu h2{margin:0 0 4px}.ecu h2 span{font-size:13px;color:#50617f;margin-left:8px}.meta{color:#66758f;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #dde5f2;padding:7px;vertical-align:top}th{background:#eef3fb;text-align:left}
+
+body{min-height:100vh}
+.app{max-width:1920px;padding:20px 20px 28px}
+.app-shell{display:grid;gap:16px}
+.topbar{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr);gap:16px;align-items:start}
+.hero-card{padding:22px}
+.hero-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:12px}
+.hero-copy h1{margin:0 0 8px;font-size:30px;line-height:1.08}
+.hero-copy p{margin:0;color:var(--muted);max-width:900px}
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.kpi-pill{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:12px;font-weight:800;color:#dbe8ff}
+.kpi-pill strong{color:#fff}
+.kpi-pill.issue{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.2)}
+.kpi-pill.ok-state{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.2)}
+.command-card{padding:18px;position:sticky;top:18px}
+.command-card details{background:transparent!important;border:0!important;padding:0!important}
+.command-card summary{list-style:none;display:flex;align-items:center;justify-content:space-between}
+.command-card summary::-webkit-details-marker{display:none}
+.command-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.command-title{font-size:18px;font-weight:900}
+.command-subtitle{font-size:12px;color:var(--muted)}
+.command-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stats{grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{padding:14px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;inset:auto -30px -30px auto;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 60%)}
+.stat .value{font-size:26px}
+.workspace{display:grid;grid-template-columns:280px minmax(0,1fr) minmax(360px,.84fr);gap:16px;align-items:start}
+.nav-card,.panel-card,.preview-card{min-height:calc(100vh - 210px)}
+.nav-card{padding:14px;position:sticky;top:18px}
+.nav-title{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.nav-title h2{margin:0;font-size:18px}
+.nav-title p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.tabs{display:grid;grid-template-columns:1fr;gap:8px;margin:0}
+.tab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 14px;text-align:left;font-size:14px;border-radius:16px;background:rgba(255,255,255,.03)}
+.tab:hover{border-color:rgba(110,168,254,.3);color:#fff}
+.tab-main{display:flex;flex-direction:column;gap:4px}
+.tab-main span{font-size:11px;color:var(--muted);font-weight:700}
+.tab-badge{min-width:34px;padding:5px 9px;border-radius:999px;background:rgba(110,168,254,.12);border:1px solid rgba(110,168,254,.2);font-size:11px;color:#dce8ff;text-align:center}
+.panel-card,.preview-card{padding:0;overflow:hidden}
+.panel-header,.preview-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 18px 14px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0))}
+.panel-header h2,.preview-header h2{margin:0;font-size:20px}
+.panel-header p,.preview-header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.panel-body{padding:18px}
+.panel-toolbar,.preview-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.preview-card{position:sticky;top:18px}
+.preview-card .code-wrap{border:none;border-radius:0;background:transparent}
+.preview-card .code-head{padding:0;background:transparent;border-bottom:none}
+.preview-meta{display:flex;gap:8px;flex-wrap:wrap}
+.preview-tag{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--border);font-size:11px;color:#dce8ff;font-weight:800}
+pre{min-height:calc(100vh - 320px);max-height:calc(100vh - 320px)}
+.quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+.search-grid{grid-template-columns:minmax(0,1fr) 220px}
+.inline-cluster{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted)}
+.export-dropdown summary{margin-bottom:12px}
+.floating-help{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--border)}
+.floating-help strong{display:block;margin-bottom:6px}
+.preview-actions-top{display:flex;gap:8px;flex-wrap:wrap}
+.panel-empty{padding:16px;border:1px dashed var(--border);border-radius:16px;color:var(--muted)}
+.status-note{font-size:12px;color:var(--muted)}
+@media(max-width:1600px){
+  .workspace{grid-template-columns:240px minmax(0,1fr) minmax(320px,.9fr)}
+  .stats{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:1300px){
+  .topbar,.workspace{grid-template-columns:1fr}
+  .nav-card,.preview-card,.command-card{position:static}
+  .nav-card,.panel-card,.preview-card{min-height:auto}
+  pre{min-height:520px;max-height:none}
+}
+@media(max-width:780px){
+  .app{padding:14px}
+  .hero-header,.command-header,.panel-header,.preview-header{flex-direction:column;align-items:flex-start}
+  .search-grid,.command-grid,.quick-actions,.form-grid,.grid-2,.library-grid,.arch-layout{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+
+</style></head><body><h1>${arch.name}</h1><div class="subtitle">Browser-generated architecture pinout overview.</div>${sections||'<p>No ECU data.</p>'}</body></html>`;
+}
+function makefileText(){ return `CC=gcc
+CFLAGS=-std=c11 -Wall -Wextra -pedantic -O2 -Iinc
+SRC=src/main.c src/AM_log.c src/AM_types.c src/AM_architecture.c src/AM_agco.c src/AM_connect.c src/AM_export.c src/AM_verify.c
+APP=app
+
+all: $(APP)
+
+$(APP):
+\t$(CC) $(CFLAGS) $(SRC) -o $(APP)
+
+run: $(APP)
+\t./$(APP)
+
+clean:
+\trm -f $(APP)
+
+.PHONY: all run clean
+`; }
+function buildShText(){ return `#!/usr/bin/env bash
+set -e
+gcc -std=c11 -Wall -Wextra -pedantic -O2 -Iinc \\
+  src/main.c src/AM_log.c src/AM_types.c src/AM_architecture.c \\
+  src/AM_agco.c src/AM_connect.c src/AM_export.c src/AM_verify.c \\
+  -o app
+./app
+`; }
+
+function buildMainC(){
+  const a=state.architecture;
+  const lines=['#include "AM_log.h"','#include "AM_architecture.h"','#include "AM_agco.h"','#include "AM_connect.h"','#include "AM_export.h"','#include "AM_verify.h"','#include <stdio.h>','','int main(void)','{','    AM_Architecture_t *arch;','    FILE *report;','','    AM_Log_Init("run.log");',`    arch = AM_Architecture_Create("${esc(a.name||'My Architecture')}");`,'    if (!arch) {','        return 1;','    }',''];
+  a.ecus.forEach((ecu,i)=>{ ecu._var=`ecu_${i+1}`; const factory=ecu.variant==='SMALL'?'createECU_AEC_small':ecu.variant==='MEDIUM'?'createECU_AEC_medium':'createECU_AEC_large'; const can=(ecu.canAddresses||[]).join(', '); lines.push(`    AM_Ecu_t *${ecu._var} = ${factory}(arch, "${esc(ecu.name)}", ${ecu.canAddresses.length}U${can?', '+can:''});`); });
+  if(a.ecus.length) lines.push('');
+  a.systems.forEach((sys,i)=>{ sys._var=`system_${i+1}`; lines.push(`    AM_System_t *${sys._var} = AM_Architecture_CreateSystem(arch, "${esc(sys.name)}");`); });
+  if(a.systems.length) lines.push('');
+  a.devices.forEach((dev,i)=>{ dev._var=`device_${i+1}`; const sys=getSystem(dev.systemId); lines.push(`    AM_Device_t *${dev._var} = AM_System_CreateDevice(${sys?._var||'NULL'}, "${esc(dev.name)}", AM_DEVICE_${dev.type});`); });
+  if(a.devices.length) lines.push('');
+  a.signals.forEach((sig,i)=>{ sig._var=`signal_${i+1}`; lines.push(`    AM_Signal_t *${sig._var} = AM_Architecture_CreateSignalEx(`); lines.push(`        arch, "${esc(sig.name)}", AM_SIGNAL_TYPE_${sig.type}, AM_SIGNAL_UNIT_${sig.unit},`); lines.push(`        ${Number(sig.min)}, ${Number(sig.max)}, ${Number(sig.resolution)}, ${Number(sig.scaling)}`); lines.push('    );'); });
+  if(a.signals.length) lines.push('');
+  a.devices.forEach(dev=>{ (dev.pins||[]).forEach(pin=>{ const sig=pin.signalId?getSignal(pin.signalId):null; lines.push(`    AM_Device_CreatePin(${dev._var}, ${pin.number}U, AM_PIN_ROLE_${pin.role}, ${sig?._var||'NULL'}, "${esc(pin.name)}");`); }); });
+  if(countDevicePins()) lines.push('');
+  a.ecuBindings.forEach(bind=>{ const ecu=getEcu(bind.ecuId), sig=getSignal(bind.signalId); if(!ecu||!sig) return; lines.push(`    AM_Ecu_connect_signal_to_pin(${ecu._var}, "${esc(bind.connector)}", ${bind.physicalPin}U, ${sig._var});`); });
+  lines.push('','    report = fopen("verification_report.txt", "w");','    if (report) {','        AM_Verify_architecture(arch, report);','        fclose(report);','    }','','    AM_Export_architecture_json(arch, "examples/example_architecture.json");','    AM_Architecture_Destroy(arch);','    AM_Log_Close();','    return 0;','}');
+  return lines.join('\n');
+}
+
+function updateStats(){
+  const issues=validateArchitecture();
+  el('statSystems').textContent=state.architecture.systems.length;
+  el('statGroups').textContent=state.architecture.systemGroups.length;
+  el('statDevices').textContent=state.architecture.devices.length;
+  el('statSignals').textContent=state.architecture.signals.length;
+  el('statEcus').textContent=state.architecture.ecus.length;
+  el('statBuses').textContent=state.architecture.buses.length;
+  el('statDevicePins').textContent=countDevicePins();
+  el('statBindings').textContent=state.architecture.ecuBindings.length;
+  el('statMessages').textContent=countMessages();
+  el('statIssues').textContent=issues.length;
+  el('statLibrary').textContent=state.libraryItems.length;
+  el('statProjects').textContent=state.savedProjects.length;
+  el('headerDbcGroup').innerHTML=['<option value="">Sélectionner un groupe</option>'].concat(state.architecture.systemGroups.map(g=>`<option value="${g.id}" ${g.id===state.previewDbcGroup?'selected':''}>${g.name}</option>`)).join('');
+  if(document.getElementById('workspaceTitle')) updateWorkspaceChrome();
+}
+
+
+function moveInArray(arr,index,delta){
+  const ni=index+delta;
+  if(index<0 || ni<0 || ni>=arr.length) return;
+  const tmp=arr[index];
+  arr[index]=arr[ni];
+  arr[ni]=tmp;
+}
+function moveRoot(listName,id,delta){
+  const arr=state.architecture[listName];
+  const idx=arr.findIndex(x=>x.id===id);
+  if(idx>=0){ moveInArray(arr,idx,delta); persistAndRender(); }
+}
+function moveChild(kind,parentId,childListName,childId,delta){
+  const parent=kind==='device'?getDevice(parentId):getGroup(parentId);
+  const arr=parent?.[childListName];
+  if(!arr) return;
+  const idx=arr.findIndex(x=>x.id===childId);
+  if(idx>=0){ moveInArray(arr,idx,delta); persistAndRender(); }
+}
+
+function nodeId(prefix,id){ return `${prefix}_${String(id).replace(/[^a-zA-Z0-9_]/g,'_')}`; }
+function svgEl(tag, attrs={}){
+  const ns='http://www.w3.org/2000/svg';
+  const n=document.createElementNS(ns,tag);
+  Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));
+  return n;
+}
+function buildDiagramModel(){
+  const nodes=[]; const edges=[];
+  const focus=state.diagramFocus;
+  const include=(...values)=>matchesGlobalSearch(...values);
+
+  state.architecture.systems.forEach(sys=>{
+    if(focus==='all'||focus==='systems'){
+      if(include(sys.name)) nodes.push({id:nodeId('sys',sys.id),label:'System: '+sys.name,type:'system',ref:{kind:'system',id:sys.id}});
+    }
+  });
+  state.architecture.systemGroups.forEach(group=>{
+    if(include(group.name)) nodes.push({id:nodeId('grp',group.id),label:'Group: '+group.name,type:'group',ref:{kind:'group',id:group.id}});
+    (group.systemIds||[]).forEach(sysId=>{
+      const sys=getSystem(sysId);
+      if(sys && include(group.name,sys.name)) edges.push({from:nodeId('grp',group.id),to:nodeId('sys',sys.id),label:''});
+    });
+    (group.messages||[]).forEach(msg=>{
+      if(include(group.name,msg.name)) nodes.push({id:nodeId('msg',msg.id),label:'J1939: '+msg.name,type:'message',ref:{kind:'message',id:msg.id,groupId:group.id}});
+      if(include(group.name,msg.name)) edges.push({from:nodeId('grp',group.id),to:nodeId('msg',msg.id),label:''});
+      (msg.signalIds||[]).forEach(sigId=>{
+        const sig=getSignal(sigId);
+        if(sig && include(msg.name,sig.name)) edges.push({from:nodeId('msg',msg.id),to:nodeId('sig',sig.id),label:''});
+      });
+    });
+  });
+
+  state.architecture.devices.forEach(dev=>{
+    const sys=getSystem(dev.systemId);
+    if((focus==='all'||focus==='devices') && include(dev.name,sys?.name)) nodes.push({id:nodeId('dev',dev.id),label:'Device: '+dev.name,type:'device',ref:{kind:'device',id:dev.id}});
+    if(sys && include(dev.name,sys.name)) edges.push({from:nodeId('sys',sys.id),to:nodeId('dev',dev.id),label:''});
+    (dev.pins||[]).forEach(pin=>{
+      const sig=getSignal(pin.signalId);
+      if(sig && include(dev.name,pin.name,sig.name)) edges.push({from:nodeId('dev',dev.id),to:nodeId('sig',sig.id),label:pin.name});
+    });
+  });
+
+  state.architecture.signals.forEach(sig=>{
+    if((focus==='all'||focus==='signals') && include(sig.name,sig.type,sig.unit)) nodes.push({id:nodeId('sig',sig.id),label:'Signal: '+sig.name,type:'signal',ref:{kind:'signal',id:sig.id}});
+  });
+
+  state.architecture.ecus.forEach(ecu=>{
+    if((focus==='all'||focus==='ecus') && include(ecu.name,ecu.variant)) nodes.push({id:nodeId('ecu',ecu.id),label:'ECU: '+ecu.name,type:'ecu',ref:{kind:'ecu',id:ecu.id}});
+  });
+  state.architecture.ecuBindings.forEach(b=>{
+    const sig=getSignal(b.signalId), ecu=getEcu(b.ecuId);
+    if(sig && ecu && include(sig.name,ecu.name,b.connector,b.pinName)) edges.push({from:nodeId('sig',sig.id),to:nodeId('ecu',ecu.id),label:`${b.connector}/${b.physicalPin}`});
+  });
+
+  state.architecture.buses.forEach(bus=>{
+    if((focus==='all'||focus==='buses') && include(bus.name,bus.type,bus.speed)) nodes.push({id:nodeId('bus',bus.id),label:'Bus: '+bus.name,type:'bus',ref:{kind:'bus',id:bus.id}});
+    (bus.ecuIds||[]).forEach(eid=>{
+      const ecu=getEcu(eid);
+      if(ecu && include(ecu.name,bus.name)) edges.push({from:nodeId('ecu',ecu.id),to:nodeId('bus',bus.id),label:''});
+    });
+  });
+
+  const uniqNodes=[]; const seen=new Set();
+  nodes.forEach(n=>{ if(!seen.has(n.id)){ seen.add(n.id); uniqNodes.push(n); } });
+  return {nodes:uniqNodes,edges};
+}
+function renderDiagramSvg(containerId){
+  const box=el(containerId); if(!box) return;
+  const model=buildDiagramModel();
+  const laneOrder=['group','system','device','signal','ecu','bus','message'];
+  const laneMap={group:0,system:1,device:2,signal:3,ecu:4,bus:5,message:6};
+  const lanes=[[],[],[],[],[],[],[]];
+  model.nodes.forEach(n=>lanes[laneMap[n.type] ?? 6].push(n));
+  const laneWidth=250, nodeW=180, nodeH=44, topPad=30, leftPad=40, rowGap=20;
+  let maxRows=1;
+  lanes.forEach(l=>{ if(l.length>maxRows) maxRows=l.length; });
+  const width=leftPad*2 + laneWidth*lanes.length;
+  const height=topPad*2 + maxRows*(nodeH+rowGap) + 80;
+
+  const positions=new Map();
+  lanes.forEach((lane,li)=>{
+    lane.forEach((node,ri)=>{
+      const x=leftPad + li*laneWidth + 20;
+      const y=topPad + ri*(nodeH+rowGap) + 30;
+      positions.set(node.id,{x,y,w:nodeW,h:nodeH,node});
+    });
+  });
+
+  const svg=svgEl('svg',{class:'diagram',width:String(width),height:String(height),viewBox:`0 0 ${width} ${height}`});
+  const defs=svgEl('defs');
+  const marker=svgEl('marker',{id:'arrow',viewBox:'0 0 10 10',refX:'8',refY:'5',markerWidth:'7',markerHeight:'7',orient:'auto-start-reverse'});
+  const path=svgEl('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'#6b7ea8'});
+  marker.appendChild(path); defs.appendChild(marker); svg.appendChild(defs);
+
+  laneOrder.forEach((name,i)=>{
+    const tx=leftPad + i*laneWidth + 20;
+    const t=svgEl('text',{x:String(tx),y:'24'});
+    t.textContent=name.toUpperCase();
+    svg.appendChild(t);
+  });
+
+  model.edges.forEach(e=>{
+    const a=positions.get(e.from), b=positions.get(e.to);
+    if(!a || !b) return;
+    const x1=a.x+a.w, y1=a.y+a.h/2, x2=b.x, y2=b.y+b.h/2;
+    const c1=x1+40, c2=x2-40;
+    const p=svgEl('path',{class:'edge',d:`M ${x1} ${y1} C ${c1} ${y1}, ${c2} ${y2}, ${x2} ${y2}`});
+    svg.appendChild(p);
+    if(e.label){
+      const tx=(x1+x2)/2, ty=(y1+y2)/2 - 4;
+      const t=svgEl('text',{x:String(tx),y:String(ty),'text-anchor':'middle'});
+      t.textContent=e.label; svg.appendChild(t);
+    }
+  });
+
+  model.nodes.forEach(n=>{
+    const pos=positions.get(n.id); if(!pos) return;
+    const g=svgEl('g',{class:`node ${n.type}`,'data-kind':n.ref.kind,'data-id':n.ref.id||''});
+    const r=svgEl('rect',{x:String(pos.x),y:String(pos.y),width:String(pos.w),height:String(pos.h)});
+    const t=svgEl('text',{x:String(pos.x+10),y:String(pos.y+26)});
+    t.textContent=n.label.length>28 ? n.label.slice(0,27)+'…' : n.label;
+    g.appendChild(r); g.appendChild(t);
+    g.style.cursor='pointer';
+    g.addEventListener('click',()=>jumpToRef(n.ref));
+    svg.appendChild(g);
+  });
+
+  box.innerHTML='';
+  box.appendChild(svg);
+}
+function jumpToRef(ref){
+  if(ref.kind==='system'){ state.activeTab='systems'; }
+  else if(ref.kind==='group' || ref.kind==='message'){ state.activeTab='groups'; }
+  else if(ref.kind==='device'){ state.activeTab='devices'; }
+  else if(ref.kind==='signal'){ state.activeTab='signals'; }
+  else if(ref.kind==='ecu'){ state.activeTab='ecus'; }
+  else if(ref.kind==='bus'){ state.activeTab='buses'; }
+  render();
+}
+
+function dragStart(kind,data,event){
+  state.dragPayload={kind,data};
+  event.dataTransfer.effectAllowed='move';
+  event.dataTransfer.setData('text/plain', JSON.stringify({kind}));
+  event.currentTarget.classList.add('dragging');
+}
+function dragEnd(event){
+  event.currentTarget.classList.remove('dragging');
+  clearDropHighlights();
+}
+function clearDropHighlights(){ document.querySelectorAll('.drop-ok,.drop-bad').forEach(n=>n.classList.remove('drop-ok','drop-bad')); }
+function allowDrop(event){ event.preventDefault(); }
+function getDropCheck(sourceKind,targetKind,targetData){
+  const payload=state.dragPayload;
+  if(!payload || payload.kind!==sourceKind) return {ok:false,reason:'source mismatch'};
+  if(sourceKind==='sensor_actuator' && targetKind==='system'){
+    const dev=getDevice(payload.data.deviceId);
+    if(dev) dev.systemId=targetData.systemId;
+  } else if(sourceKind==='signal' && targetKind==='devicePin'){
+    const sig=getSignal(payload.data.signalId), dev=getDevice(targetData.deviceId), pin=dev?.pins?.find(p=>p.id===targetData.pinId);
+    if(!sig||!dev||!pin) return {ok:false,reason:'invalid target'};
+    return {ok:true,reason:pin.signalId?'replace existing signal':'connect signal'};
+  }
+  if(sourceKind==='signal' && targetKind==='ecuPin'){
+    const sig=getSignal(payload.data.signalId), ecu=getEcu(targetData.ecuId);
+    if(!sig||!ecu) return {ok:false,reason:'invalid target'};
+    const exists=state.architecture.ecuBindings.find(b=>b.ecuId===ecu.id && String(b.connector).toUpperCase()===String(targetData.connector).toUpperCase() && Number(b.physicalPin)===Number(targetData.physicalPin));
+    return {ok:true,reason:exists?'replace existing binding':'create binding'};
+  }
+  if(sourceKind==='ecu' && targetKind==='bus'){
+    const ecu=getEcu(payload.data.ecuId), bus=state.architecture.buses.find(b=>b.id===targetData.busId);
+    if(!ecu||!bus) return {ok:false,reason:'invalid target'};
+    if((bus.ecuIds||[]).includes(ecu.id)) return {ok:false,reason:'already in bus'};
+    return {ok:true,reason:'add ECU to bus'};
+  }
+  if(sourceKind==='sensor_actuator' && targetKind==='system'){
+    const dev=getDevice(payload.data.deviceId), sys=getSystem(targetData.systemId);
+    if(!dev||!sys) return {ok:false,reason:'invalid target'};
+    if(dev.systemId===sys.id) return {ok:false,reason:'already connected'};
+    return {ok:true,reason:'connect sensor_actuator to system'};
+  }
+  if(sourceKind==='system' && targetKind==='group'){
+    const sys=getSystem(payload.data.systemId), group=getGroup(targetData.groupId);
+    if(!sys||!group) return {ok:false,reason:'invalid target'};
+    if((group.systemIds||[]).includes(sys.id)) return {ok:false,reason:'already in group'};
+    return {ok:true,reason:'add system to group'};
+  }
+  if(sourceKind==='group' && targetKind==='bus'){
+    const group=getGroup(payload.data.groupId), bus=state.architecture.buses.find(b=>b.id===targetData.busId);
+    if(!group||!bus) return {ok:false,reason:'invalid target'};
+    if((bus.groupIds||[]).includes(group.id)) return {ok:false,reason:'already linked'};
+    return {ok:true,reason:'link group to bus'};
+  }
+  if(sourceKind==='library' && targetKind==='project'){
+    const item=state.libraryItems.find(x=>x.id===payload.data.itemId);
+    return item ? {ok:true,reason:'clone from library'} : {ok:false,reason:'invalid library item'};
+  }
+  return {ok:false,reason:'rule not supported'};
+}
+function dropEnter(event, sourceKind,targetKind,targetData){
+  event.preventDefault();
+  const result=getDropCheck(sourceKind,targetKind,targetData);
+  event.currentTarget.classList.add(result.ok?'drop-ok':'drop-bad');
+}
+function dropLeave(event){ event.currentTarget.classList.remove('drop-ok','drop-bad'); }
+function applyDrop(sourceKind,targetKind,targetData){
+  const result=getDropCheck(sourceKind,targetKind,targetData);
+  if(!result.ok){ alert('Drop refusé : ' + result.reason); return; }
+  const payload=state.dragPayload;
+  if(sourceKind==='signal' && targetKind==='devicePin'){
+    const dev=getDevice(targetData.deviceId), pin=dev?.pins?.find(p=>p.id===targetData.pinId);
+    if(!pin) return;
+    if(pin.signalId && !confirm('Ce pin de sensor_actuator a déjà un signal. Le remplacer ?')) return;
+    pin.signalId=payload.data.signalId;
+  } else if(sourceKind==='signal' && targetKind==='ecuPin'){
+    const existing=state.architecture.ecuBindings.find(b=>b.ecuId===targetData.ecuId && String(b.connector).toUpperCase()===String(targetData.connector).toUpperCase() && Number(b.physicalPin)===Number(targetData.physicalPin));
+    if(existing){
+      if(!confirm('Ce pin ECU est déjà occupé. Remplacer le binding ?')) return;
+      existing.signalId=payload.data.signalId;
+    } else {
+      state.architecture.ecuBindings.push({id:uid('bind'),signalId:payload.data.signalId,ecuId:targetData.ecuId,connector:targetData.connector,physicalPin:Number(targetData.physicalPin),pinName:targetData.pinName||'',group:targetData.group||'',functions:targetData.functions||'',role:targetData.role||'',status:'valid',electrical:targetData.electrical||'',diagnostics:targetData.diagnostics||'',swConfig:targetData.swConfig||'',devicePinRef:''});
+    }
+  } else if(sourceKind==='ecu' && targetKind==='bus'){
+    const bus=state.architecture.buses.find(b=>b.id===targetData.busId);
+    if(bus) bus.ecuIds=uniq([...(bus.ecuIds||[]),payload.data.ecuId]);
+  } else if(sourceKind==='system' && targetKind==='group'){
+    const group=getGroup(targetData.groupId);
+    if(group) group.systemIds=uniq([...(group.systemIds||[]),payload.data.systemId]);
+  } else if(sourceKind==='group' && targetKind==='bus'){
+    const bus=state.architecture.buses.find(b=>b.id===targetData.busId);
+    if(bus) bus.groupIds=uniq([...(bus.groupIds||[]),payload.data.groupId]);
+  } else if(sourceKind==='library' && targetKind==='project'){
+    const item=state.libraryItems.find(x=>x.id===payload.data.itemId);
+    if(item) cloneIntoProject(item);
+    state.dragPayload=null; clearDropHighlights(); return;
+  }
+  state.dragPayload=null; clearDropHighlights(); persistAndRender();
+}
+
+function simpleNamedOptions(items,selectedId='',empty='Select...'){ return [`<option value="">${empty}</option>`].concat(items.map(v=>`<option value="${v.id}" ${v.id===selectedId?'selected':''}>${v.name}</option>`)).join(''); }
+function plainOptions(items,selected=''){ return items.map(v=>`<option ${v===selected?'selected':''}>${v}</option>`).join(''); }
+function groupSignals(group){
+  const sysSet=new Set(group.systemIds||[]);
+  const ids=[];
+  state.architecture.devices.forEach(dev=>{ if(!sysSet.has(dev.systemId)) return; (dev.pins||[]).forEach(pin=>{ if(pin.signalId) ids.push(pin.signalId); }); });
+  return uniq(ids).map(getSignal).filter(Boolean);
+}
+
+function updatePreview(textContent,title){
+  el('previewTitle').textContent=title;
+  el('codePreview').textContent=textContent;
+  el('codeSummary').textContent=`${textContent.split('\n').length} lignes`;
+  el('previewModeTag').textContent=title.replace('Prévisualisation ','').slice(0,24) || 'preview';
+}
+
+function refreshPreview(){
+  if(state.previewMode==='json') updatePreview(frameworkExportJson(),'Prévisualisation framework JSON');
+  else if(state.previewMode==='pinout') updatePreview(pinoutHtml(),'Prévisualisation pinout HTML');
+  else if(state.previewMode==='report') updatePreview(validationReportText(),'Prévisualisation validation report');
+  else if(state.previewMode==='dbc') updatePreview(groupToDbc(getGroup(state.previewDbcGroup||el('headerDbcGroup').value)),'Prévisualisation DBC');
+  else if(state.previewMode==='template') updatePreview(JSON.stringify(TEMPLATE_EXAMPLES[state.previewTemplateType]||TEMPLATE_EXAMPLES.system,null,2),`Prévisualisation template — ${state.previewTemplateType}`);
+  else if(state.previewMode==='library_item') updatePreview(JSON.stringify(state.libraryItems.find(x=>x.id===state.previewLibraryItem)||{},null,2),'Prévisualisation bibliothèque');
+  else updatePreview(buildMainC(),'Prévisualisation main.c');
+  updateStats();
+}
+
+
+function getSensorActuatorsForSystem(systemId){
+  return state.architecture.devices.filter(dev=>dev.systemId===systemId);
+}
+function buildSystemTreeHtml(){
+  const systems = state.architecture.systems.filter(sys=>matchesGlobalSearch(sys.name));
+  const groups = state.architecture.systemGroups;
+  const buses = state.architecture.buses;
+  const orphanSA = state.architecture.devices.filter(dev=>!getSystem(dev.systemId) && matchesGlobalSearch(dev.name));
+  return `<div class="tree">
+    <div class="item-title">Arborescence architecture</div>
+    <div class="inline-help">Déposez un sensor_actuator sur un système pour le connecter. Tous les objets peuvent être sauvegardés dans la library locale.</div>
+    <ul>
+      ${systems.map(sys=>{
+        const sas = getSensorActuatorsForSystem(sys.id).filter(dev=>matchesGlobalSearch(dev.name,(dev.pins||[]).map(p=>p.name).join(' ')));
+        return `<li>
+          <div class="tree-node system" data-tree-system-drop="${sys.id}">
+            <strong>${sys.name}</strong>
+            <span class="tree-badge">${sas.length} sensor_actuator(s)</span>
+          </div>
+          <ul>
+            ${sas.map(dev=>`<li>
+              <div class="tree-node sa">
+                <span>${dev.name}</span>
+                <span class="tree-badge">${dev.type}</span>
+              </div>
+              <ul>
+                ${(dev.pins||[]).map(pin=>`<li><div class="tree-node signal"><span>${pin.name}</span><span class="tree-badge">${getSignal(pin.signalId)?.name || 'no signal'}</span></div></li>`).join('') || '<li><div class="tree-node misc">No pins</div></li>'}
+              </ul>
+            </li>`).join('') || '<li><div class="tree-node misc">No sensor_actuator connected</div></li>'}
+          </ul>
+        </li>`;
+      }).join('')}
+      <li>
+        <div class="tree-node misc"><strong>Groups</strong><span class="tree-badge">${groups.length}</span></div>
+        <ul>${groups.map(g=>`<li><div class="tree-node misc">${g.name}<span class="tree-badge">${(g.systemIds||[]).length} systems</span></div></li>`).join('') || '<li><div class="tree-node misc">No groups</div></li>'}</ul>
+      </li>
+      <li>
+        <div class="tree-node misc"><strong>Buses</strong><span class="tree-badge">${buses.length}</span></div>
+        <ul>${buses.map(b=>`<li><div class="tree-node misc">${b.name}<span class="tree-badge">${(b.ecuIds||[]).length} ECU · ${(b.groupIds||[]).length} groups</span></div></li>`).join('') || '<li><div class="tree-node misc">No buses</div></li>'}</ul>
+      </li>
+      <li>
+        <div class="tree-node misc"><strong>Orphan sensor_actuator</strong><span class="tree-badge">${orphanSA.length}</span></div>
+        <ul>${orphanSA.map(dev=>`<li><div class="tree-node sa">${dev.name}<span class="tree-badge">not connected</span></div></li>`).join('') || '<li><div class="tree-node misc">None</div></li>'}</ul>
+      </li>
+    </ul>
+  </div>`;
+}
+
+function tabCount(tabId){
+  if(tabId==='architecture') return state.architecture.systems.length + state.architecture.devices.length;
+  if(tabId==='diagram') return buildDiagramModel().nodes.length;
+  if(tabId==='imports') return Object.keys(TEMPLATE_EXAMPLES).length;
+  if(tabId==='library') return state.libraryItems.length + state.savedProjects.length;
+  if(tabId==='systems') return state.architecture.systems.length;
+  if(tabId==='groups') return state.architecture.systemGroups.length;
+  if(tabId==='devices') return state.architecture.devices.length;
+  if(tabId==='signals') return state.architecture.signals.length;
+  if(tabId==='ecus') return state.architecture.ecus.length;
+  if(tabId==='buses') return state.architecture.buses.length;
+  if(tabId==='validation') return validateArchitecture().length;
+  if(tabId==='exports') return 8;
+  return 0;
+}
+function getTabMeta(tabId){
+  const meta={
+    architecture:{title:'Architecture',desc:'Configurez le projet, l’arborescence métier et les connexions principales.',hint:'projet'},
+    diagram:{title:'Diagramme',desc:'Visualisation SVG du modèle avec navigation directe par nœud.',hint:'vue'},
+    imports:{title:'Imports',desc:'Import d’objets JSON, templates et flux DBC.',hint:'import'},
+    library:{title:'Library locale',desc:'Réutilisez des objets sauvegardés dans IndexedDB.',hint:'library'},
+    systems:{title:'Systems',desc:'Créez les systèmes fonctionnels et organisez-les.',hint:'systems'},
+    groups:{title:'System Groups',desc:'Associez systèmes, messages J1939 et groupes métier.',hint:'groups'},
+    devices:{title:'Sensors / Actuators',desc:'Rattachez les devices aux systèmes et gérez leurs pins.',hint:'devices'},
+    signals:{title:'Signals',desc:'Définissez les signaux et leurs propriétés électriques.',hint:'signals'},
+    ecus:{title:'ECUs',desc:'Gérez variants, adresses CAN et pré-affectations.',hint:'ECU'},
+    buses:{title:'Buses',desc:'Connectez ECU et groups aux bus physiques.',hint:'bus'},
+    validation:{title:'Validation',desc:'Contrôles qualité, cohérence et auto-test outillé.',hint:'QA'},
+    exports:{title:'Exports & bindings',desc:'Préparez les sorties, les bindings ECU et les artefacts.',hint:'export'}
+  };
+  return meta[tabId] || {title:'Panneau',desc:'Zone d’édition.',hint:'tab'};
+}
+function renderTabs(){
+  el('tabs').innerHTML=tabs.map(t=>{
+    const meta=getTabMeta(t.id);
+    return `<div class="tab ${state.activeTab===t.id?'active':''}" data-tab="${t.id}"><div class="tab-main"><strong>${t.label}</strong><span>${meta.hint}</span></div><span class="tab-badge">${tabCount(t.id)}</span></div>`;
+  }).join('');
+  document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{ state.activeTab=btn.dataset.tab; render(); });
+}
+
+function rowButtons(rootName,id){
+  return `<div class="sort-buttons"><button class="ghost small-btn" data-move-up="${rootName}::${id}">▲</button><button class="ghost small-btn" data-move-down="${rootName}::${id}">▼</button></div>`;
+}
+function childButtons(kind,parentId,listName,id){
+  return `<div class="sort-buttons"><button class="ghost small-btn" data-child-up="${kind}::${parentId}::${listName}::${id}">▲</button><button class="ghost small-btn" data-child-down="${kind}::${parentId}::${listName}::${id}">▼</button></div>`;
+}
+
+function renderArchitectureTab(){
+  return `<div class="stack">
+    <h2>Architecture</h2>
+    <p>Définissez les infos globales du projet et visualisez l’arborescence à gauche. Un ou plusieurs sensor_actuator peuvent être connectés à chaque système.</p>
+    <div class="arch-layout">
+      <div class="stack">
+        <div class="form-grid">
+          <div class="field full"><label>Nom de l’architecture</label><input id="archName" value="${state.architecture.name||''}" /></div>
+          <div class="field full"><label>Notes</label><textarea id="archNotes">${state.architecture.notes||''}</textarea></div>
+        </div>
+        <div class="item-actions">
+          <button class="primary" id="saveArchitectureBtn">Enregistrer</button>
+          <button class="secondary small-btn" id="saveAllObjectsToLibraryBtn">Sauvegarder tous les objets du projet</button>
+        </div>
+        <div class="item">
+          <div class="item-title">Résumé de connexion système → sensor_actuator</div>
+          <div class="items" style="max-height:320px">
+            ${state.architecture.systems.map(sys=>`<div class="item">
+              <div class="item-title">${sys.name}</div>
+              <div class="chips">${getSensorActuatorsForSystem(sys.id).map(dev=>`<span class="chip">${dev.name}</span>`).join('') || '<span class="muted">Aucun sensor_actuator connecté</span>'}</div>
+            </div>`).join('') || '<div class="muted">Aucun système.</div>'}
+          </div>
+        </div>
+      </div>
+      <div class="tree-wrap">
+        ${buildSystemTreeHtml()}
+      </div>
+    </div>
+  </div>`;
+}
+function renderDiagramTab(){
+  return `<div class="stack">
+    <h2>Diagramme</h2>
+    <p>Diagramme SVG natif généré sans dépendance externe. Cliquez un nœud pour ouvrir l’onglet correspondant.</p>
+    <div class="diagram-wrap">
+      <div class="item-actions"><button class="secondary small-btn" id="refreshDiagramBtn">Rafraîchir</button><button class="ghost small-btn" id="previewDiagramSourceBtn">Prévisualiser source JSON</button></div>
+      <div class="diagram-stage" id="diagramSvgBox"></div>
+    </div>
+  </div>`;
+}
+function renderImportsTab(){
+  return `<div class="stack">
+    <h2>Imports</h2>
+    <p>Importez des objets JSON ou un DBC vers un groupe.</p>
+    <div class="item">
+      <div class="item-title">Importer un fichier objet</div>
+      <div class="item-actions"><label class="file-label secondary" for="panelImportObjectFile">Choisir un fichier JSON</label><input id="panelImportObjectFile" type="file" accept="application/json" /></div>
+      <div class="chips"><span class="chip">system</span><span class="chip">system_group</span><span class="chip">device</span><span class="chip">signal</span><span class="chip">ecu</span><span class="chip">bus</span><span class="chip">ecu_binding</span><span class="chip">full_architecture</span></div>
+    </div>
+    <div class="item">
+      <div class="item-title">Templates d’import</div>
+      <div class="form-grid"><div class="field"><label>Type de template</label><select id="templateTypeSelect">${Object.keys(TEMPLATE_EXAMPLES).map(k=>`<option value="${k}">${k}</option>`).join('')}</select></div></div>
+      <div class="item-actions"><button class="primary small-btn" id="previewTemplateBtn">Prévisualiser</button><button class="secondary small-btn" id="downloadTemplateBtn">Télécharger</button></div>
+    </div>
+    <div class="item">
+      <div class="item-title">Import DBC vers un groupe</div>
+      <div class="form-grid">
+        <div class="field"><label>Groupe cible</label><select id="dbcGroup">${simpleNamedOptions(state.architecture.systemGroups,'','Sélectionner un groupe')}</select></div>
+        <div class="field"><label>Groupe export DBC</label><select id="dbcGroupExport">${simpleNamedOptions(state.architecture.systemGroups,state.previewDbcGroup||'','Sélectionner un groupe')}</select></div>
+        <div class="field full"><label>Texte DBC</label><textarea id="dbcText"></textarea></div>
+      </div>
+      <div class="item-actions"><button class="primary small-btn" id="importDbcBtn">Importer DBC</button><button class="secondary small-btn" id="previewDbcBtn">Prévisualiser DBC</button><button class="secondary small-btn" id="downloadSelectedDbcBtn">Télécharger DBC</button></div>
+    </div>
+  </div>`;
+}
+function renderLibraryTab(){
+  const items=filteredLibraryItems();
+  return `<div class="stack">
+    <h2>Library locale</h2>
+    <p>Bibliothèque IndexedDB avec recherche, filtre, ajout au projet et drag &amp; drop Library → projet.</p>
+    <div class="library-grid">
+      <div class="field"><label>Recherche bibliothèque</label><input id="librarySearch" value="${state.librarySearch}" /></div>
+      <div class="field"><label>Type</label><select id="libraryType">${libraryTypes.map(v=>`<option value="${v}" ${state.libraryType===v?'selected':''}>${v}</option>`).join('')}</select></div>
+    </div>
+    <div class="item-actions">
+      <button class="primary small-btn" id="saveProjectToLibraryBtn">Sauvegarder le projet</button>
+      <button class="secondary small-btn" id="saveSystemsToLibraryBtn">Sauver systems</button>
+      <button class="secondary small-btn" id="saveGroupsToLibraryBtn">Sauver groups</button>
+      <button class="secondary small-btn" id="saveDevicesToLibraryBtn">Sauver devices</button>
+      <button class="secondary small-btn" id="saveSignalsToLibraryBtn">Sauver signaux</button>
+      <button class="secondary small-btn" id="saveEcusToLibraryBtn">Sauver ECU</button>
+      <button class="secondary small-btn" id="saveBusesToLibraryBtn">Sauver bus</button>
+      <button class="secondary small-btn" id="saveBindingsToLibraryBtn">Sauver bindings</button>
+      <button class="ghost small-btn" id="refreshLibraryBtn">Actualiser</button>
+    </div>
+    <div class="item">
+      <div class="item-title">Projets sauvegardés</div>
+      <div class="items" style="max-height:220px">${state.savedProjects.map(p=>`<div class="item"><div class="item-top"><div><div class="item-title">${p.name}</div><div class="item-meta">${p.updatedAt||p.createdAt||''}</div></div><div class="item-actions"><button class="ok small-btn" data-load-project="${p.id}">Charger</button><button class="danger small-btn" data-del-project="${p.id}">Supprimer</button></div></div></div>`).join('')||'<div class="muted">Aucun projet.</div>'}</div>
+    </div>
+    <div class="item">
+      <div class="item-title">Objets bibliothèque</div>
+      <div class="inline-help">Les éléments sont draggables vers la zone projet dans l’onglet Exports.</div>
+      <div class="items">${items.map(item=>`<div class="item" draggable="true" data-drag-kind="library" data-drag-id="${item.id}"><div class="item-top"><div><div class="item-title">${item.name}</div><div class="item-meta">${item.objectType}</div></div><div class="item-actions"><button class="ok small-btn" data-add-library-item="${item.id}">Ajouter</button><button class="secondary small-btn" data-preview-library-item="${item.id}">Preview</button><button class="danger small-btn" data-del-library-item="${item.id}">Supprimer</button></div></div><div class="chips">${(item.tags||[]).map(t=>`<span class="chip">${t}</span>`).join('')}</div></div>`).join('')||'<div class="muted">Aucun objet.</div>'}</div>
+    </div>
+  </div>`;
+}
+function renderSystemsTab(){
+  const systems=state.architecture.systems.filter(sys=>matchesGlobalSearch(sys.name));
+  return `<div class="stack">
+    <h2>Systems</h2>
+    <p>Réorganisation par boutons + drag métier system → group.</p>
+    <div class="field"><label>Nom du système</label><input id="systemName" /></div>
+    <button class="primary" id="addSystemBtn">Ajouter</button>
+    <div class="items">${systems.map(sys=>`<div class="item" draggable="true" data-drag-kind="system" data-drag-id="${sys.id}"><div class="item-top"><div><div class="item-title">${sys.name}</div><div class="item-meta">${state.architecture.devices.filter(d=>d.systemId===sys.id).length} sensor_actuator(s)</div></div><div class="row-actions">${rowButtons('systems',sys.id)}<button class="danger small-btn" data-del-system="${sys.id}">Supprimer</button></div></div></div>`).join('')||'<div class="muted">Aucun système.</div>'}</div>
+  </div>`;
+}
+function renderGroupsTab(){
+  const groups=state.architecture.systemGroups.filter(g=>matchesGlobalSearch(g.name,(g.messages||[]).map(m=>m.name).join(' ')));
+  return `<div class="stack">
+    <h2>System Groups</h2>
+    <p>Réorganisation + drop system → group + drop group → bus.</p>
+    <div class="field"><label>Nom du groupe</label><input id="groupName" /></div>
+    <button class="primary" id="addGroupBtn">Ajouter</button>
+    <div class="item">
+      <div class="item-title">Ajouter un message J1939</div>
+      <div class="form-grid">
+        <div class="field"><label>Groupe</label><select id="msgGroup">${simpleNamedOptions(state.architecture.systemGroups,'','Sélectionner un groupe')}</select></div>
+        <div class="field"><label>Nom message</label><input id="msgName" placeholder="ET1" /></div>
+        <div class="field"><label>PGN</label><input id="msgPgn" type="number" value="65262" /></div>
+        <div class="field"><label>Priority</label><input id="msgPriority" type="number" value="6" /></div>
+        <div class="field"><label>Source Address</label><input id="msgSa" type="number" value="0" /></div>
+        <div class="field"><label>DLC</label><input id="msgDlc" type="number" value="8" /></div>
+        <div class="field"><label>Cycle time</label><input id="msgCycle" type="number" value="100" /></div>
+        <div class="field full"><label>Signals</label><select id="msgSignals" multiple size="8">${state.architecture.signals.map(sig=>`<option value="${sig.id}">${sig.name}</option>`).join('')}</select></div>
+      </div>
+      <button class="primary small-btn" id="addMessageBtn">Ajouter le message</button>
+    </div>
+    <div class="items">${groups.map(group=>{
+      const msgs=(group.messages||[]).filter(m=>matchesGlobalSearch(group.name,m.name,(m.signalIds||[]).map(id=>getSignal(id)?.name).join(' ')));
+      return `<div class="item" draggable="true" data-drag-kind="group" data-drag-id="${group.id}">
+        <div class="item-top"><div><div class="item-title">${group.name}</div><div class="item-meta">${(group.systemIds||[]).map(id=>getSystem(id)?.name).filter(Boolean).join(', ')||'No systems'} · ${(group.messages||[]).length} message(s)</div></div><div class="row-actions">${rowButtons('systemGroups',group.id)}<button class="danger small-btn" data-del-group="${group.id}">Supprimer</button></div></div>
+        <div class="dropzone" data-drop-source="system" data-drop-target="group" data-group-drop="${group.id}">Déposez ici un system pour l’ajouter au group.</div>
+        <div class="field"><label>Systèmes membres</label><select multiple size="6" data-group-systems="${group.id}">${state.architecture.systems.map(sys=>`<option value="${sys.id}" ${(group.systemIds||[]).includes(sys.id)?'selected':''}>${sys.name}</option>`).join('')}</select></div>
+        <div class="chips">${groupSignals(group).map(sig=>`<span class="chip">${sig.name}</span>`).join('')||'<span class="muted">Pas de signaux</span>'}</div>
+        <div class="item-actions"><button class="secondary small-btn" data-preview-group-dbc="${group.id}">Prévisualiser DBC</button><button class="secondary small-btn" data-download-group-dbc="${group.id}">Télécharger DBC</button></div>
+        <div class="items">${msgs.map(msg=>`<div class="item"><div class="item-top"><div><div class="item-title">${msg.name}</div><div class="item-meta">PGN ${msg.pgn} · SA ${msg.sourceAddress} · PRI ${msg.priority} · DLC ${msg.dlc}</div></div><div class="row-actions">${childButtons('group',group.id,'messages',msg.id)}<button class="danger small-btn" data-del-message="${group.id}::${msg.id}">Supprimer</button></div></div></div>`).join('')||'<div class="muted">Aucun message.</div>'}</div>
+      </div>`;
+    }).join('')||'<div class="muted">Aucun groupe.</div>'}</div>
+  </div>`;
+}
+function renderDevicesTab(){
+  const devices=state.architecture.devices.filter(dev=>matchesGlobalSearch(dev.name,getSystem(dev.systemId)?.name,(dev.pins||[]).map(p=>p.name).join(' ')));
+  return `<div class="stack">
+    <h2>Sensors_Actuators</h2>
+    <p>Réorganisation + drop signal → sensor_actuator pin + connexion sensor_actuator → system.</p>
+    <div class="form-grid">
+      <div class="field"><label>Système</label><select id="deviceSystem">${simpleNamedOptions(state.architecture.systems,'','Sélectionner un système')}</select></div>
+      <div class="field"><label>Type</label><select id="deviceType">${plainOptions(deviceTypes,'SENSOR')}</select></div>
+      <div class="field full"><label>Nom du sensor_actuator</label><input id="deviceName" /></div>
+    </div>
+    <button class="primary" id="addDeviceBtn">Ajouter</button>
+    <div class="item">
+      <div class="item-title">Connexion rapide vers un système</div>
+      <div class="inline-help">Déposez un sensor_actuator sur un système dans l’arborescence Architecture, ou utilisez ce formulaire.</div>
+      <div class="form-grid">
+        <div class="field"><label>Sensor_Actuator</label><select id="quickAssignDevice">${simpleNamedOptions(state.architecture.devices,'','Sélectionner un sensor_actuator')}</select></div>
+        <div class="field"><label>Système cible</label><select id="quickAssignSystem">${simpleNamedOptions(state.architecture.systems,'','Sélectionner un système')}</select></div>
+      </div>
+      <button class="secondary small-btn" id="assignDeviceToSystemBtn">Connecter au système</button>
+    </div>
+    <div class="items">${devices.map(dev=>{
+      const sys=getSystem(dev.systemId);
+      const pins=(dev.pins||[]).filter(pin=>matchesGlobalSearch(dev.name,pin.name,getSignal(pin.signalId)?.name));
+      return `<div class="item" draggable="true" data-drag-kind="sensor_actuator" data-drag-id="${dev.id}">
+        <div class="item-top"><div><div class="item-title">${dev.name}</div><div class="item-meta">${dev.type} · system: ${sys?sys.name:'—'}</div></div><div class="row-actions">${rowButtons('devices',dev.id)}<button class="danger small-btn" data-del-device="${dev.id}">Supprimer</button></div></div>
+        <div class="item-actions">
+          <button class="secondary small-btn" data-add-device-pin="${dev.id}">Ajouter un pin</button>
+          <button class="secondary small-btn" data-save-single-device-library="${dev.id}">Sauver en library</button>
+        </div>
+        <div class="items">${pins.map(pin=>{
+          const sig=getSignal(pin.signalId);
+          return `<div class="item">
+            <div class="item-top"><div><div class="item-title">${pin.name}</div><div class="item-meta">#${pin.number} · ${pin.role} · signal: ${sig?sig.name:'none'}</div></div><div class="row-actions">${childButtons('device',dev.id,'pins',pin.id)}<button class="danger small-btn" data-del-device-pin="${dev.id}::${pin.id}">Supprimer le pin</button></div></div>
+            <div class="dropzone" data-drop-source="signal" data-drop-target="devicePin" data-device-pin-drop="${dev.id}::${pin.id}">Déposez ici un signal pour connecter ce pin de sensor_actuator.</div>
+            <div class="form-grid" style="margin-top:8px">
+              <div class="field"><label>Signal connecté</label><select data-device-pin-signal="${dev.id}::${pin.id}"><option value="">None</option>${state.architecture.signals.map(s=>`<option value="${s.id}" ${pin.signalId===s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+              <div class="field"><label>Role</label><select data-device-pin-role="${dev.id}::${pin.id}">${pinRoles.map(r=>`<option ${pin.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
+            </div>
+          </div>`;
+        }).join('')||'<div class="muted">Aucun pin.</div>'}</div>
+      </div>`;
+    }).join('')||'<div class="muted">Aucun sensor_actuator.</div>'}</div>
+  </div>`;
+}
+function renderSignalsTab(){
+  const signals=state.architecture.signals.filter(sig=>matchesGlobalSearch(sig.name,sig.type,sig.unit));
+  return `<div class="stack">
+    <h2>Signals</h2>
+    <p>Réorganisation + drag métier signal → sensor_actuator pin / ECU pin.</p>
+    <div class="form-grid">
+      <div class="field full"><label>Nom du signal</label><input id="signalName" /></div>
+      <div class="field"><label>Type</label><select id="signalType">${plainOptions(signalTypes,'ANALOG')}</select></div>
+      <div class="field"><label>Unit</label><select id="signalUnit">${plainOptions(signalUnits,'CELSIUS')}</select></div>
+      <div class="field"><label>Min</label><input id="signalMin" type="number" value="0" /></div>
+      <div class="field"><label>Max</label><input id="signalMax" type="number" value="100" /></div>
+      <div class="field"><label>Resolution</label><input id="signalResolution" type="number" step="0.001" value="1" /></div>
+      <div class="field"><label>Scaling</label><input id="signalScaling" type="number" step="0.001" value="1" /></div>
+    </div>
+    <button class="primary" id="addSignalBtn">Ajouter</button>
+    <div class="items">${signals.map(sig=>{
+      const devRefs=[]; state.architecture.devices.forEach(dev=>(dev.pins||[]).forEach(pin=>{ if(pin.signalId===sig.id) devRefs.push(`${dev.name}.${pin.name}`); }));
+      const ecuRefs=state.architecture.ecuBindings.filter(b=>b.signalId===sig.id).map(b=>`${getEcu(b.ecuId)?.name||'?'} ${b.connector}/${b.physicalPin}`);
+      return `<div class="item" draggable="true" data-drag-kind="signal" data-drag-id="${sig.id}"><div class="item-top"><div><div class="item-title">${sig.name}</div><div class="item-meta">${sig.type} · ${sig.unit} · ${sig.min}..${sig.max}</div></div><div class="row-actions">${rowButtons('signals',sig.id)}<button class="danger small-btn" data-del-signal="${sig.id}">Supprimer</button></div></div><div class="chips">${devRefs.map(v=>`<span class="chip">DEV ${v}</span>`).join('')}${ecuRefs.map(v=>`<span class="chip">ECU ${v}</span>`).join('')}</div></div>`;
+    }).join('')||'<div class="muted">Aucun signal.</div>'}</div>
+  </div>`;
+}
+function renderEcusTab(){
+  const ecus=state.architecture.ecus.filter(ecu=>matchesGlobalSearch(ecu.name,ecu.variant,(ecu.canAddresses||[]).join(' ')));
+  return `<div class="stack">
+    <h2>ECUs</h2>
+    <p>Réorganisation + drag métier ECU → bus.</p>
+    <div class="form-grid">
+      <div class="field full"><label>Nom ECU</label><input id="ecuName" /></div>
+      <div class="field"><label>Variant</label><select id="ecuVariant">${plainOptions(ecuVariants,'SMALL')}</select></div>
+      <div class="field"><label>Adresses CAN</label><input id="ecuCanAddresses" placeholder="0x12, 0x34" /></div>
+    </div>
+    <button class="primary" id="addEcuBtn">Ajouter</button>
+    <div class="items">${ecus.map(ecu=>{
+      const bindings=state.architecture.ecuBindings.filter(b=>b.ecuId===ecu.id);
+      return `<div class="item" draggable="true" data-drag-kind="ecu" data-drag-id="${ecu.id}"><div class="item-top"><div><div class="item-title">${ecu.name}</div><div class="item-meta">${ecu.variant} · CAN: ${(ecu.canAddresses||[]).join(', ')||'none'} · ${bindings.length} binding(s)</div></div><div class="row-actions">${rowButtons('ecus',ecu.id)}<button class="danger small-btn" data-del-ecu="${ecu.id}">Supprimer</button></div></div><div class="item-actions"><button class="secondary small-btn" data-prefill-binding="${ecu.id}">Pré-remplir binding</button></div><div class="chips">${bindings.map(b=>`<span class="chip">${getSignal(b.signalId)?.name||'?'} → ${b.connector}/${b.physicalPin}</span>`).join('')||'<span class="muted">Aucun binding</span>'}</div></div>`;
+    }).join('')||'<div class="muted">Aucun ECU.</div>'}</div>
+  </div>`;
+}
+function renderBusesTab(){
+  const buses=state.architecture.buses.filter(bus=>matchesGlobalSearch(bus.name,bus.type,bus.speed,(bus.groupIds||[]).map(id=>getGroup(id)?.name).join(' '),(bus.ecuIds||[]).map(id=>getEcu(id)?.name).join(' ')));
+  return `<div class="stack">
+    <h2>Buses</h2>
+    <p>Réorganisation + drop ECU → bus + group → bus.</p>
+    <div class="form-grid">
+      <div class="field"><label>Nom bus</label><input id="busName" /></div>
+      <div class="field"><label>Type</label><select id="busType">${plainOptions(busTypes,'CAN')}</select></div>
+      <div class="field full"><label>Vitesse CAN</label><select id="busSpeed"><option value="">Pas de vitesse / non CAN</option>${canSpeeds.map(v=>`<option value="${v}">${v} bps</option>`).join('')}</select></div>
+    </div>
+    <button class="primary" id="addBusBtn">Ajouter</button>
+    <div class="items">${buses.map(bus=>{
+      const load=estimateBusLoad(bus);
+      return `<div class="item">
+        <div class="item-top"><div><div class="item-title">${bus.name}</div><div class="item-meta">${bus.type}${bus.type==='CAN'&&bus.speed?' · '+bus.speed+' bps':''}</div></div><div class="row-actions">${rowButtons('buses',bus.id)}<button class="danger small-btn" data-del-bus="${bus.id}">Supprimer</button></div></div>
+        <div class="dropzone" data-drop-source="ecu" data-drop-target="bus" data-bus-drop-ecu="${bus.id}">Déposez ici un ECU pour l’ajouter au bus.</div>
+        <div class="dropzone" data-drop-source="group" data-drop-target="bus" data-bus-drop-group="${bus.id}">Déposez ici un group pour le lier au bus.</div>
+        ${bus.type==='CAN'?`<div class="field"><label>Vitesse CAN</label><select data-bus-speed="${bus.id}"><option value="">No speed</option>${canSpeeds.map(v=>`<option value="${v}" ${String(bus.speed||'')===String(v)?'selected':''}>${v} bps</option>`).join('')}</select></div>`:''}
+        <div class="field"><label>ECU membres</label><select multiple size="6" data-bus-members="${bus.id}">${state.architecture.ecus.map(ecu=>`<option value="${ecu.id}" ${(bus.ecuIds||[]).includes(ecu.id)?'selected':''}>${ecu.name}</option>`).join('')}</select></div>
+        <div class="field"><label>Groupes système liés</label><select multiple size="6" data-bus-groups="${bus.id}">${state.architecture.systemGroups.map(group=>`<option value="${group.id}" ${(bus.groupIds||[]).includes(group.id)?'selected':''}>${group.name}</option>`).join('')}</select></div>
+        ${bus.type==='CAN'?`<div class="item"><div class="item-title">Charge CAN estimée</div><div class="item-meta">${load.bitsPerSecond.toFixed(1)} bit/s · ${load.loadPct.toFixed(2)}%</div><div class="items" style="max-height:200px">${load.details.map(d=>`<div class="item"><div class="item-title">${d.message}</div><div class="item-meta">${d.group} · DLC ${d.dlc} · ${d.cycle} ms · ${d.bitsPerSecond.toFixed(1)} bit/s</div></div>`).join('')||'<div class="muted">Aucun message lié.</div>'}</div></div>`:''}
+      </div>`;
+    }).join('')||'<div class="muted">Aucun bus.</div>'}</div>
+  </div>`;
+}
+function renderValidationTab(){
+  const issues=validateArchitecture().filter(i=>matchesGlobalSearch(i.text));
+  return `<div class="stack">
+    <h2>Validation</h2>
+    <p>Vérifications structurelles et métier.</p>
+    <div class="item-actions"><button class="primary small-btn" id="refreshValidationBtn">Actualiser</button><button class="secondary small-btn" id="previewValidationBtn">Prévisualiser le rapport</button><button class="secondary small-btn" id="runSelfTestBtn">Auto-test outil</button></div>
+    <div class="items">${issues.map(i=>`<div class="issue ${i.severity==='error'?'err':'warn'}"><strong>${i.severity.toUpperCase()}</strong> — ${i.text}</div>`).join('')||'<div class="muted">Aucune issue visible.</div>'}</div>
+  </div>`;
+}
+function renderExportsTab(){
+  const bindings=state.architecture.ecuBindings.filter(b=>matchesGlobalSearch(getSignal(b.signalId)?.name,getEcu(b.ecuId)?.name,b.connector,b.pinName,b.group,b.functions));
+  return `<div class="stack">
+    <h2>Exports</h2>
+    <p>Prévisualisation et exports. Drop signal → ECU pin via zones rapides.</p>
+    <div class="grid-2">
+      <button class="primary" id="previewMainBtn">Prévisualiser main.c</button>
+      <button class="secondary" id="previewJsonBtn">Prévisualiser JSON</button>
+      <button class="secondary" id="previewPinoutBtn">Prévisualiser pinout HTML</button>
+      <button class="secondary" id="previewReportBtn">Prévisualiser report</button>
+      <button class="secondary" id="previewDbcBtn">Prévisualiser DBC</button>
+      <button class="secondary" id="downloadSelectedDbcBtn">Télécharger DBC</button>
+    </div>
+    <div class="item">
+      <div class="item-title">Éditeur de bindings ECU</div>
+      <div class="form-grid">
+        <div class="field"><label>Signal</label><select id="bindingSignal">${simpleNamedOptions(state.architecture.signals,'','Sélectionner un signal')}</select></div>
+        <div class="field"><label>ECU</label><select id="bindingEcu">${simpleNamedOptions(state.architecture.ecus,'','Sélectionner un ECU')}</select></div>
+        <div class="field"><label>Connector</label><input id="bindingConnector" placeholder="X1" /></div>
+        <div class="field"><label>Physical pin</label><input id="bindingPhysicalPin" type="number" value="1" /></div>
+        <div class="field"><label>Pin name</label><input id="bindingPinName" placeholder="IN_AIV_07" /></div>
+        <div class="field"><label>Main group</label><input id="bindingGroup" placeholder="AIV_5" /></div>
+        <div class="field full"><label>Alt groups/functions</label><input id="bindingFunctions" placeholder="AIV_16, AIV_RES, SENT" /></div>
+        <div class="field"><label>Role</label><select id="bindingRole"><option value="">(optional)</option>${pinRoles.map(v=>`<option>${v}</option>`).join('')}</select></div>
+        <div class="field"><label>Status</label><select id="bindingStatus"><option>valid</option><option>warning</option><option>error</option><option>free</option></select></div>
+        <div class="field full"><label>Electrical</label><input id="bindingElectrical" placeholder="0..5 V, ADC 12-bit" /></div>
+        <div class="field full"><label>Diagnostics</label><input id="bindingDiagnostics" placeholder="Open Load, Short GND, Short BAT" /></div>
+        <div class="field full"><label>SW Config</label><input id="bindingSwConfig" placeholder="Pull-Up, Interrupt" /></div>
+        <div class="field full"><label>Source sensor_actuator pin</label><select id="bindingDevicePin"><option value="">None</option>${state.architecture.devices.flatMap(dev=>(dev.pins||[]).map(pin=>`<option value="${dev.id}::${pin.id}">${dev.name} :: ${pin.name}</option>`)).join('')}</select></div>
+      </div>
+      <button class="primary small-btn" id="addBindingBtn">Ajouter le binding</button>
+    </div>
+    <div class="item">
+      <div class="item-title">Zones de drop rapides signal → ECU pin</div>
+      <div class="items">${state.architecture.ecus.filter(ecu=>matchesGlobalSearch(ecu.name)).map(ecu=>`
+        <div class="item">
+          <div class="item-title">${ecu.name}</div>
+          <div class="grid-2">
+            <div class="dropzone" data-drop-source="signal" data-drop-target="ecuPin" data-ecu-pin-drop='${JSON.stringify({ecuId:ecu.id,connector:'X1',physicalPin:1,pinName:'PIN_AUTO_X1_1'})}'>Déposez un signal → ${ecu.name} X1/1</div>
+            <div class="dropzone" data-drop-source="signal" data-drop-target="ecuPin" data-ecu-pin-drop='${JSON.stringify({ecuId:ecu.id,connector:'X1',physicalPin:2,pinName:'PIN_AUTO_X1_2'})}'>Déposez un signal → ${ecu.name} X1/2</div>
+          </div>
+        </div>`).join('')||'<div class="muted">Aucun ECU.</div>'}
+      </div>
+    </div>
+    <div class="items">${bindings.map(b=>{
+      const sig=getSignal(b.signalId), ecu=getEcu(b.ecuId), ref=findDevicePin(b.devicePinRef);
+      return `<div class="item"><div class="item-top"><div><div class="item-title">${sig?sig.name:'Unknown'} → ${ecu?ecu.name:'Unknown'}</div><div class="item-meta">${b.connector}/${b.physicalPin} · ${b.pinName||'no pin name'} · ${ref?ref.dev.name+' :: '+ref.pin.name:'no sensor_actuator pin'}</div></div><div class="row-actions">${rowButtons('ecuBindings',b.id)}<button class="danger small-btn" data-del-binding="${b.id}">Déconnecter</button></div></div></div>`;
+    }).join('')||'<div class="muted">Aucun binding ECU.</div>'}</div>
+    <div class="item"><div class="item-title">Drop depuis Library → projet</div><div class="dropzone" data-drop-source="library" data-drop-target="project" id="libraryProjectDrop">Déposez ici un objet de bibliothèque pour le cloner dans le projet courant.</div></div>
+  </div>`;
+}
+
+function updateWorkspaceChrome(){
+  const meta=getTabMeta(state.activeTab);
+  el('workspaceTitle').textContent=meta.title;
+  el('workspaceDescription').textContent=meta.desc;
+  el('activeTabPill').textContent=meta.hint;
+  el('projectNamePill').textContent=state.architecture.name || 'My EE Architecture';
+  const needle=(state.globalSearch||'').trim();
+  el('searchStatusPill').textContent=needle ? `Recherche : ${needle}` : 'Recherche inactive';
+  const issues=validateArchitecture().length;
+  const issuePill=el('issueStatusPill');
+  issuePill.textContent=`${issues} issue${issues>1?'s':''}`;
+  issuePill.className=`kpi-pill ${issues?'issue':'ok-state'}`;
+  const previewModeLabel={main:'main.c',json:'JSON',pinout:'pinout',report:'validation',dbc:'DBC',template:'template',library_item:'library'}[state.previewMode] || state.previewMode;
+  el('previewModeTag').textContent=previewModeLabel;
+  el('previewContextTag').textContent=meta.title;
+}
+
+function render(){
+  renderTabs();
+  updateWorkspaceChrome();
+  const renderers={architecture:renderArchitectureTab,diagram:renderDiagramTab,imports:renderImportsTab,library:renderLibraryTab,systems:renderSystemsTab,groups:renderGroupsTab,devices:renderDevicesTab,signals:renderSignalsTab,ecus:renderEcusTab,buses:renderBusesTab,validation:renderValidationTab,exports:renderExportsTab};
+  el('leftPanel').innerHTML=renderers[state.activeTab]();
+  bindPanelEvents();
+  setupDragDropHooks();
+  if(state.activeTab==='diagram') renderDiagramSvg('diagramSvgBox');
+  refreshPreview();
+}
+
+function setupDragDropHooks(){
+  document.querySelectorAll('[data-drag-kind]').forEach(node=>{
+    node.addEventListener('dragstart', e=>{
+      const kind=node.dataset.dragKind, id=node.dataset.dragId;
+      const data=kind==='signal'?{signalId:id}:kind==='system'?{systemId:id}:kind==='group'?{groupId:id}:kind==='ecu'?{ecuId:id}:kind==='sensor_actuator'?{deviceId:id}:kind==='library'?{itemId:id}:{id};
+      dragStart(kind,data,e);
+    });
+    node.addEventListener('dragend', dragEnd);
+  });
+
+  document.querySelectorAll('[data-tree-system-drop]').forEach(node=>{
+    const systemId=node.dataset.treeSystemDrop;
+    node.addEventListener('dragover', allowDrop);
+    node.addEventListener('dragenter', e=>dropEnter(e,'sensor_actuator','system',{systemId}));
+    node.addEventListener('dragleave', dropLeave);
+    node.addEventListener('drop', e=>{ e.preventDefault(); applyDrop('sensor_actuator','system',{systemId}); });
+  });
+
+  document.querySelectorAll('[data-device-pin-drop]').forEach(node=>{
+    const [deviceId,pinId]=node.dataset.devicePinDrop.split('::');
+    node.addEventListener('dragover', allowDrop);
+    node.addEventListener('dragenter', e=>dropEnter(e,'signal','devicePin',{deviceId,pinId}));
+    node.addEventListener('dragleave', dropLeave);
+    node.addEventListener('drop', e=>{ e.preventDefault(); applyDrop('signal','devicePin',{deviceId,pinId}); });
+  });
+  document.querySelectorAll('[data-group-drop]').forEach(node=>{
+    const groupId=node.dataset.groupDrop;
+    node.addEventListener('dragover', allowDrop);
+    node.addEventListener('dragenter', e=>dropEnter(e,'system','group',{groupId}));
+    node.addEventListener('dragleave', dropLeave);
+    node.addEventListener('drop', e=>{ e.preventDefault(); applyDrop('system','group',{groupId}); });
+  });
+  document.querySelectorAll('[data-bus-drop-ecu]').forEach(node=>{
+    const busId=node.dataset.busDropEcu;
+    node.addEventListener('dragover', allowDrop);
+    node.addEventListener('dragenter', e=>dropEnter(e,'ecu','bus',{busId}));
+    node.addEventListener('dragleave', dropLeave);
+    node.addEventListener('drop', e=>{ e.preventDefault(); applyDrop('ecu','bus',{busId}); });
+  });
+  document.querySelectorAll('[data-bus-drop-group]').forEach(node=>{
+    const busId=node.dataset.busDropGroup;
+    node.addEventListener('dragover', allowDrop);
+    node.addEventListener('dragenter', e=>dropEnter(e,'group','bus',{busId}));
+    node.addEventListener('dragleave', dropLeave);
+    node.addEventListener('drop', e=>{ e.preventDefault(); applyDrop('group','bus',{busId}); });
+  });
+  document.querySelectorAll('[data-ecu-pin-drop]').forEach(node=>{
+    const targetData=JSON.parse(node.dataset.ecuPinDrop);
+    node.addEventListener('dragover', allowDrop);
+    node.addEventListener('dragenter', e=>dropEnter(e,'signal','ecuPin',targetData));
+    node.addEventListener('dragleave', dropLeave);
+    node.addEventListener('drop', e=>{ e.preventDefault(); applyDrop('signal','ecuPin',targetData); });
+  });
+  const libProjectDrop=el('libraryProjectDrop');
+  if(libProjectDrop){
+    libProjectDrop.addEventListener('dragover', allowDrop);
+    libProjectDrop.addEventListener('dragenter', e=>dropEnter(e,'library','project',{}));
+    libProjectDrop.addEventListener('dragleave', dropLeave);
+    libProjectDrop.addEventListener('drop', e=>{ e.preventDefault(); applyDrop('library','project',{}); });
+  }
+}
+
+function importObjectFileChangeHandler(e){
+  const file=e.target.files?.[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ try{ alert(importObjectFileData(JSON.parse(reader.result))); } catch(err){ alert(err.message||'JSON d’import invalide.'); } };
+  reader.readAsText(file); e.target.value='';
+}
+function download(filename, content, type){
+  const blob=new Blob([content],{type});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function exportAllFiles(){
+  const group=getGroup(el('headerDbcGroup').value)||state.architecture.systemGroups[0]||null;
+  const files=[
+    {name:'main.c',content:buildMainC(),type:'text/x-c'},
+    {name:'architecture.json',content:frameworkExportJson(),type:'application/json'},
+    {name:'editor_state.json',content:JSON.stringify(state.architecture,null,2),type:'application/json'},
+    {name:'Makefile',content:makefileText(),type:'text/plain'},
+    {name:'build.sh',content:buildShText(),type:'text/x-shellscript'},
+    {name:'architecture_pinout_browser.html',content:pinoutHtml(),type:'text/html'},
+    {name:'validation_report.txt',content:validationReportText(),type:'text/plain'}
+  ];
+  if(group) files.push({name:`${group.name}.dbc`,content:groupToDbc(group),type:'text/plain'});
+  files.forEach((f,idx)=>setTimeout(()=>download(f.name,f.content,f.type), idx*250));
+  alert('Export de tous les fichiers lancé.');
+}
+
+function runSelfTest(){
+  const results=[];
+  const push=(name,ok,detail)=>results.push({name,ok,detail});
+  try{
+    const json=frameworkExportJson();
+    JSON.parse(json);
+    push('Export JSON',true,'JSON valide');
+  }catch(e){ push('Export JSON',false,e.message); }
+  try{
+    const c=buildMainC();
+    push('Generation main.c', c.includes('AM_Ecu_connect_signal_to_pin'), 'Fonction attendue présente');
+  }catch(e){ push('Generation main.c',false,e.message); }
+  try{
+    const issues=validateArchitecture();
+    push('Validation engine',true,issues.length+' issue(s)');
+  }catch(e){ push('Validation engine',false,e.message); }
+  try{
+    const group=state.architecture.systemGroups[0];
+    const dbc=groupToDbc(group);
+    const parsed=parseDbc(dbc);
+    push('DBC roundtrip', parsed.length>0, parsed.length+' message(s) relu(s)');
+  }catch(e){ push('DBC roundtrip',false,e.message); }
+  try{
+    const renderers={architecture:renderArchitectureTab,diagram:renderDiagramTab,imports:renderImportsTab,library:renderLibraryTab,systems:renderSystemsTab,groups:renderGroupsTab,devices:renderDevicesTab,signals:renderSignalsTab,ecus:renderEcusTab,buses:renderBusesTab,validation:renderValidationTab,exports:renderExportsTab};
+    const missing=tabs.filter(t=>typeof renderers[t.id]!=='function').map(t=>t.id);
+    push('Coverage onglets', missing.length===0, missing.length?missing.join(', '):tabs.length+' onglets couverts');
+  }catch(e){ push('Coverage onglets',false,e.message); }
+  try{
+    const diagram=buildDiagramModel();
+    push('Diagram model', Array.isArray(diagram.nodes) && Array.isArray(diagram.edges), `${diagram.nodes.length} nœud(s), ${diagram.edges.length} lien(s)`);
+  }catch(e){ push('Diagram model',false,e.message); }
+  updatePreview(results.map((r,i)=>`${i+1}. ${r.ok?'[OK]':'[FAIL]'} ${r.name} — ${r.detail}`).join('\n'),'Auto-test outil');
+}
+
+function loadDemo(){
+  const sysBody=uid('sys'), sysPower=uid('sys');
+  const devSensor=uid('dev'), devFan=uid('dev');
+  const pinSensor=uid('dpin'), pinFan=uid('dpin');
+  const sigCool=uid('sig'), sigFan=uid('sig'), sigCan=uid('sig');
+  const ecuSmall=uid('ecu'), ecuLarge=uid('ecu');
+  const groupPower=uid('grp');
+  state.architecture={
+    name:'Demo EE Architecture',
+    notes:'Projet de démonstration',
+    systems:[{id:sysBody,name:'BodySystem'},{id:sysPower,name:'PowertrainSystem'}],
+    systemGroups:[{id:groupPower,name:'PowertrainGroup',systemIds:[sysPower],messages:[{id:uid('msg'),name:'ET1',pgn:65262,priority:6,sourceAddress:0,dlc:8,cycleTime:100,signalIds:[sigCool]}]}],
+    devices:[
+      {id:devSensor,name:'CoolantTempSensor_1',type:'SENSOR',systemId:sysPower,pins:[{id:pinSensor,name:'OUT_TEMP',number:1,role:'INPUT',signalId:sigCool}]},
+      {id:devFan,name:'FanActuator_1',type:'ACTUATOR',systemId:sysBody,pins:[{id:pinFan,name:'CTRL_PWM',number:1,role:'OUTPUT',signalId:sigFan}]}
+    ],
+    signals:[
+      {id:sigCool,name:'CoolantTemperature',type:'ANALOG',unit:'CELSIUS',min:-40,max:150,resolution:0.1,scaling:1},
+      {id:sigFan,name:'FanCommand',type:'PWM',unit:'PERCENT',min:0,max:100,resolution:0.1,scaling:1},
+      {id:sigCan,name:'VehicleCAN',type:'CAN',unit:'NONE',min:0,max:0,resolution:1,scaling:1}
+    ],
+    ecus:[
+      {id:ecuSmall,name:'AEC_SMALL_01',variant:'SMALL',canAddresses:['0x12','0x34']},
+      {id:ecuLarge,name:'AEC_LARGE_01',variant:'LARGE',canAddresses:['0x70']}
+    ],
+    buses:[{id:uid('bus'),name:'MainCAN',type:'CAN',speed:'500000',ecuIds:[ecuSmall,ecuLarge],groupIds:[groupPower]}],
+    ecuBindings:[
+      {id:uid('bind'),signalId:sigCool,ecuId:ecuLarge,connector:'X1',physicalPin:42,pinName:'IN_AIV_07',group:'AIV_5',functions:'AIV_16, AIV_RES, SENT',role:'INPUT',status:'valid',electrical:'0..5 V, ADC 12-bit',diagnostics:'Open Load, Short GND, Short BAT, Range Check',swConfig:'Pull-Up, Pull-Down, Interrupt, Filter',devicePinRef:`${devSensor}::${pinSensor}`},
+      {id:uid('bind'),signalId:sigFan,ecuId:ecuSmall,connector:'X2',physicalPin:17,pinName:'OUT_PWM_HS_HC_02',group:'PWM_HS_HC',functions:'DO_HS_HC',role:'OUTPUT',status:'valid',electrical:'0..14 V, 100 Hz .. 2 kHz · High-side',diagnostics:'Open Load, Overcurrent, Thermal Warn',swConfig:'Drive Strength, PWM Freq',devicePinRef:`${devFan}::${pinFan}`},
+      {id:uid('bind'),signalId:sigCan,ecuId:ecuSmall,connector:'X3',physicalPin:5,pinName:'CAN1_H',group:'CAN',functions:'',role:'INOUT',status:'valid',electrical:'0..18 V monitor, Differential bus line',diagnostics:'Voltage Monitor, Comm Error',swConfig:'Wakeup',devicePinRef:''}
+    ]
+  };
+  persistAndRender();
+}
+function resetProject(){
+  if(!confirm('Réinitialiser tout le projet ?')) return;
+  state.architecture={name:'My EE Architecture',notes:'',systems:[],systemGroups:[],devices:[],signals:[],ecus:[],buses:[],ecuBindings:[]};
+  state.activeTab='architecture'; state.previewMode='main'; persistAndRender();
+}
+
+function bindPanelEvents(){
+  async function saveAllProjectObjects(){
+    await saveObjectTypeToLibrary('system');
+    await saveObjectTypeToLibrary('system_group');
+    await saveObjectTypeToLibrary('device');
+    await saveObjectTypeToLibrary('signal');
+    await saveObjectTypeToLibrary('ecu');
+    await saveObjectTypeToLibrary('bus');
+    await saveObjectTypeToLibrary('ecu_binding');
+    await saveCurrentProjectToLibrary();
+    alert('Tous les objets du projet et le projet complet ont été sauvegardés dans la library locale.');
+  }
+
+  el('saveAllObjectsToLibraryBtn')?.addEventListener('click', saveAllProjectObjects);
+  el('saveAllProjectObjectsBtn')?.addEventListener('click', saveAllProjectObjects);
+
+  el('saveArchitectureBtn')?.addEventListener('click',()=>{
+    state.architecture.name=el('archName').value.trim()||'My EE Architecture';
+    state.architecture.notes=el('archNotes').value;
+    persistAndRenderPreview();
+  });
+
+  el('refreshDiagramBtn')?.addEventListener('click',()=>renderDiagramSvg('diagramSvgBox'));
+  el('previewDiagramSourceBtn')?.addEventListener('click',()=>updatePreview(JSON.stringify(buildDiagramModel(),null,2),'Source diagramme'));
+
+  el('librarySearch')?.addEventListener('input',e=>{ state.librarySearch=e.target.value; render(); });
+  el('libraryType')?.addEventListener('change',e=>{ state.libraryType=e.target.value; render(); });
+  el('saveProjectToLibraryBtn')?.addEventListener('click',saveCurrentProjectToLibrary);
+  el('saveSystemsToLibraryBtn')?.addEventListener('click',()=>saveObjectTypeToLibrary('system'));
+  el('saveGroupsToLibraryBtn')?.addEventListener('click',()=>saveObjectTypeToLibrary('system_group'));
+  el('saveDevicesToLibraryBtn')?.addEventListener('click',()=>saveObjectTypeToLibrary('device'));
+  el('saveSignalsToLibraryBtn')?.addEventListener('click',()=>saveObjectTypeToLibrary('signal'));
+  el('saveEcusToLibraryBtn')?.addEventListener('click',()=>saveObjectTypeToLibrary('ecu'));
+  el('saveBusesToLibraryBtn')?.addEventListener('click',()=>saveObjectTypeToLibrary('bus'));
+  el('saveBindingsToLibraryBtn')?.addEventListener('click',()=>saveObjectTypeToLibrary('ecu_binding'));
+  el('refreshLibraryBtn')?.addEventListener('click',refreshLibraryState);
+  document.querySelectorAll('[data-add-library-item]').forEach(btn=>btn.onclick=()=>{ const item=state.libraryItems.find(x=>x.id===btn.dataset.addLibraryItem); if(item) cloneIntoProject(item); });
+  document.querySelectorAll('[data-preview-library-item]').forEach(btn=>btn.onclick=()=>{ state.previewMode='library_item'; state.previewLibraryItem=btn.dataset.previewLibraryItem; refreshPreview(); });
+  document.querySelectorAll('[data-del-library-item]').forEach(btn=>btn.onclick=()=>deleteLibraryItem(btn.dataset.delLibraryItem,false));
+  document.querySelectorAll('[data-load-project]').forEach(btn=>btn.onclick=()=>loadProjectFromLibrary(btn.dataset.loadProject));
+  document.querySelectorAll('[data-del-project]').forEach(btn=>btn.onclick=()=>deleteLibraryItem(btn.dataset.delProject,true));
+
+  el('addSystemBtn')?.addEventListener('click',()=>{ const name=el('systemName').value.trim(); if(!name) return alert('Nom système requis.'); state.architecture.systems.push({id:uid('sys'),name}); persistAndRender(); });
+  document.querySelectorAll('[data-del-system]').forEach(btn=>btn.onclick=()=>{ const id=btn.dataset.delSystem; state.architecture.systems=state.architecture.systems.filter(x=>x.id!==id); state.architecture.devices=state.architecture.devices.filter(x=>x.systemId!==id); state.architecture.systemGroups.forEach(g=>g.systemIds=(g.systemIds||[]).filter(v=>v!==id)); persistAndRender(); });
+
+  el('addGroupBtn')?.addEventListener('click',()=>{ const name=el('groupName').value.trim(); if(!name) return alert('Nom groupe requis.'); state.architecture.systemGroups.push({id:uid('grp'),name,systemIds:[],messages:[]}); persistAndRender(); });
+  document.querySelectorAll('[data-del-group]').forEach(btn=>btn.onclick=()=>{ const id=btn.dataset.delGroup; state.architecture.systemGroups=state.architecture.systemGroups.filter(x=>x.id!==id); state.architecture.buses.forEach(bus=>bus.groupIds=(bus.groupIds||[]).filter(v=>v!==id)); persistAndRender(); });
+  document.querySelectorAll('[data-group-systems]').forEach(sel=>sel.onchange=()=>{ const group=getGroup(sel.dataset.groupSystems); if(group){ group.systemIds=Array.from(sel.selectedOptions).map(o=>o.value); persistAndRenderPreview(); }});
+  el('addMessageBtn')?.addEventListener('click',()=>{ const group=getGroup(el('msgGroup').value); if(!group) return alert('Sélectionnez un groupe.'); const name=el('msgName').value.trim(); if(!name) return alert('Nom message requis.'); group.messages.push({id:uid('msg'),name,pgn:Number(el('msgPgn').value||0),priority:Number(el('msgPriority').value||6),sourceAddress:Number(el('msgSa').value||0),dlc:Number(el('msgDlc').value||8),cycleTime:Number(el('msgCycle').value||100),signalIds:Array.from(el('msgSignals').selectedOptions).map(o=>o.value)}); persistAndRender(); });
+  document.querySelectorAll('[data-del-message]').forEach(btn=>btn.onclick=()=>{ const [groupId,msgId]=btn.dataset.delMessage.split('::'); const group=getGroup(groupId); if(group){ group.messages=(group.messages||[]).filter(m=>m.id!==msgId); persistAndRender(); }});
+  document.querySelectorAll('[data-preview-group-dbc]').forEach(btn=>btn.onclick=()=>{ state.previewMode='dbc'; state.previewDbcGroup=btn.dataset.previewGroupDbc; refreshPreview(); });
+  document.querySelectorAll('[data-download-group-dbc]').forEach(btn=>btn.onclick=()=>{ const group=getGroup(btn.dataset.downloadGroupDbc); if(group) download(`${group.name}.dbc`,groupToDbc(group),'text/plain'); });
+
+  el('addDeviceBtn')?.addEventListener('click',()=>{ const name=el('deviceName').value.trim(), systemId=el('deviceSystem').value, type=el('deviceType').value; if(!name||!systemId) return alert('Nom sensor_actuator et système requis.'); state.architecture.devices.push({id:uid('dev'),name,type,systemId,pins:[]}); persistAndRender(); });
+  document.querySelectorAll('[data-del-device]').forEach(btn=>btn.onclick=()=>{ const id=btn.dataset.delDevice; state.architecture.devices=state.architecture.devices.filter(x=>x.id!==id); state.architecture.ecuBindings=state.architecture.ecuBindings.filter(x=>!String(x.devicePinRef||'').startsWith(id+'::')); persistAndRender(); });
+  document.querySelectorAll('[data-add-device-pin]').forEach(btn=>btn.onclick=()=>{ const dev=getDevice(btn.dataset.addDevicePin); if(!dev) return; const name=prompt('Nom du sensor_actuator pin',`${dev.name}.PIN_${(dev.pins?.length||0)+1}`); if(!name) return; const number=Number(prompt('Numéro du sensor_actuator pin',String((dev.pins?.length||0)+1))||1); const role=prompt('Role (INPUT / OUTPUT / INOUT / SUPPLY / GROUND)','INPUT')||'INPUT'; dev.pins.push({id:uid('dpin'),name,number,role,signalId:''}); persistAndRender(); });
+  document.querySelectorAll('[data-del-device-pin]').forEach(btn=>btn.onclick=()=>{ const [devId,pinId]=btn.dataset.delDevicePin.split('::'); const dev=getDevice(devId); if(!dev) return; dev.pins=(dev.pins||[]).filter(p=>p.id!==pinId); state.architecture.ecuBindings=state.architecture.ecuBindings.filter(b=>b.devicePinRef!==`${devId}::${pinId}`); persistAndRender(); });
+  document.querySelectorAll('[data-device-pin-signal]').forEach(sel=>sel.onchange=()=>{ const [devId,pinId]=sel.dataset.devicePinSignal.split('::'); const dev=getDevice(devId), pin=dev?.pins?.find(p=>p.id===pinId); if(pin){ pin.signalId=sel.value; persistAndRenderPreview(); }});
+  document.querySelectorAll('[data-device-pin-role]').forEach(sel=>sel.onchange=()=>{ const [devId,pinId]=sel.dataset.devicePinRole.split('::'); const dev=getDevice(devId), pin=dev?.pins?.find(p=>p.id===pinId); if(pin){ pin.role=sel.value; persistAndRenderPreview(); }});
+
+  el('addSignalBtn')?.addEventListener('click',()=>{ const name=el('signalName').value.trim(); if(!name) return alert('Nom signal requis.'); state.architecture.signals.push({id:uid('sig'),name,type:el('signalType').value,unit:el('signalUnit').value,min:Number(el('signalMin').value||0),max:Number(el('signalMax').value||0),resolution:Number(el('signalResolution').value||1),scaling:Number(el('signalScaling').value||1)}); persistAndRender(); });
+  document.querySelectorAll('[data-del-signal]').forEach(btn=>btn.onclick=()=>{ const id=btn.dataset.delSignal; state.architecture.signals=state.architecture.signals.filter(x=>x.id!==id); state.architecture.devices.forEach(dev=>(dev.pins||[]).forEach(pin=>{ if(pin.signalId===id) pin.signalId=''; })); state.architecture.ecuBindings=state.architecture.ecuBindings.filter(x=>x.signalId!==id); state.architecture.systemGroups.forEach(g=>(g.messages||[]).forEach(m=>m.signalIds=(m.signalIds||[]).filter(v=>v!==id))); persistAndRender(); });
+
+  el('addEcuBtn')?.addEventListener('click',()=>{ const name=el('ecuName').value.trim(); if(!name) return alert('Nom ECU requis.'); state.architecture.ecus.push({id:uid('ecu'),name,variant:el('ecuVariant').value,canAddresses:csv(el('ecuCanAddresses').value)}); persistAndRender(); });
+  document.querySelectorAll('[data-del-ecu]').forEach(btn=>btn.onclick=()=>{ const id=btn.dataset.delEcu; state.architecture.ecus=state.architecture.ecus.filter(x=>x.id!==id); state.architecture.ecuBindings=state.architecture.ecuBindings.filter(x=>x.ecuId!==id); state.architecture.buses.forEach(bus=>bus.ecuIds=(bus.ecuIds||[]).filter(v=>v!==id)); persistAndRender(); });
+  document.querySelectorAll('[data-prefill-binding]').forEach(btn=>btn.onclick=()=>{ state.activeTab='exports'; render(); if(el('bindingEcu')) el('bindingEcu').value=btn.dataset.prefillBinding; });
+
+  el('addBusBtn')?.addEventListener('click',()=>{ const name=el('busName').value.trim(); if(!name) return alert('Nom bus requis.'); const type=el('busType').value; state.architecture.buses.push({id:uid('bus'),name,type,speed:type==='CAN'?el('busSpeed').value:'',ecuIds:[],groupIds:[]}); persistAndRender(); });
+  document.querySelectorAll('[data-del-bus]').forEach(btn=>btn.onclick=()=>{ state.architecture.buses=state.architecture.buses.filter(x=>x.id!==btn.dataset.delBus); persistAndRender(); });
+  document.querySelectorAll('[data-bus-members]').forEach(sel=>sel.onchange=()=>{ const bus=state.architecture.buses.find(b=>b.id===sel.dataset.busMembers); if(bus){ bus.ecuIds=Array.from(sel.selectedOptions).map(o=>o.value); persistAndRenderPreview(); }});
+  document.querySelectorAll('[data-bus-groups]').forEach(sel=>sel.onchange=()=>{ const bus=state.architecture.buses.find(b=>b.id===sel.dataset.busGroups); if(bus){ bus.groupIds=Array.from(sel.selectedOptions).map(o=>o.value); persistAndRenderPreview(); }});
+  document.querySelectorAll('[data-bus-speed]').forEach(sel=>sel.onchange=()=>{ const bus=state.architecture.buses.find(b=>b.id===sel.dataset.busSpeed); if(bus){ bus.speed=sel.value; persistAndRenderPreview(); }});
+
+  el('refreshValidationBtn')?.addEventListener('click',()=>persistAndRender());
+  el('previewValidationBtn')?.addEventListener('click',()=>{ state.previewMode='report'; refreshPreview(); });
+  el('runSelfTestBtn')?.addEventListener('click',runSelfTest);
+
+  el('previewMainBtn')?.addEventListener('click',()=>{ state.previewMode='main'; refreshPreview(); });
+  el('previewJsonBtn')?.addEventListener('click',()=>{ state.previewMode='json'; refreshPreview(); });
+  el('previewPinoutBtn')?.addEventListener('click',()=>{ state.previewMode='pinout'; refreshPreview(); });
+  el('previewReportBtn')?.addEventListener('click',()=>{ state.previewMode='report'; refreshPreview(); });
+  el('previewDbcBtn')?.addEventListener('click',()=>{ state.previewMode='dbc'; state.previewDbcGroup=el('dbcGroupExport')?.value||state.previewDbcGroup; refreshPreview(); });
+  el('downloadSelectedDbcBtn')?.addEventListener('click',()=>{ const group=getGroup(el('dbcGroupExport')?.value||el('headerDbcGroup').value); if(!group) return alert('Sélectionnez un groupe.'); download(`${group.name}.dbc`,groupToDbc(group),'text/plain'); });
+  el('importDbcBtn')?.addEventListener('click',()=>importDbcToGroup(el('dbcGroup').value,el('dbcText').value));
+  el('previewTemplateBtn')?.addEventListener('click',()=>{ state.previewMode='template'; state.previewTemplateType=el('templateTypeSelect').value; refreshPreview(); });
+  el('downloadTemplateBtn')?.addEventListener('click',()=>{ const t=el('templateTypeSelect').value; download(`${t}_template.json`,JSON.stringify(TEMPLATE_EXAMPLES[t],null,2),'application/json'); });
+  el('panelImportObjectFile')?.addEventListener('change',importObjectFileChangeHandler);
+
+  el('addBindingBtn')?.addEventListener('click',()=>{ const signalId=el('bindingSignal').value, ecuId=el('bindingEcu').value, connector=el('bindingConnector').value.trim(), physicalPin=Number(el('bindingPhysicalPin').value||0); if(!signalId||!ecuId||!connector||!physicalPin) return alert('Signal, ECU, connector et pin physique requis.'); state.architecture.ecuBindings.push({id:uid('bind'),signalId,ecuId,connector,physicalPin,pinName:el('bindingPinName').value.trim(),group:el('bindingGroup').value.trim(),functions:el('bindingFunctions').value.trim(),role:el('bindingRole').value,status:el('bindingStatus').value,electrical:el('bindingElectrical').value.trim(),diagnostics:el('bindingDiagnostics').value.trim(),swConfig:el('bindingSwConfig').value.trim(),devicePinRef:el('bindingDevicePin').value}); persistAndRender(); });
+  document.querySelectorAll('[data-del-binding]').forEach(btn=>btn.onclick=()=>{ state.architecture.ecuBindings=state.architecture.ecuBindings.filter(x=>x.id!==btn.dataset.delBinding); persistAndRender(); });
+
+  document.querySelectorAll('[data-move-up]').forEach(btn=>btn.onclick=()=>{ const [listName,id]=btn.dataset.moveUp.split('::'); moveRoot(listName,id,-1); });
+  document.querySelectorAll('[data-move-down]').forEach(btn=>btn.onclick=()=>{ const [listName,id]=btn.dataset.moveDown.split('::'); moveRoot(listName,id,1); });
+  document.querySelectorAll('[data-child-up]').forEach(btn=>btn.onclick=()=>{ const [kind,parentId,listName,id]=btn.dataset.childUp.split('::'); moveChild(kind,parentId,listName,id,-1); });
+  document.querySelectorAll('[data-child-down]').forEach(btn=>btn.onclick=()=>{ const [kind,parentId,listName,id]=btn.dataset.childDown.split('::'); moveChild(kind,parentId,listName,id,1); });
+}
+
+function bindTopActions(){
+  function runSelectedExport(){
+    const mode = el('exportMenu').value;
+    if(mode==='all'){ exportAllFiles(); return; }
+    if(mode==='main'){ download('main.c',buildMainC(),'text/x-c'); return; }
+    if(mode==='arch_json'){ download('architecture.json',frameworkExportJson(),'application/json'); return; }
+    if(mode==='state'){ download('editor_state.json',JSON.stringify(state.architecture,null,2),'application/json'); return; }
+    if(mode==='makefile'){ download('Makefile',makefileText(),'text/plain'); return; }
+    if(mode==='buildsh'){ download('build.sh',buildShText(),'text/x-shellscript'); return; }
+    if(mode==='pinout'){ download('architecture_pinout_browser.html',pinoutHtml(),'text/html'); return; }
+    if(mode==='report'){ download('validation_report.txt',validationReportText(),'text/plain'); return; }
+    if(mode==='dbc'){
+      const group=getGroup(el('headerDbcGroup').value);
+      if(!group) return alert('Sélectionnez un groupe.');
+      download(`${group.name}.dbc`,groupToDbc(group),'text/plain');
+      return;
+    }
+  }
+  el('exportAllBtn').onclick=exportAllFiles;
+  el('runExportBtn').onclick=runSelectedExport;
+  el('loadDemoBtn').onclick=loadDemo;
+  el('resetBtn').onclick=resetProject;
+  el('importState').addEventListener('change',e=>{ const file=e.target.files?.[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try{ state.architecture=JSON.parse(reader.result); persistAndRender(); }catch{ alert('Editor state invalide.'); } }; reader.readAsText(file); });
+  el('importObjectFile').addEventListener('change',importObjectFileChangeHandler);
+  el('headerDbcGroup').addEventListener('change',()=>{ state.previewDbcGroup=el('headerDbcGroup').value; });
+  el('globalSearch').addEventListener('input',e=>{ state.globalSearch=e.target.value; render(); });
+  el('diagramFocus').addEventListener('change',e=>{ state.diagramFocus=e.target.value; if(state.activeTab==='diagram') render(); else updateWorkspaceChrome(); });
+  el('copyPreviewBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText(el('codePreview').textContent||''); el('copyPreviewBtn').textContent='Copié'; setTimeout(()=>el('copyPreviewBtn').textContent='Copier',1200); }catch{ alert('Copie impossible dans ce navigateur.'); } };
+  el('jumpValidationBtn').onclick=()=>{ state.activeTab='validation'; render(); };
+  el('jumpExportsBtn').onclick=()=>{ state.activeTab='exports'; render(); };
+}
+
+
+function persistAndRender(){ saveState(); render(); }
+function persistAndRenderPreview(){ saveState(); refreshPreview(); updateStats(); }
+
+(async function init(){
+  loadState();
+  bindTopActions();
+  await refreshLibraryState();
+  render();
+})();
+</script>
+</body>
+</html>

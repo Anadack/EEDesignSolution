@@ -1,0 +1,53 @@
+{
+  "schema": "eec-component-1.0",
+  "type": "component",
+
+  "name": "Hydraulic_Rear_Hitch_Control",
+  "part_number": "COMP-HYD-RH-001",
+  "ref_2x": "REF-2X-2001",
+  "description": "Rear hydraulic hitch position sensing, load sensing and proportional valve control assembly for Category II/III implement attachment.",
+  "supplier": "AGCO Engineering",
+  "location": "Rear_Chassis",
+
+  "take_rate": 100.0,
+  "is_mandatory": true,
+  "weight_kg": 1.2,
+  "cost_eur": 85.0,
+  "priority": "HIGH",
+  "safety": "AgPL_B",
+
+  "devices": [
+    {
+      "device_type": "sensor",
+      "instance_name": "Rear_Hitch_Position_Sensor",
+      "path": "library/sensors/position_family/angle/HYDAC_HAT1200_Angle_Family_Analogue_3Pin_Template.eec-sensor-1.5.json",
+      "is_mandatory": true,
+      "safety": "AgPL_B",
+      "notes": "Analog angle sensor, 0-180 deg, 0.5-4.5 V output. Measures draft link angle for position control loop."
+    },
+    {
+      "device_type": "sensor",
+      "instance_name": "Hitch_Hydraulic_Pressure_Sensor",
+      "path": "library/sensors/pressure/hda4300/HYDAC_HDA4300_Pressure_10bar_A_4_20mA_2Wire.eec-sensor-1.5.json",
+      "is_mandatory": false,
+      "safety": "AgPL_A",
+      "notes": "4-20 mA pressure sensor for hydraulic cylinder force monitoring. Optional on base specification."
+    },
+    {
+      "device_type": "actuator",
+      "instance_name": "Hitch_Proportional_Lowering_Valve",
+      "path": "library/actuators/HYD_PDR10830_Prop_Press_Vlv.json",
+      "is_mandatory": true,
+      "safety": "AgPL_B",
+      "notes": "Proportional pressure-reducing valve controlling oil flow for smooth, load-adaptive hitch descent."
+    },
+    {
+      "device_type": "actuator",
+      "instance_name": "Hitch_Raise_Solenoid_Valve",
+      "path": "library/actuators/HYD_Sol_Coil_12PN_5_1_50_2345.json",
+      "is_mandatory": true,
+      "safety": "AgPL_B",
+      "notes": "On/off solenoid valve for hitch raise command. Energised = lift. De-energised = blocked (safe state)."
+    }
+  ]
+}
