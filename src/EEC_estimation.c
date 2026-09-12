@@ -387,20 +387,15 @@ static EEC_Ecu_t *create_ecu_by_variant(EEC_Architecture_t *arch,
     }
 }
 
-static void compute_ecu_capacity(EEC_Architecture_t *scratch,
-                                  uint32_t variant_idx,
-                                  EEC_EcuCapacity_t *cap)
+static void compute_capacity_from_ecu(const EEC_Ecu_t *ecu,
+                                      const char *capacity_name,
+                                      EEC_EcuCapacity_t *cap)
 {
-    EEC_Ecu_t *ecu = NULL;
     uint32_t p;
-    char label[32];
 
-    snprintf(cap->variant, sizeof(cap->variant), "%s", ecu_variant_names[variant_idx]);
+    snprintf(cap->variant, sizeof(cap->variant), "%s", capacity_name ? capacity_name : "ECU");
     memset(cap->per_iface, 0, sizeof(cap->per_iface));
     cap->total_pins = 0;
-
-    snprintf(label, sizeof(label), "_cap_%s", ecu_variant_names[variant_idx]);
-    ecu = create_ecu_by_variant(scratch, variant_idx, label);
     if (!ecu) return;
 
     /* Count available pins per interface type using the canonical mapping */
@@ -408,20 +403,35 @@ static void compute_ecu_capacity(EEC_Architecture_t *scratch,
         const EEC_EcuPin_t *pin = &ecu->pins[p];
         uint32_t mask = pin->supported_capability_mask;
         EEC_SignalInterface_t iface;
-        bool matched = false;
+        bool usable = false;
 
         /* Try each interface — use EEC_Signal_InterfaceToCapability() */
         for (iface = EEC_SIGNAL_INTERFACE_DIGITAL;
              iface < EEC_SIGNAL_INTERFACE_RESERVED; ++iface) {
             if (mask & EEC_Signal_InterfaceToCapability(iface)) {
                 cap->per_iface[iface]++;
-                cap->total_pins++;
-                matched = true;
-                break; /* classify by primary (highest-priority) match */
+                usable = true;
             }
         }
-        (void)matched;
+        /* A multifunction pin contributes to every interface it supports, but
+         * remains one physical pin in the total capacity. The estimator takes
+         * the maximum per-interface ECU count, so this avoids falsely declaring
+         * supplier multifunction inputs unsupported without double-counting
+         * physical pins in utilisation. */
+        if (usable) cap->total_pins++;
     }
+}
+
+static void compute_ecu_capacity(EEC_Architecture_t *scratch,
+                                  uint32_t variant_idx,
+                                  EEC_EcuCapacity_t *cap)
+{
+    EEC_Ecu_t *ecu;
+    char label[32];
+
+    snprintf(label, sizeof(label), "_cap_%s", ecu_variant_names[variant_idx]);
+    ecu = create_ecu_by_variant(scratch, variant_idx, label);
+    compute_capacity_from_ecu(ecu, ecu_variant_names[variant_idx], cap);
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -659,6 +669,10 @@ static const char *iface_label(EEC_SignalInterface_t iface)
         case EEC_SIGNAL_INTERFACE_LIN:      return "LIN";
         case EEC_SIGNAL_INTERFACE_SENT:     return "SENT";
         case EEC_SIGNAL_INTERFACE_ETHERNET: return "ETHERNET";
+        case EEC_SIGNAL_INTERFACE_RESISTANCE: return "RESISTANCE";
+        case EEC_SIGNAL_INTERFACE_FREQUENCY: return "FREQUENCY";
+        case EEC_SIGNAL_INTERFACE_CURRENT: return "CURRENT";
+        case EEC_SIGNAL_INTERFACE_FLEXRAY: return "FLEXRAY";
         case EEC_SIGNAL_INTERFACE_POWER:    return "POWER";
         case EEC_SIGNAL_INTERFACE_GROUND:   return "GROUND";
         default: return "UNKNOWN";
@@ -749,6 +763,35 @@ static int write_estimation_json(const EEC_EstimationResult_t *r, const char *pa
     }
     fprintf(f, "  ],\n");
 
+    /* Optional supplier/product ECU selected from the JSON library. */
+    fprintf(f, "  \"selected_ecu\": ");
+    if (r->selected_ecu.selected) {
+        const EEC_SelectedEcuEstimate_t *s = &r->selected_ecu;
+        uint32_t j;
+        bool first = true;
+        fprintf(f, "{\n    \"source\": "); json_escape_str(f, s->source_path);
+        fprintf(f, ",\n    \"name\": "); json_escape_str(f, s->name);
+        fprintf(f, ",\n    \"variant\": "); json_escape_str(f, s->variant);
+        fprintf(f, ",\n    \"compatible\": %s", s->compatible ? "true" : "false");
+        fprintf(f, ",\n    \"unsupported_interface_count\": %u",
+                s->unsupported_interface_count);
+        fprintf(f, ",\n    \"capacity\": {\"total_pins\": %u, \"per_interface\": {",
+                s->capacity.total_pins);
+        for (j = 0; j < EEC_EST_MAX_IFACE_TYPES; ++j) {
+            if (s->capacity.per_iface[j] == 0) continue;
+            if (!first) fprintf(f, ", ");
+            fprintf(f, "\"%s\": %u", iface_label((EEC_SignalInterface_t)j),
+                    s->capacity.per_iface[j]);
+            first = false;
+        }
+        fprintf(f, "}},\n    \"estimate\": {\"ecu_count\": %u, \"pins_available\": %u, "
+                   "\"pins_used\": %u, \"utilisation_pct\": %.1f}\n  },\n",
+                s->estimate.ecu_count, s->estimate.total_pins_available,
+                s->estimate.total_pins_used, (double)s->estimate.utilisation_pct);
+    } else {
+        fprintf(f, "null,\n");
+    }
+
     /* Mixed proposition */
     fprintf(f, "  \"proposition\": {\n");
     fprintf(f, "    \"ecu_count\": %u,\n", r->proposed_count);
@@ -791,9 +834,10 @@ static int write_estimation_json(const EEC_EstimationResult_t *r, const char *pa
  *  Public entry point
  * ════════════════════════════════════════════════════════════════════════ */
 
-int EEC_Estimation_Run(const char *platform_path,
-                       const char *library_dir,
-                       const char *output_json)
+int EEC_Estimation_RunWithEcu(const char *platform_path,
+                              const char *library_dir,
+                              const char *ecu_json_path,
+                              const char *output_json)
 {
     EEC_EstimationResult_t result;
     EEC_Architecture_t *arch = NULL;
@@ -895,6 +939,48 @@ int EEC_Estimation_Run(const char *platform_path,
             EEC_Log_Printf(EEC_LOG_INFO, "  AEC %-6s : %u usable pins",
                           result.capacities[v].variant, result.capacities[v].total_pins);
         }
+        if (ecu_json_path && ecu_json_path[0] != '\0') {
+            EEC_Ecu_t *selected = EEC_Library_ImportEcu(
+                    scratch, ecu_json_path, NULL);
+            if (!selected) {
+                EEC_Log_Printf(EEC_LOG_ERROR,
+                               "  FAILED — could not import selected ECU '%s'", ecu_json_path);
+                EEC_Architecture_Destroy(scratch);
+                EEC_Architecture_Destroy(arch);
+                return -1;
+            }
+            result.selected_ecu.selected = true;
+            snprintf(result.selected_ecu.source_path, sizeof(result.selected_ecu.source_path),
+                     "%s", ecu_json_path);
+            snprintf(result.selected_ecu.name, sizeof(result.selected_ecu.name),
+                     "%s", selected->name);
+            snprintf(result.selected_ecu.variant, sizeof(result.selected_ecu.variant),
+                     "%s", selected->variant);
+            compute_capacity_from_ecu(selected, selected->name,
+                                      &result.selected_ecu.capacity);
+            compute_homogeneous_estimate(result.arch_io, result.arch_iface_count,
+                                         result.arch_total_signals,
+                                         &result.selected_ecu.capacity,
+                                         &result.selected_ecu.estimate);
+            result.selected_ecu.compatible = true;
+            for (i = 0; i < result.arch_iface_count; ++i) {
+                EEC_SignalInterface_t iface = result.arch_io[i].interface_type;
+                if (result.arch_io[i].total > 0U
+                    && result.selected_ecu.capacity.per_iface[iface] == 0U) {
+                    result.selected_ecu.compatible = false;
+                    result.selected_ecu.unsupported_interface_count++;
+                    EEC_Log_Printf(EEC_LOG_WARN,
+                                   "  Selected ECU has no %s capacity (%u required)",
+                                   iface_label(iface), result.arch_io[i].total);
+                }
+            }
+            EEC_Log_Printf(EEC_LOG_INFO,
+                           "  Selected %-20s : %u ECU(s), %u/%u pins, %.1f%% utilisation",
+                           result.selected_ecu.name, result.selected_ecu.estimate.ecu_count,
+                           result.selected_ecu.estimate.total_pins_used,
+                           result.selected_ecu.estimate.total_pins_available,
+                           (double)result.selected_ecu.estimate.utilisation_pct);
+        }
         EEC_Architecture_Destroy(scratch);
     }
 
@@ -957,4 +1043,11 @@ int EEC_Estimation_Run(const char *platform_path,
 
     EEC_Architecture_Destroy(arch);
     return 0;
+}
+
+int EEC_Estimation_Run(const char *platform_path,
+                       const char *library_dir,
+                       const char *output_json)
+{
+    return EEC_Estimation_RunWithEcu(platform_path, library_dir, NULL, output_json);
 }

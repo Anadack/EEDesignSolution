@@ -1875,6 +1875,31 @@ EEC_Ecu_t *EEC_Library_ImportEcu(EEC_Architecture_t *arch, const char *filepath,
                 if (iface == EEC_SIGNAL_INTERFACE_PWM && (p_elec_cap & EEC_ELEC_LOW_SIDE)) {
                     pin->supported_capability_mask |= EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_DIGITAL);
                 }
+                /* Supplier ECU definitions expose multifunction modes in
+                 * sw_config (for example "DI,AI,FI,AIC" on BODAS inputs).
+                 * Preserve those selectable modes for mapping and IO sizing
+                 * instead of treating the JSON's primary `type` as exclusive. */
+                if (strstr(p_swcfg, "DI") != NULL || strstr(p_swcfg, "DO") != NULL) {
+                    pin->supported_capability_mask |= EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_DIGITAL);
+                }
+                if (strstr(p_swcfg, "AI") != NULL || strstr(p_swcfg, "AOV") != NULL) {
+                    pin->supported_capability_mask |= EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_ANALOG);
+                }
+                if (strstr(p_swcfg, "FI") != NULL) {
+                    pin->supported_capability_mask |= EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_FREQUENCY);
+                }
+                if (strstr(p_swcfg, "AIC") != NULL) {
+                    pin->supported_capability_mask |= EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_CURRENT);
+                }
+                if (strstr(p_swcfg, "RI") != NULL) {
+                    pin->supported_capability_mask |= EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_RESISTANCE);
+                }
+                if (strstr(p_swcfg, "SENT") != NULL) {
+                    pin->supported_capability_mask |= EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_SENT);
+                }
+                if (strstr(p_swcfg, "PO") != NULL) {
+                    pin->supported_capability_mask |= EEC_Signal_InterfaceToCapability(EEC_SIGNAL_INTERFACE_PWM);
+                }
                 snprintf(pin->device_pin_desc, sizeof(pin->device_pin_desc), "%s", p_desc);
                 /* Populate provided supply/ground fields from structured JSON when present.
                  * The importer prefers explicit 'supply'/'ground' objects but falls back
