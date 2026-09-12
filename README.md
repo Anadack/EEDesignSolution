@@ -589,14 +589,15 @@ gcc -std=c11 -Wall -Wextra -pedantic -Werror -O2 -Iinc src/*.c -o app -lm
 # 4. gate on verification status
 grep "STATUS: OK" generated_doc/exports/verify_report.txt || exit 1
 
-# 5. generate documentation
-python tools/scripts/generate_all_architecture_docs.py --root . --strict
+# 5. generate documentation (add --strict once the 2 vendored templates in
+#    tools/scripts/templates/ are provided — see that dir's README)
+python tools/scripts/generate_all_architecture_docs.py --root .
 
 # 6. package release
 python tools/scripts/package_release.py --tag ${GIT_TAG}
 ```
 
-A ready-to-use GitHub Actions workflow — including an ASan/UBSan sanitizer run in both CENTRAL and ZONAL mode, and DBC round-trip validation with `cantools` — is provided at `ci-eearch.yml` (copy to `.github/workflows/ci.yml` to enable).
+A GitHub Actions workflow enforcing all of this — strict build, `qa/run_tests.sh`, an ASan/UBSan sanitizer run in both CENTRAL and ZONAL mode, DBC round-trip validation with `cantools`, the documentation suite, and an export-reproducibility check — runs automatically on every push/PR via `.github/workflows/ci.yml`. It does not yet pass `--strict` to the documentation step: 2 of 44 generators need HTML templates that were never vendored into the repo (`tools/scripts/templates/README.md` lists them); they `[SKIP]` cleanly today but should switch to `--strict` once added.
 
 ### Architecture naming in exports
 
