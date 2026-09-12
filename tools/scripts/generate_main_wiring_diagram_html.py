@@ -11,7 +11,7 @@ def main() -> int:
     compiler=args.compiler or default_compiler(cfg); py=args.python or default_python(cfg); app_name=args.app_name or default_app_name(cfg); app_path=root/app_name
     if not args.skip_build: app_path=build_demo(root,compiler,app_name)
     if not args.skip_run: run_demo(root,app_path)
-    gen=root/'tools'/'generate_architecture_wiring_html.py'
+    gen=root/'tools'/'scripts'/'generate_architecture_wiring_html.py'
     cmd=[py, str(gen), '--root', str(root)]
     if args.config: cmd += ['--config', args.config]
     if args.input: cmd += ['--input', args.input]

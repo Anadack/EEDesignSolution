@@ -159,6 +159,7 @@ int EEC_ExtractFunctionName(
     char *function_name_out,
     size_t max_len)
 {
+    (void)device_name; /* reserved for future device-scoped naming */
     if (!original_signal || !function_name_out || max_len < 4) {
         return -1;
     }

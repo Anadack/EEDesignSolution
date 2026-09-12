@@ -469,7 +469,9 @@ def build_demo(root: Path, compiler: str, app_name: str) -> Path:
     if not sources:
         raise FileNotFoundError(f"No C source files found in {src_dir}")
     app_path = root / app_name
-    cmd = [compiler, "-std=c11", "-Wall", "-Wextra", "-pedantic", "-O2", "-Iinc", *[str(p.relative_to(root)) for p in sources], "-o", str(app_path.relative_to(root))]
+    # -lm is required: EEC_verify.c uses fmaxf/fabsf from libm. Must appear
+    # AFTER the objects on the link line or the reference stays undefined.
+    cmd = [compiler, "-std=c11", "-Wall", "-Wextra", "-pedantic", "-O2", "-Iinc", *[str(p.relative_to(root)) for p in sources], "-o", str(app_path.relative_to(root)), "-lm"]
     run_command(cmd, root, "Build demo executable")
     return app_path
 

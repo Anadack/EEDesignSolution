@@ -497,6 +497,63 @@ int EEC_Verify_zones(const EEC_Architecture_t *arch, FILE *report)
         }
     }
 
+    /* Z1: each ECU must belong to at most one zone (no ECU in two zones). */
+    for (i = 0U; i < arch->ecu_count; ++i) {
+        const EEC_Ecu_t *ecu = arch->ecus[i];
+        uint32_t z, in = 0U;
+        if (!ecu) continue;
+        for (z = 0U; z < arch->zone_count; ++z) {
+            const EEC_Zone_t *zone = arch->zones[z];
+            uint32_t e;
+            if (!zone) continue;
+            for (e = 0U; e < zone->ecu_count; ++e) {
+                if (zone->ecus[e] == ecu) { ++in; break; }
+            }
+        }
+        if (in > 1U) {
+            ++errors;
+            if (report) fprintf(report, "  [FAIL] Z1 ECU '%s' assigned to %u zones (must be exactly one).\n", ecu->name, in);
+        }
+        /* Z2: every ECU must belong to some zone in ZONAL mode. */
+        if (in == 0U) {
+            ++errors;
+            if (report) fprintf(report, "  [FAIL] Z2 ECU '%s' is not assigned to any zone.\n", ecu->name);
+        }
+    }
+
+    /* Z3: inter-zone connectivity. With more than one zone, each zone must have
+       at least one ECU that sits on a bus shared with an ECU from another zone
+       (a backbone). A zone with no inter-zone bus link is islanded — cross-zone
+       signals from it cannot be routed. */
+    if (arch->zone_count > 1U && arch->bus_count > 0U) {
+        for (i = 0U; i < arch->zone_count; ++i) {
+            const EEC_Zone_t *zone = arch->zones[i];
+            bool linked = false;
+            uint32_t b;
+            if (!zone || zone->ecu_count == 0U) continue;
+            for (b = 0U; b < arch->bus_count && !linked; ++b) {
+                const EEC_Bus_t *bus = arch->buses[b];
+                bool has_self = false, has_other = false;
+                uint32_t n, e;
+                if (!bus) continue;
+                for (n = 0U; n < bus->node_count; ++n) {
+                    const EEC_Ecu_t *necu = bus->nodes[n].ecu;
+                    bool in_zone = false;
+                    if (!necu) continue;
+                    for (e = 0U; e < zone->ecu_count; ++e) {
+                        if (zone->ecus[e] == necu) { in_zone = true; break; }
+                    }
+                    if (in_zone) has_self = true; else has_other = true;
+                }
+                if (has_self && has_other) linked = true;
+            }
+            if (!linked) {
+                ++errors;
+                if (report) fprintf(report, "  [FAIL] Z3 zone '%s' has no inter-zone bus link (islanded — cross-zone signals cannot be routed).\n", zone->name);
+            }
+        }
+    }
+
     if (report) {
         fprintf(report, "[ZONES] %d error(s).\n", errors);
     }

@@ -79,9 +79,9 @@
     ]
   },
   "ecu_capacities": [
-    {"variant": "SMALL", "total_pins": 86, "per_interface": {"DIGITAL": 19, "ANALOG": 32, "CAN": 6, "LIN": 1, "ETHERNET": 10}},
-    {"variant": "MEDIUM", "total_pins": 138, "per_interface": {"DIGITAL": 37, "ANALOG": 58, "CAN": 8, "LIN": 1, "ETHERNET": 10}},
-    {"variant": "LARGE", "total_pins": 166, "per_interface": {"DIGITAL": 59, "ANALOG": 60, "CAN": 8, "LIN": 1, "ETHERNET": 10}}
+    {"variant": "SMALL", "total_pins": 86, "per_interface": {"DIGITAL": 19, "ANALOG": 32, "CAN": 6, "LIN": 1, "ETHERNET": 10, "POWER": 9, "GROUND": 9}},
+    {"variant": "MEDIUM", "total_pins": 138, "per_interface": {"DIGITAL": 37, "ANALOG": 58, "CAN": 8, "LIN": 1, "ETHERNET": 10, "POWER": 12, "GROUND": 12}},
+    {"variant": "LARGE", "total_pins": 166, "per_interface": {"DIGITAL": 59, "ANALOG": 60, "CAN": 8, "LIN": 1, "ETHERNET": 10, "POWER": 14, "GROUND": 14}}
   ],
   "estimates": [
     {"variant": "SMALL", "ecu_count": 5, "pins_available": 430, "pins_used": 82, "utilisation_pct": 19.1},

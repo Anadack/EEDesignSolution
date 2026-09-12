@@ -5,6 +5,7 @@
  * @date    2026
  */
 
+#include <stdio.h>
 #include "EEC_message.h"
 #include "EEC_log.h"
 
@@ -44,8 +45,7 @@ static void msg_copy_string(char *dest, size_t dest_size, const char *src)
         dest[0] = '\0';
         return;
     }
-    strncpy(dest, src, dest_size - 1U);
-    dest[dest_size - 1U] = '\0';
+    snprintf(dest, dest_size, "%s", src);
 }
 
 /* ── SWC lifecycle ─────────────────────────────────────────────────────── */

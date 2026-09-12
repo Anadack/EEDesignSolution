@@ -29,6 +29,7 @@ Checks performed:
   B6  Unique CAN addresses per bus
   B7  Bus-type signals assigned to a bus
   B8  Bus bitrate > 0 when nodes connected
+  B9  CAN busload within safe utilization (<80%)
 
 ------------------------------------------------------------------------
 Results:
@@ -73,7 +74,7 @@ WARNING: signal 'Display_Vehicle_Speed' (CAN) is not assigned to any bus
 WARNING: signal 'Cluster_Warning_Flags' (CAN) is not assigned to any bus
 WARNING: signal 'Brake_Pressure' (CAN) is not assigned to any bus
 WARNING: signal 'Brake_Applied' (CAN) is not assigned to any bus
-  [FAIL] B1-B8  6 bus verification error(s)
+  [FAIL] B1-B9  6 bus verification error(s)
   [PASS] C1-C5  All CAN message rules passed
 
 ========================================================================

@@ -356,20 +356,6 @@ int main(void)
     }
     printf("[INFO] Total signals mapped: %d\n", mapped_total);
 
-    /* Zone distribution snapshot + consistency check (only when zones exist). */
-    if (arch->zone_count > 0U) {
-        char zones_json_path[PATH_MAX];
-        int zone_errors;
-        join_path(zones_json_path, sizeof(zones_json_path), exports_dir, "zones.json");
-        if (EEC_Export_zones_json(arch, zones_json_path) == 0) {
-            printf("[INFO] Zones JSON → %s\n", zones_json_path);
-        }
-        zone_errors = EEC_Verify_zones(arch, stdout);
-        if (zone_errors > 0) {
-            printf("[WARN] Zone verification: %d issue(s)\n", zone_errors);
-        }
-    }
-
     /* ------------------------------------------------------------------
      * 6. Configure communication buses
      *
@@ -382,7 +368,7 @@ int main(void)
     /* ------------------------------------------------------------------
      * 6b. Import SWC / CAN definitions from data files (fully data-driven).
      *     Bit layout and DLC are auto-derived; ECUs and buses are resolved
-     *     by name. Editing library/swc/*.json changes every CAN output.
+     *     by name. Editing library/swc/ JSON files changes every CAN output.
      * ------------------------------------------------------------------ */
     {
         size_t si;
@@ -397,6 +383,21 @@ int main(void)
             EEC_Architecture_RebuildHostedSwcs(arch);
             EEC_Architecture_RebuildBusMessages(arch);
             printf("[OK] Imported %d SWC(s) from data files\n", swc_total);
+        }
+    }
+
+    /* Zone distribution snapshot + consistency check. Runs AFTER buses are
+     * configured so the inter-zone connectivity rule (Z3) sees real topology. */
+    if (arch->zone_count > 0U) {
+        char zones_json_path[PATH_MAX];
+        int zone_errors;
+        join_path(zones_json_path, sizeof(zones_json_path), exports_dir, "zones.json");
+        if (EEC_Export_zones_json(arch, zones_json_path) == 0) {
+            printf("[INFO] Zones JSON → %s\n", zones_json_path);
+        }
+        zone_errors = EEC_Verify_zones(arch, stdout);
+        if (zone_errors > 0) {
+            printf("[WARN] Zone verification: %d issue(s)\n", zone_errors);
         }
     }
 

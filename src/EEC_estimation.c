@@ -14,6 +14,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Guard the invariant that per_iface[]/arch_io[] can be indexed by any
+   EEC_SignalInterface_t value without overrunning. Fails the build if the
+   interface enum ever grows past the bucket capacity. */
+_Static_assert(EEC_EST_MAX_IFACE_TYPES >= (uint32_t)EEC_SIGNAL_INTERFACE_RESERVED,
+               "EEC_EST_MAX_IFACE_TYPES must cover every EEC_SignalInterface_t value");
+
 #ifdef _WIN32
 #  include <windows.h>
 #else

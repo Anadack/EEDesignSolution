@@ -604,6 +604,12 @@ int EEC_Export_architecture_json(const EEC_Architecture_t *arch, const char *fil
 
 int EEC_Export_physical_architecture_json(const EEC_Architecture_t *arch, const char *filename)
 {
+    /* KNOWN LIMITATION: this currently emits the SAME content as the logical
+     * export (the logical model already carries pin-level physical placement),
+     * so exported_architecture.json and exported_physical_architecture.json are
+     * byte-identical. A dedicated pin-only projection (drop the logical device
+     * tree, keep ECU -> connector -> pin -> wire) is a pending feature. Until
+     * then this alias is intentional and documented rather than a silent copy. */
     return EEC_Export_architecture_json(arch, filename);
 }
 

@@ -38,9 +38,12 @@ def main()->int:
     parser.add_argument('--root',default='.') ; parser.add_argument('--input',default=None); parser.add_argument('--outdir',default=None); parser.add_argument('--config',default=None)
     parser.add_argument('--build-run',action='store_true',help='Build and run the C framework before generating docs.')
     parser.add_argument('--compiler',default=None); parser.add_argument('--app-name',default=None); parser.add_argument('--skip-build',action='store_true'); parser.add_argument('--skip-run',action='store_true')
+    parser.add_argument('--strict',action='store_true',help='Exit non-zero if ANY generator fails (for CI gating). Default: run all, report at end.')
     args=parser.parse_args(); root=resolve_root(args.root)
     if args.build_run: build_and_run(root,args.compiler,args.app_name,args.skip_build,args.skip_run)
     tools=Path(__file__).resolve().parent
+    results=[]  # (script, status, seconds, message)
+    import time
     for script in SCRIPTS:
         cmd=[sys.executable,str(tools/script),'--root',str(root)]
         if args.input: cmd += ['--input',args.input]
@@ -50,6 +53,36 @@ def main()->int:
             cmd += ['--outdir',args.outdir]
         if args.config: cmd += ['--config',args.config]
         print('[DOC]',script)
-        subprocess.run(cmd,check=True)
-    return 0
+        t0=time.time()
+        # Fault-tolerant: never let one broken generator abort the whole suite.
+        proc=subprocess.run(cmd,capture_output=True,text=True)
+        dt=time.time()-t0
+        out=(proc.stdout or '')+(proc.stderr or '')
+        if proc.returncode==0:
+            status='SKIP' if '[SKIP]' in out else 'OK'
+        else:
+            status='FAIL'
+        msg=''
+        for line in out.splitlines():
+            if any(k in line for k in ('[SKIP]','Error','error','Traceback','Exception')):
+                msg=line.strip()[:120]; break
+        results.append((script,status,dt,msg))
+        if status!='OK':
+            print(f'   -> {status}: {msg}')
+    # Summary
+    ok=sum(1 for _,s,_,_ in results if s=='OK')
+    skip=sum(1 for _,s,_,_ in results if s=='SKIP')
+    fail=sum(1 for _,s,_,_ in results if s=='FAIL')
+    print('\n================ DOC SUITE SUMMARY ================')
+    for script,status,dt,msg in results:
+        tag={'OK':'  OK ','SKIP':' SKIP','FAIL':'FAIL '}[status]
+        print(f'[{tag}] {script:<52} {dt:5.1f}s  {msg}')
+    print('--------------------------------------------------')
+    print(f'{ok} ok, {skip} skipped, {fail} failed, {len(results)} total')
+    print('==================================================')
+    # Default: succeed if nothing hard-failed (skips are tolerated).
+    # --strict: any non-OK is a failure (CI gate).
+    if args.strict:
+        return 1 if (fail or skip) else 0
+    return 1 if fail else 0
 if __name__=='__main__': raise SystemExit(main())

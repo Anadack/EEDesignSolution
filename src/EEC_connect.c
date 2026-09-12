@@ -194,7 +194,7 @@ static int connect_pins_strict(EEC_DevicePin_t *pins, uint32_t pin_count, const 
                 /* Enforce AgPL constraint in strict mode: skip pins that cannot support the required AgPL. */
                 {
                     EEC_AgplLevel_t required_agpl = EEC_AGPL_A;
-                    if (signal->safety == EEC_SAFETY_AGPL_A) {
+                    if (signal->safety >= EEC_SAFETY_AGPL_A) {
                         required_agpl = EEC_AGPL_C;
                         if (signal->priority == EEC_PRIORITY_CRITICAL) {
                             required_agpl = EEC_AGPL_D;
@@ -629,7 +629,7 @@ static EEC_AgplLevel_t system_max_agpl(const EEC_System_t *sys)
                 const EEC_Signal_t *sig = comp->sensors[d]->pins[p].signal;
                 if (!sig) continue;
                 EEC_AgplLevel_t lvl = EEC_AGPL_A;
-                if (sig->safety == EEC_SAFETY_AGPL_A) {
+                if (sig->safety >= EEC_SAFETY_AGPL_A) {
                     lvl = EEC_AGPL_C;
                     if (sig->priority == EEC_PRIORITY_CRITICAL) lvl = EEC_AGPL_D;
                 }
@@ -642,7 +642,7 @@ static EEC_AgplLevel_t system_max_agpl(const EEC_System_t *sys)
                 const EEC_Signal_t *sig = comp->actuators[d]->pins[p].signal;
                 if (!sig) continue;
                 EEC_AgplLevel_t lvl = EEC_AGPL_A;
-                if (sig->safety == EEC_SAFETY_AGPL_A) {
+                if (sig->safety >= EEC_SAFETY_AGPL_A) {
                     lvl = EEC_AGPL_C;
                     if (sig->priority == EEC_PRIORITY_CRITICAL) lvl = EEC_AGPL_D;
                 }

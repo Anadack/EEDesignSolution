@@ -677,6 +677,19 @@ int EEC_Report_pin_allocation(const EEC_Architecture_t *arch, FILE *report)
  *  Bus verification rules B1–B8
  * ══════════════════════════════════════════════════════════════════════════ */
 
+/* Worst-case on-wire bit length of a classic-CAN frame including bit stuffing,
+ * per ISO 11898-1. Fixed framing/overhead + 8*DLC data bits + worst-case stuff
+ * bits (one per 4 bits of the stuffable field). Standard = 11-bit ID, extended
+ * = 29-bit ID (J1939). Used by the B9 busload estimate. */
+static uint32_t eec_can_frame_bits(uint8_t dlc, bool extended)
+{
+    uint32_t data = 8U * (uint32_t)dlc;
+    if (extended) {
+        return 67U + data + ((54U + data) / 4U);
+    }
+    return 47U + data + ((34U + data) / 4U);
+}
+
 static int eec_verify_buses(const EEC_Architecture_t *arch, FILE *report)
 {
     uint32_t b, n, s, b2, n2;
@@ -786,6 +799,51 @@ static int eec_verify_buses(const EEC_Architecture_t *arch, FILE *report)
             fprintf(report,
                     "WARNING: bus '%s': bitrate is 0 but %u nodes are connected\n",
                     bus->name, bus->node_count);
+        }
+
+        /* B9: CAN busload estimate must stay within safe utilization.
+         * Sums worst-case periodic traffic (cycle_time_ms > 0) on CAN/ISOBUS
+         * buses; event-driven frames (cycle 0) are reported, not summed.
+         * WARNING >= 50% (leave headroom; safety buses lower still),
+         * ERROR > 80% (classic-CAN practical ceiling). Uses existing model
+         * fields only: bus->bitrate, msg->dlc/is_extended, tx cycle_time_ms. */
+        if ((bus->type == EEC_BUS_TYPE_CAN || bus->type == EEC_BUS_TYPE_ISOBUS) &&
+            bus->bitrate > 0U && bus->message_count > 0U) {
+            double load_bps = 0.0;
+            uint32_t event_driven = 0U, m;
+            for (m = 0; m < bus->message_count; ++m) {
+                const EEC_Message_t *msg = bus->messages[m];
+                uint32_t cycle_ms = 0U, t;
+                if (!msg) continue;
+                for (t = 0; t < msg->tx_count; ++t) {
+                    if (msg->tx_ports[t].bus == bus) {
+                        cycle_ms = msg->tx_ports[t].cycle_time_ms;
+                        break;
+                    }
+                }
+                if (cycle_ms == 0U) { ++event_driven; continue; }
+                load_bps += (double)eec_can_frame_bits(msg->dlc, msg->is_extended)
+                            * (1000.0 / (double)cycle_ms);
+            }
+            {
+                double pct = 100.0 * load_bps / (double)bus->bitrate;
+                if (pct > 80.0) {
+                    ++errors;
+                    fprintf(report,
+                            "ERROR: bus '%s': B9 busload %.1f%% exceeds 80%% ceiling "
+                            "(%.0f bps periodic of %u bps)\n",
+                            bus->name, pct, load_bps, bus->bitrate);
+                } else if (pct >= 50.0) {
+                    fprintf(report,
+                            "WARNING: bus '%s': B9 busload %.1f%% is high (target <50%% for headroom)\n",
+                            bus->name, pct);
+                }
+                if (event_driven > 0U) {
+                    fprintf(report,
+                            "  [INFO] bus '%s': %u event-driven frame(s) excluded from busload (cycle=0)\n",
+                            bus->name, event_driven);
+                }
+            }
         }
     }
 
@@ -1030,6 +1088,7 @@ int EEC_Verify_architecture(const EEC_Architecture_t *arch, FILE *report)
     fprintf(report, "  B6  Unique CAN addresses per bus\n");
     fprintf(report, "  B7  Bus-type signals assigned to a bus\n");
     fprintf(report, "  B8  Bus bitrate > 0 when nodes connected\n");
+    fprintf(report, "  B9  CAN busload within safe utilization (<80%%)\n");
     fprintf(report, "\n------------------------------------------------------------------------\n");
     fprintf(report, "Results:\n");
     fprintf(report, "------------------------------------------------------------------------\n");
@@ -1107,11 +1166,11 @@ int EEC_Verify_architecture(const EEC_Architecture_t *arch, FILE *report)
     if (check_errors == 0) { fprintf(report, "  [PASS] V5-V9  All signal mappings valid (role, electrical, pull resistor)\n"); checks_passed++; }
     else { fprintf(report, "  [FAIL] V5-V9  %d logical pin error(s)\n", check_errors); checks_failed++; }
 
-    /* B1-B8: Bus verification */
+    /* B1-B9: Bus verification (incl. busload) */
     check_errors = eec_verify_buses(arch, report);
     errors += check_errors;
-    if (check_errors == 0) { fprintf(report, "  [PASS] B1-B8  All bus rules passed\n"); checks_passed++; }
-    else { fprintf(report, "  [FAIL] B1-B8  %d bus verification error(s)\n", check_errors); checks_failed++; }
+    if (check_errors == 0) { fprintf(report, "  [PASS] B1-B9  All bus rules passed\n"); checks_passed++; }
+    else { fprintf(report, "  [FAIL] B1-B9  %d bus verification error(s)\n", check_errors); checks_failed++; }
 
     /* C1-C5: CAN message / SWC coherence */
     check_errors = eec_verify_can(arch, report);
