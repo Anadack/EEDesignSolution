@@ -63,7 +63,11 @@ AEC_TRAILER_01: total=122 allocated=0 free=122 allocation=0.0%
   X1003: total=4 allocated=0 free=4 allocation=0.0%
   X1004: total=2 allocated=0 free=2 allocation=0.0%
 
-TOTAL: total=988 allocated=86 free=902 allocation=8.7%
+VALIDATION_IO_ECU: total=240 allocated=6 free=234 allocation=2.5%
+  Priority: LOW  Safety: QM
+  T1: total=240 allocated=6 free=234 allocation=2.5%
+
+TOTAL: total=1228 allocated=92 free=1136 allocation=7.5%
 
 Systems:
   HYDAC_Selected_Sensor_Examples: level=SL1  priority=MEDIUM  safety=QM  signals=36
@@ -80,5 +84,5 @@ Systems:
   Cabin_Display_Software: level=SL0  priority=LOW  safety=QM  signals=0
 
 ========================================================================
-RESULT: 6 ECU(s), 988 total pin(s), 86 allocated, 902 free (8.7% used)
+RESULT: 7 ECU(s), 1228 total pin(s), 92 allocated, 1136 free (7.5% used)
 ========================================================================
