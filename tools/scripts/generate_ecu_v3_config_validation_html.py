@@ -113,7 +113,16 @@ def main() -> int:
 
     # Find USER CONFIGURATION ZONE boundaries
     zone_start = template_html.find("/* ==========================================================================\n   USER CONFIGURATION ZONE")
-    zone_end = template_html.find("   END USER CONFIGURATION ZONE — DO NOT EDIT BELOW")
+    # NOTE: the marker must include the comment opener "/*". config_zone above
+    # always closes ITS OWN header comment before the real `const` statements
+    # (see the literal "*/\n" right before "const functionCatalog={" below), so
+    # by the time `after` begins, we are in normal (non-comment) JS context.
+    # `after` starts at this exact substring, so if it did not include "/*" it
+    # would be bare, invalid JS (bare identifiers with no operators, plus a
+    # literal em-dash which is not a valid identifier character) with no way
+    # for any template to make it parse — the template must open a fresh
+    # comment right here for `after` to be valid on its own.
+    zone_end = template_html.find("/* END USER CONFIGURATION ZONE — DO NOT EDIT BELOW")
 
     if zone_start == -1 or zone_end == -1:
         print("Could not find USER CONFIGURATION ZONE markers", file=__import__('sys').stderr)

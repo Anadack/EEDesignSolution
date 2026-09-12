@@ -35,10 +35,7 @@ jobs:
         run: ./app || true   # demo data intentionally contains verify errors
 
       - name: "Verification gate (fail if STATUS: FAIL)"
-        run: |
-          # Enable this once the shipped baseline is a passing architecture:
-          # grep -q "STATUS: OK" generated_doc/exports/verify_report.txt || exit 1
-          test -f generated_doc/exports/verify_report.txt
+        run: grep -q "STATUS: OK" generated_doc/exports/verify_report.txt
 
       - name: C unit tests (all 6 qa/test_*.c suites)
         run: ./qa/run_tests.sh
@@ -61,13 +58,8 @@ jobs:
           sys.exit(1 if bad else 0)
           PY
 
-      - name: Full documentation suite (fails only on a hard generator failure)
-        # NOT --strict: 2 of 44 generators need HTML templates
-        # (tools/scripts/templates/Network_BUS_Backbone_Template.html and
-        # .../ECU_Pinout_MultiECU_Config_Validation_Template.html) that have
-        # never been vendored into the repo, so they always [SKIP]. Switch to
-        # --strict once those assets are added (see tools/scripts/templates/README.md).
-        run: python3 tools/scripts/generate_all_architecture_docs.py --root .
+      - name: Full documentation suite (strict — any skip/fail is a gate failure)
+        run: python3 tools/scripts/generate_all_architecture_docs.py --root . --strict
 
       - name: Validate all exported JSON is well-formed
         run: |

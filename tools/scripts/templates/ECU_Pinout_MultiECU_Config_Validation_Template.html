@@ -1,0 +1,287 @@
+<!--
+  ECU Pinout Multi-ECU Config Validation Template (v1)
+  =====================================================
+  Consumed by tools/scripts/generate_ecu_v3_config_validation_html.py, which
+  locates the "USER CONFIGURATION ZONE" comment block below, replaces
+  everything between it and "END USER CONFIGURATION ZONE — DO NOT EDIT BELOW"
+  with real architecture data (ecus/devices/signals/ecuPins/wiringSchemas),
+  and writes the result to
+  generated_doc/architecture_html/ecu_v3_config_validation.html.
+
+  This is a first, deliberately simpler implementation (not a recreation of
+  any prior "v3 zoom/dataflow/print" template) written to close the
+  "[SKIP] vendored template not found" gap in the documentation pipeline. It
+  renders, per ECU: a searchable pin table with function badges, a click-to
+  -inspect wiring schema panel for the mapped device, and a "V3 validation"
+  panel that cross-checks the references between the five configuration
+  blocks (a pin's signalId exists in `signals`, a pin's deviceId exists in
+  `devices`, and every schema id referenced by a device actually exists in
+  `wiringSchemas` — this last one is a genuine check: the generator script
+  only keeps the wiring schemas it detects as "used" from pin capabilities,
+  which is not guaranteed to include every schema a device/signal happens to
+  reference, so a real architecture can legitimately fail it).
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECU Pinout — Config Validation</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111a2e; --panel2:#0e1626; --border:#233152;
+    --text:#e6edf7; --muted:#8fa2c4; --accent:#3b82f6;
+    --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    --mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  header{padding:20px 24px;border-bottom:1px solid var(--border);}
+  header h1{margin:0 0 4px;font-size:1.4rem;font-weight:800;letter-spacing:-.01em;}
+  header .sub{color:var(--muted);font-size:.85rem;}
+  main{padding:20px 24px;display:flex;flex-direction:column;gap:18px;}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;}
+  .tab{padding:6px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);cursor:pointer;font-size:.85rem;}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .panel h2{margin:0 0 10px;font-size:1rem;}
+  #pin-filter{width:100%;max-width:320px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:.9rem;margin-bottom:10px;}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:860px){.cols{grid-template-columns:1fr;}}
+  table{border-collapse:collapse;width:100%;font-size:.82rem;}
+  th,td{border-bottom:1px solid var(--border);padding:5px 8px;text-align:left;}
+  th{color:var(--muted);font-weight:600;}
+  tr.hidden{display:none;}
+  tr.pin-row{cursor:pointer;}
+  tr.pin-row:hover{background:var(--panel2);}
+  tr.pin-row.selected{background:#16233f;}
+  .badge{display:inline-block;padding:1px 6px;border-radius:5px;font-size:.7rem;font-weight:700;margin-right:3px;background:#1c2a48;color:#a9c1ea;border:1px solid var(--border);}
+  .badge.power{background:#3a2a10;color:#f0b355;}
+  .badge.ground{background:#241a3a;color:#b79cf0;}
+  .badge.network{background:#0f2e2e;color:#5fd0d0;}
+  .badge.pull{background:#2a1c1c;color:#f0a3a3;}
+  #device-panel .empty{color:var(--muted);font-size:.85rem;}
+  .kv{display:grid;grid-template-columns:140px 1fr;gap:4px 10px;font-size:.85rem;margin-bottom:10px;}
+  .kv div:nth-child(odd){color:var(--muted);}
+  .wire-list{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px;}
+  .wire-list li{padding:4px 10px;border-radius:6px;font-size:.8rem;font-weight:600;color:#0b1220;}
+  #validation-summary{display:flex;gap:18px;margin-bottom:10px;font-size:.9rem;}
+  #validation-summary b{font-size:1.1rem;}
+  .v-ok{color:var(--ok)} .v-warn{color:var(--warn)} .v-bad{color:var(--bad)}
+  #validation-list{font-size:.82rem;font-family:var(--mono);max-height:220px;overflow:auto;}
+  #validation-list div{padding:2px 0;border-bottom:1px dashed var(--border);}
+  code{font-family:var(--mono);color:#9db4e0;}
+</style>
+</head>
+<body>
+<header>
+  <h1>ECU Pinout — Multi-ECU Config Validation</h1>
+  <div class="sub" id="hdr-sub"></div>
+</header>
+<main>
+  <div class="tabs" id="ecu-tabs"></div>
+
+  <div class="cols">
+    <div class="panel">
+      <h2>Pinout</h2>
+      <input id="pin-filter" type="text" placeholder="Filter by pin name, function, or device…">
+      <table id="pin-table">
+        <thead><tr><th>Pin</th><th>Side</th><th>Name</th><th>Functions</th><th>Device</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="panel" id="device-panel">
+      <h2>Wiring schema</h2>
+      <div class="empty">Click a pin on the left to inspect its device and wiring schema.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>V3 validation</h2>
+    <div id="validation-summary"></div>
+    <div id="validation-list"></div>
+  </div>
+</main>
+
+<script>
+/* ==========================================================================
+   USER CONFIGURATION ZONE
+   --------------------------------------------------------------------------
+   1) functionCatalog: available ECU pin alternative functions.
+   2) ecus: one object per ECU.
+   3) devices: sensors, actuators, network nodes, power objects.
+   4) signals: producer → signal → consumer data-flow definitions.
+   5) ecuPins: physical ECU connector pins and mapping to signal/device.
+   6) wiringSchemas: reusable wiring concepts opened when clicking a device.
+
+   V3 validation checks the references between these blocks automatically.
+   The rendering engine starts after END USER CONFIGURATION ZONE.
+   This placeholder content is only used when the template is opened
+   directly, before tools/scripts/generate_ecu_v3_config_validation_html.py
+   has injected real architecture data (which replaces this entire block,
+   except wiringSchemas: the generator scans the ORIGINAL wiringSchemas
+   catalog below for the schema ids it needs and keeps only those).
+   ========================================================================== */
+const functionCatalog={
+ PWM:{label:"PWM",color:"pwm",desc:"Pulse-width modulation."},
+ RES:{label:"RES",color:"res",desc:"Resistance measurement."},
+ AI:{label:"AI",color:"ai",desc:"Analog input."},
+ DI:{label:"DI",color:"di",desc:"Digital input."},
+ DO:{label:"DO",color:"do",desc:"Digital output."},
+ FREQ:{label:"FREQ",color:"freq",desc:"Frequency input."},
+ PULL_UP:{label:"PULL UP",color:"pull",desc:"Pull-up."},
+ PULL_DOWN:{label:"PULL DOWN",color:"pull",desc:"Pull-down."},
+ SUPPLY_5V:{label:"SUPPLY 5V",color:"power",desc:"5V supply."},
+ SUPPLY_VBAT:{label:"SUPPLY VBAT",color:"power",desc:"VBAT supply."},
+ GND:{label:"GND",color:"ground",desc:"Ground."},
+ HSD:{label:"HSD",color:"do",desc:"High-side driver."},
+ LSD:{label:"LSD",color:"do",desc:"Low-side driver."},
+ AO:{label:"AO",color:"ao",desc:"Analog output."},
+ CAN:{label:"CAN",color:"network",desc:"CAN network."},
+ LIN:{label:"LIN",color:"network",desc:"LIN network."},
+ WAKE:{label:"WAKE",color:"network",desc:"Wake signal."},
+ NC:{label:"NC",color:"nc",desc:"Not connected."}
+};
+const ecus=[
+ {id:"AEC1",name:"AEC1",short:"AEC1",description:"Preview ECU"}
+];
+const devices={};
+const signals={};
+const ecuPins=[];
+const wiringSchemas=[
+ {id:"schema-ai-3wire",title:"3-Wire Analog Input",wires:["Signal","Supply","Ground"],colors:["#f59e0b","#ef4444","#334155"],notes:"Ratiometric sensor with dedicated supply and ground return."},
+ {id:"schema-res-2wire",title:"2-Wire Resistive Input",wires:["Sense A","Sense B"],colors:["#f59e0b","#334155"],notes:"Resistive element (NTC/PTC/potentiometer) with pull excitation on the ECU pin."},
+ {id:"schema-di-switch",title:"Digital Input Switch",wires:["Switch","Ground"],colors:["#38bdf8","#334155"],notes:"Mechanical or solid-state switch to ground, read with an internal pull-up."},
+ {id:"schema-frequency-hall",title:"Frequency / Hall Input",wires:["Signal","Supply","Ground"],colors:["#a78bfa","#f59e0b","#334155"],notes:"Hall-effect or VR sensor producing a frequency proportional to speed."},
+ {id:"schema-ao-amplifier",title:"Analog Output (Amplified)",wires:["Output","Ground"],colors:["#22c55e","#334155"],notes:"Buffered analog output driving an external load or gauge."},
+ {id:"schema-power-5v",title:"5V Supply",wires:["+5V","Ground"],colors:["#f59e0b","#334155"],notes:"Regulated 5V sensor supply, current-limited."},
+ {id:"schema-vbat-supply",title:"VBAT Supply",wires:["+VBAT","Ground"],colors:["#f59e0b","#334155"],notes:"Direct battery-rail supply, fused upstream."},
+ {id:"schema-hsd-load",title:"High-Side Driver Load",wires:["+VBAT","Load","Ground"],colors:["#f59e0b","#38bdf8","#334155"],notes:"ECU switches the load's supply; load return is chassis/system ground."},
+ {id:"schema-lsd-coil",title:"Low-Side Driver Coil",wires:["+VBAT","Coil","Ground"],colors:["#f59e0b","#38bdf8","#334155"],notes:"Coil is permanently powered; ECU switches the ground return."},
+ {id:"schema-pwm-proportional-valve",title:"PWM Proportional Valve",wires:["+VBAT","PWM Drive","Ground"],colors:["#f59e0b","#a78bfa","#334155"],notes:"Proportional solenoid driven with a PWM duty cycle for variable flow/pressure."},
+ {id:"schema-pwm-sensor",title:"PWM Sensor Input",wires:["Signal","Supply","Ground"],colors:["#a78bfa","#f59e0b","#334155"],notes:"Sensor encodes its reading as a PWM duty cycle or frequency."},
+ {id:"schema-can-smart-node",title:"CAN Smart Node",wires:["CAN_H","CAN_L","Ground"],colors:["#5fd0d0","#5fd0d0","#334155"],notes:"Twisted, terminated differential pair to a smart (networked) device."},
+ {id:"schema-lin-node",title:"LIN Node",wires:["LIN","+VBAT","Ground"],colors:["#5fd0d0","#f59e0b","#334155"],notes:"Single-wire LIN bus with local supply and ground at the node."}
+];
+/* END USER CONFIGURATION ZONE — DO NOT EDIT BELOW
+   ========================================================================== */
+
+let selectedEcu="AEC1";
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function funcBadges(funcs){
+  return (funcs||[]).map(f=>{
+    const meta = functionCatalog[f] || {label:f, color:"nc"};
+    return `<span class="badge ${esc(meta.color)}">${esc(meta.label)}</span>`;
+  }).join("");
+}
+
+function renderTabs(){
+  const tabs = document.getElementById("ecu-tabs");
+  tabs.innerHTML = ecus.map(e =>
+    `<span class="tab${e.id===selectedEcu?" active":""}" data-ecu="${esc(e.id)}">${esc(e.short||e.name)}</span>`
+  ).join("");
+  tabs.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+    selectedEcu = t.getAttribute("data-ecu");
+    renderTabs();
+    renderPins();
+  }));
+  const cur = ecus.find(e=>e.id===selectedEcu);
+  document.getElementById("hdr-sub").textContent =
+    `${ecus.length} ECU(s) · ${ecuPins.length} pin(s) · ${Object.keys(devices).length} device(s) · ${Object.keys(signals).length} signal(s)` +
+    (cur ? ` · viewing ${cur.name} (${cur.description||""})` : "");
+}
+
+function renderPins(){
+  const body = document.querySelector("#pin-table tbody");
+  const pins = ecuPins.filter(p => p.ecuId === selectedEcu)
+                      .sort((a,b) => (a.side===b.side ? Number(a.no)-Number(b.no) : (a.side==="left"?-1:1)));
+  body.innerHTML = pins.map((p,i) => {
+    const dev = devices[p.deviceId];
+    const hay = [p.no,p.side,p.pinElectrical,p.deviceId,...(p.functions||[])].join(" ").toLowerCase();
+    return `<tr class="pin-row" data-idx="${i}" data-hay="${esc(hay)}">
+      <td>${esc(p.no)}</td><td>${esc(p.side)}</td><td>${esc(p.pinElectrical||p.signalId)}</td>
+      <td>${funcBadges(p.functions)}</td><td>${dev?esc(dev.name):"—"}</td></tr>`;
+  }).join("");
+  body.querySelectorAll("tr.pin-row").forEach(tr => {
+    tr.addEventListener("click", () => {
+      body.querySelectorAll("tr.pin-row").forEach(r=>r.classList.remove("selected"));
+      tr.classList.add("selected");
+      renderDevicePanel(pins[Number(tr.getAttribute("data-idx"))]);
+    });
+  });
+  filterPins();
+}
+
+function renderDevicePanel(pin){
+  const panel = document.getElementById("device-panel");
+  const dev = devices[pin.deviceId];
+  const sig = signals[pin.signalId];
+  const schema = dev && wiringSchemas.find(s => s.id === dev.schema);
+  let html = `<h2>Wiring schema</h2>`;
+  html += `<div class="kv">
+    <div>Pin</div><div><code>${esc(pin.no)} (${esc(pin.side)})</code></div>
+    <div>Device</div><div>${dev?esc(dev.name):"<em>unmapped</em>"}</div>
+    <div>Signal</div><div>${sig?esc(sig.name):"—"} ${sig?`<span class="badge">${esc(sig.class)}</span>`:""}</div>
+    <div>Direction</div><div>${sig?esc(sig.direction):"—"}</div>
+  </div>`;
+  if (schema) {
+    html += `<div style="margin-bottom:6px;font-weight:700">${esc(schema.title)}</div>`;
+    html += `<ul class="wire-list">` + schema.wires.map((w,i) =>
+      `<li style="background:${esc(schema.colors[i]||'#334155')}">${esc(w)}</li>`).join("") + `</ul>`;
+    html += `<p class="empty" style="margin-top:10px">${esc(schema.notes)}</p>`;
+  } else if (dev) {
+    html += `<div class="empty">Device references wiring schema <code>${esc(dev.schema)}</code>, which is not in the current wiringSchemas set (see V3 validation below).</div>`;
+  } else {
+    html += `<div class="empty">This pin has no device mapped.</div>`;
+  }
+  panel.innerHTML = html;
+}
+
+function filterPins(){
+  const q = (document.getElementById("pin-filter").value||"").trim().toLowerCase();
+  document.querySelectorAll("#pin-table tbody tr").forEach(tr => {
+    tr.classList.toggle("hidden", q !== "" && !(tr.getAttribute("data-hay")||"").includes(q));
+  });
+}
+document.getElementById("pin-filter").addEventListener("input", filterPins);
+
+function runValidation(){
+  const issues = [];
+  const schemaIds = new Set(wiringSchemas.map(s=>s.id));
+  const ecuIds = new Set(ecus.map(e=>e.id));
+
+  ecuPins.forEach(p => {
+    if (!ecuIds.has(p.ecuId)) issues.push({level:"bad", msg:`ecuPins: pin ${p.no} references unknown ECU "${p.ecuId}"`});
+    if (p.signalId && !(p.signalId in signals)) issues.push({level:"bad", msg:`ecuPins: pin ${p.ecuId}/${p.no} references unknown signal "${p.signalId}"`});
+    if (p.deviceId && p.deviceId !== "unknown" && !(p.deviceId in devices)) issues.push({level:"warn", msg:`ecuPins: pin ${p.ecuId}/${p.no} references unknown device "${p.deviceId}"`});
+  });
+  Object.entries(devices).forEach(([key, dev]) => {
+    if (dev.schema && !schemaIds.has(dev.schema)) issues.push({level:"warn", msg:`devices.${key}: references wiring schema "${dev.schema}" which is not present in wiringSchemas`});
+  });
+  Object.entries(signals).forEach(([key, sig]) => {
+    if (sig.schema && !schemaIds.has(sig.schema)) issues.push({level:"warn", msg:`signals.${key}: references wiring schema "${sig.schema}" which is not present in wiringSchemas`});
+  });
+  if (ecus.length === 0) issues.push({level:"bad", msg:"No ECUs defined."});
+
+  const bad = issues.filter(i=>i.level==="bad").length;
+  const warn = issues.filter(i=>i.level==="warn").length;
+  document.getElementById("validation-summary").innerHTML =
+    `<span class="v-ok"><b>${ecuPins.length}</b> pin(s) checked</span>` +
+    `<span class="v-warn"><b>${warn}</b> warning(s)</span>` +
+    `<span class="v-bad"><b>${bad}</b> error(s)</span>`;
+  const list = document.getElementById("validation-list");
+  list.innerHTML = issues.length
+    ? issues.map(i => `<div class="v-${i.level}">[${i.level.toUpperCase()}] ${esc(i.msg)}</div>`).join("")
+    : `<div class="v-ok">[OK] No cross-reference issues found.</div>`;
+}
+
+renderTabs();
+renderPins();
+runValidation();
+</script>
+</body>
+</html>

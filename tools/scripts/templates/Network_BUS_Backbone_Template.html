@@ -1,0 +1,251 @@
+<!--
+  Network BUS Backbone Template (v1)
+  ===================================
+  Consumed by tools/scripts/generate_network_bus_backbone_html.py, which
+  replaces the `let DATA = generateTemplateData({ ecuCount: N });` line below
+  with the real architecture data and writes the result to
+  generated_doc/architecture_html/network_bus_backbone.html.
+
+  This is a first, deliberately simple implementation (not a recreation of
+  any prior template) written to close the "[SKIP] vendored template not
+  found" gap in the documentation pipeline: a system-level view of every
+  communication bus and which ECUs sit on it, with the per-bus message list
+  available on click. Self-contained (no external CSS/JS/fonts) so it opens
+  from a plain file:// URL and works whether the generator has injected real
+  DATA or not (generateTemplateData() below produces placeholder data so the
+  template previews sensibly on its own).
+
+  DATA shape produced by the generator (see extract_*_from_architecture() in
+  the generator script):
+    {
+      meta: { project, revision, generatedFrom, nodeCount },
+      nodes: [ { id, name, shortName, type, row: "top"|"bottom", domain,
+                 diagnosticAddress, description, role, status } ],
+      buses: [ { id, name, protocol, bitrate, addressScheme, physicalLayer,
+                 termination, loadTarget, color } ],
+      connectors: [ { id, nodeId, name, type, pins } ],
+      connections: [ { id, nodeId, busId, connectorId, port, pins, role,
+                        stubLengthCm, shielding } ],
+      messages: [ { id, busId, name, canId, idFormat, dlc, cycleMs,
+                     producerNodeId, consumerNodeIds, txSoftwareComponentId,
+                     rxSoftwareComponentIds, signals, status } ],
+      softwareComponents: [ { id, ecuId, name, shortName, category, ... } ],
+      softwareFlows: [ { id, producerComponentId, consumerComponentId,
+                          producerNodeId, consumerNodeId, busId, messageId,
+                          data, interfaceType, timingMs } ]
+    }
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network BUS Backbone</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111a2e; --panel2:#0e1626; --border:#233152;
+    --text:#e6edf7; --muted:#8fa2c4; --accent:#3b82f6;
+    --mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;}
+  header h1{margin:0;font-size:1.4rem;font-weight:800;letter-spacing:-.01em;}
+  header .meta{color:var(--muted);font-size:.85rem;font-family:var(--mono);}
+  main{padding:20px 24px;display:flex;flex-direction:column;gap:20px;}
+  #filter{width:100%;max-width:360px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:.9rem;}
+  #filter::placeholder{color:var(--muted);}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:.8rem;color:var(--muted);}
+  .legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle;}
+  svg text{fill:var(--text);font-family:var(--sans);}
+  .node-box{fill:var(--panel2);stroke:var(--border);stroke-width:1;rx:8;}
+  .node-box.selected{stroke:var(--accent);stroke-width:2;}
+  .node-label{font-size:12px;font-weight:600;}
+  .node-sub{font-size:9px;fill:var(--muted);}
+  .bus-line{stroke-width:4;stroke-linecap:round;cursor:pointer;}
+  .bus-label{font-size:11px;font-weight:700;}
+  .stub{stroke:var(--border);stroke-width:1.5;}
+  .stub.active{stroke-opacity:.9;}
+  table{border-collapse:collapse;width:100%;font-size:.85rem;}
+  th,td{border-bottom:1px solid var(--border);padding:6px 10px;text-align:left;white-space:nowrap;}
+  th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel);}
+  tr.hidden{display:none;}
+  code{font-family:var(--mono);font-size:.85em;color:#9db4e0;}
+  .hint{color:var(--muted);font-size:.8rem;margin-top:4px;}
+  h2{font-size:1rem;margin:0 0 10px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Network BUS Backbone</h1>
+  <div class="meta" id="hdr-meta"></div>
+</header>
+<main>
+  <input id="filter" type="text" placeholder="Filter by ECU, bus, or message name…">
+
+  <div class="panel">
+    <h2>Topology</h2>
+    <div class="legend" id="legend"></div>
+    <svg id="diagram" width="100%" height="420"></svg>
+    <div class="hint">Click a bus line to highlight its connected ECUs and jump to its messages below.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Buses</h2>
+    <table id="bus-table">
+      <thead><tr><th>Bus</th><th>Protocol</th><th>Bitrate</th><th>Address scheme</th><th>Physical layer</th><th>Termination</th><th>Load target</th><th>Nodes</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Messages</h2>
+    <table id="msg-table">
+      <thead><tr><th>Message</th><th>Bus</th><th>CAN ID</th><th>Format</th><th>DLC</th><th>Cycle (ms)</th><th>Producer</th><th>Consumers</th><th>Signals</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+/* Placeholder data generator: only used when this template is opened
+   directly, before the doc-generator script has injected real DATA. */
+function generateTemplateData({ ecuCount = 6 } = {}) {
+  const nodes = [];
+  for (let i = 0; i < ecuCount; i++) {
+    nodes.push({ id: `ECU_${i+1}`, name: `ECU_${i+1}`, shortName: `ECU_${i+1}`, type: "ecu",
+                 row: i % 2 === 0 ? "top" : "bottom", domain: "Network",
+                 diagnosticAddress: `0x7${String(10+i).padStart(2,"0")}`,
+                 description: "Controller", role: "network participant", status: "active" });
+  }
+  const buses = [
+    { id: "CAN_PT", name: "CAN Powertrain", protocol: "CAN FD", bitrate: "500 kbit/s / 2 Mbit/s",
+      addressScheme: "29-bit CAN ID", physicalLayer: "ISO 11898-2", termination: "120 Ω at both ends",
+      loadTarget: "< 40%", color: "#2563eb" }
+  ];
+  const connections = nodes.map((n, i) => ({
+    id: `C_${n.id}`, nodeId: n.id, busId: "CAN_PT", connectorId: `CONN_${n.id}`,
+    port: "CAN_PT_PORT", pins: "CAN_H/CAN_L", role: "node", stubLengthCm: 18, shielding: "twisted pair"
+  }));
+  const messages = nodes.map((n, i) => ({
+    id: `MSG_${n.id}_STATUS`, busId: "CAN_PT", name: `${n.id}_Status`,
+    canId: `0x${(0x180+i).toString(16).toUpperCase()}`, idFormat: "11-bit", dlc: 8, cycleMs: 50,
+    producerNodeId: n.id, consumerNodeIds: nodes.filter(o=>o.id!==n.id).map(o=>o.id).slice(0,2),
+    txSoftwareComponentId: `SWC_${n.id}_COM`, rxSoftwareComponentIds: [], signals: [`${n.id}_Alive`], status: "active"
+  }));
+  return { meta: { project: "Preview", revision: "v0", generatedFrom: "placeholder", nodeCount: nodes.length },
+           nodes, buses, connectors: [], connections, messages, softwareComponents: [], softwareFlows: [] };
+}
+
+let DATA = generateTemplateData({ ecuCount: 8 });
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function render() {
+  const d = DATA;
+  document.getElementById("hdr-meta").textContent =
+    `${d.meta.project} · rev ${d.meta.revision} · ${d.meta.nodeCount} node(s) · from ${d.meta.generatedFrom}`;
+
+  // Legend
+  const legend = document.getElementById("legend");
+  legend.innerHTML = d.buses.map(b =>
+    `<span><span class="sw" style="background:${esc(b.color)}"></span>${esc(b.name)} (${esc(b.protocol)})</span>`
+  ).join("");
+
+  // Diagram: ECUs across two rows, buses as horizontal lanes, stubs connecting them.
+  const svg = document.getElementById("diagram");
+  const W = Math.max(900, (d.nodes.length + 1) * 130);
+  svg.setAttribute("viewBox", `0 0 ${W} 420`);
+  const topNodes = d.nodes.filter(n => n.row !== "bottom");
+  const botNodes = d.nodes.filter(n => n.row === "bottom");
+  const nodeX = {};
+  const layoutRow = (list, y) => {
+    const step = W / (list.length + 1);
+    list.forEach((n, i) => { nodeX[n.id] = { x: (i + 1) * step, y }; });
+  };
+  layoutRow(topNodes, 70);
+  layoutRow(botNodes, 350);
+
+  const busY = {};
+  d.buses.forEach((b, i) => { busY[b.id] = 140 + i * 40; });
+
+  let svgParts = [];
+
+  // bus lines
+  d.buses.forEach(b => {
+    const y = busY[b.id];
+    svgParts.push(`<line class="bus-line" data-bus="${esc(b.id)}" x1="20" y1="${y}" x2="${W-20}" y2="${y}" stroke="${esc(b.color)}"/>`);
+    svgParts.push(`<text class="bus-label" x="24" y="${y-8}" fill="${esc(b.color)}">${esc(b.name)}</text>`);
+  });
+
+  // stubs from nodes to their buses
+  (d.connections || []).forEach(c => {
+    const pos = nodeX[c.nodeId];
+    const y = busY[c.busId];
+    if (!pos || y === undefined) return;
+    const y2 = pos.y > y ? pos.y - 26 : pos.y + 26;
+    svgParts.push(`<line class="stub" data-bus="${esc(c.busId)}" x1="${pos.x}" y1="${y2}" x2="${pos.x}" y2="${y}"/>`);
+  });
+
+  // node boxes
+  d.nodes.forEach(n => {
+    const pos = nodeX[n.id];
+    if (!pos) return;
+    svgParts.push(`<g class="node" data-node="${esc(n.id)}">
+      <rect class="node-box" x="${pos.x-48}" y="${pos.y-22}" width="96" height="44"/>
+      <text class="node-label" x="${pos.x}" y="${pos.y-2}" text-anchor="middle">${esc(n.shortName || n.name)}</text>
+      <text class="node-sub" x="${pos.x}" y="${pos.y+14}" text-anchor="middle">${esc(n.diagnosticAddress || "")}</text>
+    </g>`);
+  });
+
+  svg.innerHTML = svgParts.join("");
+
+  // bus click -> highlight
+  svg.querySelectorAll(".bus-line").forEach(el => {
+    el.addEventListener("click", () => {
+      const busId = el.getAttribute("data-bus");
+      svg.querySelectorAll(".stub").forEach(s => s.classList.toggle("active", s.getAttribute("data-bus") === busId));
+      document.getElementById("filter").value = "";
+      filterAll("");
+      document.querySelectorAll("#msg-table tbody tr").forEach(tr => {
+        tr.classList.toggle("hidden", tr.getAttribute("data-bus") !== busId);
+      });
+    });
+  });
+
+  // Bus table
+  const busBody = document.querySelector("#bus-table tbody");
+  busBody.innerHTML = d.buses.map(b => {
+    const nodeCount = (d.connections || []).filter(c => c.busId === b.id).length;
+    return `<tr data-name="${esc((b.name+' '+b.protocol).toLowerCase())}">
+      <td><span class="sw" style="background:${esc(b.color)};display:inline-block;width:10px;height:10px;border-radius:2px;"></span> ${esc(b.name)}</td>
+      <td>${esc(b.protocol)}</td><td>${esc(b.bitrate)}</td><td>${esc(b.addressScheme)}</td>
+      <td>${esc(b.physicalLayer)}</td><td>${esc(b.termination)}</td><td>${esc(b.loadTarget)}</td>
+      <td>${nodeCount}</td></tr>`;
+  }).join("");
+
+  // Message table
+  const msgBody = document.querySelector("#msg-table tbody");
+  msgBody.innerHTML = (d.messages || []).map(m => `<tr data-bus="${esc(m.busId)}" data-name="${esc((m.name+' '+m.producerNodeId).toLowerCase())}">
+      <td>${esc(m.name)}</td><td>${esc(m.busId)}</td><td><code>${esc(m.canId)}</code></td>
+      <td>${esc(m.idFormat)}</td><td>${esc(m.dlc)}</td><td>${esc(m.cycleMs)}</td>
+      <td>${esc(m.producerNodeId)}</td><td>${esc((m.consumerNodeIds||[]).join(", "))}</td>
+      <td>${esc((m.signals||[]).join(", "))}</td></tr>`).join("");
+}
+
+function filterAll(q) {
+  q = q.trim().toLowerCase();
+  document.querySelectorAll("#bus-table tbody tr, #msg-table tbody tr").forEach(tr => {
+    const hay = tr.getAttribute("data-name") || "";
+    tr.classList.toggle("hidden", q !== "" && !hay.includes(q));
+  });
+}
+
+document.getElementById("filter").addEventListener("input", e => filterAll(e.target.value));
+
+render();
+</script>
+</body>
+</html>
