@@ -81,6 +81,51 @@ void join_path(char *out, size_t out_size, const char *a, const char *b)
  * Bulk-import helpers
  * ------------------------------------------------------------------------- */
 
+/* When the same ECU preset file is instantiated more than once (e.g. two
+ * zone-specific AEC_LARGE_3CAN ECUs), every instance inherits the exact same
+ * default CAN addresses baked into that preset's JSON. Left alone, that is a
+ * genuine network conflict (rule V1: no two ECUs anywhere in the architecture
+ * may share a CAN node address, since diagnostic/UDS addressing is scoped to
+ * the whole vehicle network even across a gateway), not a false positive.
+ *
+ * For every repeat use of a preset, shift its addresses by a fixed offset per
+ * repetition and, if that still collides with any ECU imported so far, keep
+ * probing forward until a free byte is found. The first use of a preset is
+ * left untouched so single-instance ECUs keep their documented addresses. */
+static void remap_duplicate_can_addresses(EEC_Ecu_t *ecu, unsigned int repetition,
+                                          EEC_Ecu_t *const *prior_ecus, unsigned int prior_count)
+{
+    uint8_t i;
+
+    if (!ecu || repetition == 0U) {
+        return;
+    }
+
+    for (i = 0U; i < ecu->can_address_count; ++i) {
+        unsigned int offset = 0x20U * repetition;
+        unsigned int candidate = ((unsigned int)ecu->can_addresses[i] + offset) & 0xFFU;
+        unsigned int tries;
+
+        for (tries = 0U; tries < 0x100U; ++tries) {
+            bool taken = false;
+            unsigned int p;
+            for (p = 0U; p < prior_count && !taken; ++p) {
+                if (EEC_Ecu_HasCanAddress(prior_ecus[p], (uint8_t)candidate)) {
+                    taken = true;
+                }
+            }
+            if (!taken) {
+                break;
+            }
+            candidate = (candidate + 1U) & 0xFFU;
+        }
+
+        printf("[INFO]   remapped duplicate-preset CAN address 0x%02X -> 0x%02X on %s (repetition #%u of its preset)\n",
+               ecu->can_addresses[i], (uint8_t)candidate, ecu->name, repetition);
+        ecu->can_addresses[i] = (uint8_t)candidate;
+    }
+}
+
 unsigned int import_library_ecus(EEC_Architecture_t       *arch,
                                  const LibraryEcuImport_t *ecu_imports,
                                  size_t                    ecu_import_count,
@@ -95,7 +140,9 @@ unsigned int import_library_ecus(EEC_Architecture_t       *arch,
     }
 
     for (i = 0U; i < ecu_import_count && imported < ecu_capacity; ++i) {
-        EEC_Ecu_t *ecu;
+        EEC_Ecu_t   *ecu;
+        unsigned int repetition = 0U;
+        size_t       j;
 
         if (!path_exists(ecu_imports[i].path)) {
             fprintf(stderr, "[WARN] ECU file not found: %s\n", ecu_imports[i].path);
@@ -107,6 +154,13 @@ unsigned int import_library_ecus(EEC_Architecture_t       *arch,
             fprintf(stderr, "[WARN] Failed to import ECU: %s\n", ecu_imports[i].path);
             continue;
         }
+
+        for (j = 0U; j < i; ++j) {
+            if (strcmp(ecu_imports[j].path, ecu_imports[i].path) == 0) {
+                ++repetition;
+            }
+        }
+        remap_duplicate_can_addresses(ecu, repetition, ecus, imported);
 
         ecus[imported++] = ecu;
         printf("[OK] Imported ECU: %s  →  %s\n",

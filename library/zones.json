@@ -17,7 +17,7 @@
     },
     {
       "name": "Rear",
-      "ecus": ["AEC_REAR_HITCH_01", "AEC_TRAILER_01"],
+      "ecus": ["AEC_REAR_HITCH_01", "AEC_TRAILER_01", "VALIDATION_IO_ECU"],
       "systems": [
         "Rear_Hydraulic_Hitch_System",
         "HYDAC_Selected_Sensor_Examples",
