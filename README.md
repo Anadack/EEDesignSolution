@@ -42,7 +42,7 @@ At the centre is a **C11 application** that:
 - Runs **smart auto-mapping** — assigns device signals to physical ECU pins based on interface type, role, electrical requirements, and safety class
 - Executes **23 architectural verification rules** (V1–V13, B1–B9, P1), plus zone integrity (Z1–Z3) and DBC-level checks (D1–D8) and produces a PASS/WARN/FAIL report
 - Exports **architecture JSON** snapshots (logical + physical), estimation results, and text reports
-- Feeds a **Python documentation pipeline** of 44 HTML generators covering bus diagrams, signal dictionaries, IO needs matrices, DFD data-flow diagrams, harness books, safety traces, change impact reports, and more
+- Feeds a **Python documentation pipeline** of 17 HTML generators covering bus diagrams, signal dictionaries, IO needs matrices, DFD data-flow diagrams, harness books, safety traces, change impact reports, and more
 
 Every output is **generated from data** — no manual HTML editing. Change a system definition, rebuild, and all documents update automatically.
 
@@ -82,7 +82,7 @@ Every output is **generated from data** — no manual HTML editing. Change a sys
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │             Python Documentation Suite (tools/scripts/)             │
-│  44 generators sharing a common dark-theme CSS + SVG icon system   │
+│  17 generators sharing a common dark-theme CSS + SVG icon system   │
 │  bus diagram · signal dictionary · IO needs matrix · DFD L0/L1 ·   │
 │  harness connector book · safety trace · change impact · wiring …  │
 └─────────────────────────────────────────────────────────────────────┘
@@ -95,7 +95,7 @@ Every output is **generated from data** — no manual HTML editing. Change a sys
 | Core engine | C11, no external deps | Deterministic, zero-install, embeddable in CI |
 | Library format | JSON | Human-readable, diff-friendly, tool-agnostic |
 | Documentation | Python 3.11 + HTML | Single-file outputs; run in any browser, no server |
-| CSS theme | CSS custom properties | One `base_css()` call propagates to all 44 documents |
+| CSS theme | CSS custom properties | One `base_css()` call propagates to all 17 documents |
 | Icons | Inline SVG | ECU, sensor, actuator, CAN, LIN, ETH icons at any DPI |
 | Bus topology | `arch["buses"]` array | Named buses + ECU node lists are the authoritative source; pin counts are never used to infer bus connectivity |
 
@@ -141,11 +141,12 @@ Builds and runs every hermetic test in `qa/` against the real engine (no mocks):
 ### Generate documentation
 
 ```bash
-# all architecture HTML documents (44 files)
+# all architecture HTML documents (17 files; 31 distinct generator scripts exist in
+# tools/scripts/ in total — see "Documentation & Report Suite" below)
 python tools/scripts/generate_all_architecture_docs.py --root .
 
 # or a single document
-python tools/scripts/generate_system_overview_html.py --root . --outdir generated_doc/architecture_html
+python tools/scripts/generate_architecture_tree_html.py --root . --outdir generated_doc/architecture_html
 ```
 
 ### Create a release package
@@ -286,11 +287,12 @@ The **Signal Dictionary** (`generated_doc/architecture_html/signal_dictionary.ht
 
 ### Safety traceability
 
-`generate_safety_concept_trace_html.py` produces a dedicated safety trace:
+Safety-relevant traceability data is already produced by the verification engine (`verify_report.txt`, [Section 6](#6-pre-validation-engine--23-checks)):
 - All signals classified AgPL_A–E (ISO 25119 agricultural machinery safety levels)
-- Diagnostic coverage per safety-relevant signal
 - Signals that are safety-relevant but lack diagnostics (V13 violations flagged)
 - Ground class isolation evidence (V12)
+
+A dedicated, standalone safety-trace HTML report (diagnostic coverage per safety-relevant signal, rendered as its own document rather than mixed into the verification text report) is not yet implemented — see *Next Possible Improvements*.
 
 ### Requirements traceability
 
@@ -511,7 +513,7 @@ A comprehensive **HTML reference** (`docs/doc_mapping_EE_ArchitectDesign.html`) 
 
 ### IO Needs Matrix
 
-`system_overview.html` provides an **IO Needs Matrix** showing exact resource consumption per ECU:
+`architecture_allocation_matrix.html` (from `generate_architecture_allocation_matrix_html.py`) provides an **IO Needs Matrix** showing exact resource consumption per ECU:
 
 | ECU | Variant | ANALOG | DIGITAL | PWM | SENT | CAN | LIN | ISOBUS |
 |---|---|---|---|---|---|---|---|---|
@@ -547,18 +549,9 @@ The estimation HTML shows the recommended ECU mix with per-interface utilisation
 
 ## 8. Architecture Comparison & Change Impact
 
-`generate_change_impact_report_html.py` compares two architecture JSON exports — typically the baseline vs. the feature branch — and produces a structured HTML diff:
+**Not yet implemented** — no `generate_change_impact_report_html.py` or equivalent exists in `tools/scripts/` today. The building blocks are already in place, though: `exported_architecture.json` is committed to git on every build ([Section 5](#5-traceability)), so `git diff` between two commits already gives a raw, machine-readable change record, and a dedicated tool could turn that into the structured report below without needing any new data-model fields:
 
-```bash
-python tools/scripts/generate_change_impact_report_html.py \
-  --baseline generated_doc/exports/baseline_v2_0.json \
-  --input    generated_doc/exports/exported_architecture.json \
-  --outdir   generated_doc/architecture_html
-```
-
-The report shows:
-
-| Category | What is flagged |
+| Category | What would be flagged |
 |---|---|
 | **Systems** | Added / removed functional domains |
 | **ECUs** | Added / removed controllers |
@@ -568,7 +561,7 @@ The report shows:
 | **Safety level changes** | QM → AgPL_B (triggers re-verification requirement) |
 | **Bus topology** | New bus added, node removed, bitrate changed |
 
-This makes iterative architecture refinement safe: commit the baseline, run the change, compare. The diff is a formal record for peer review and design approval.
+Building this generator (baseline JSON vs. current JSON → structured HTML diff) is listed in *Next Possible Improvements*.
 
 ---
 
@@ -597,8 +590,8 @@ gcc -std=c11 -Wall -Wextra -pedantic -Werror -O2 -Iinc src/*.c -o app -lm
 # 4. gate on verification status
 grep "STATUS: OK" generated_doc/exports/verify_report.txt || exit 1
 
-# 5. generate documentation (all 44 generators; --strict fails the build on
-#    any skip too)
+# 5. generate documentation (the 17-script main pipeline; --strict fails the
+#    build on any skip too)
 python tools/scripts/generate_all_architecture_docs.py --root . --strict
 
 # 6. package release
@@ -620,61 +613,58 @@ This name propagates into every HTML document's hero section, the JSON header, t
 
 ## 10. Documentation & Report Suite
 
-All 44 documents share the same dark design theme, CSS token system (`--bg`, `--surface0–4`, `--border0–2`, `--cyan`, `--green`, `--amber`, `--red`), SVG icon set (ECU chip, sensor, actuator, CAN, LIN, Ethernet, ISOBUS), and sortable/filterable table component.
+`generate_all_architecture_docs.py` (the command in [Section 3](#3-getting-started) and the CI gate) orchestrates 17 generator scripts end to end and is the one `--strict`-gated in CI. `tools/scripts/` holds 31 distinct `generate_*.py` scripts in total; the other 14 (bus/topology/console/pinout/signal-dictionary/naming-convention views, plus 6 `generate_main_*.py` convenience wrappers that build+run the demo before delegating to their `generate_architecture_*.py` counterpart) are run standalone or via the older, partially-overlapping `generate_all_reports.py` (11 scripts) — not yet folded into the single `--strict` pipeline. All of them share the same dark design theme, CSS token system (`--bg`, `--surface0–4`, `--border0–2`, `--cyan`, `--green`, `--amber`, `--red`), SVG icon set (ECU chip, sensor, actuator, CAN, LIN, Ethernet, ISOBUS), and sortable/filterable table component.
 
 ### System-level views
 
-| Document | What it shows |
-|---|---|
-| **System Overview** | ECU catalogue with icons, IO needs matrix, bus network (from `buses[]`), device catalogue, signal distribution — all in one page |
-| **Bus Diagram** | Named buses from `buses[]` with ECU nodes, bitrate, signal count; never inferred from pin counts |
-| **Bus Backbone** | Visual backbone with ECU cards connected to named bus lanes; JS-drawn connection lines |
-| **Architecture Topology** | ECU-to-ECU connectivity graph |
-| **Architecture Tree** | Full hierarchical object tree (system → device → pin → signal) |
-| **Logical Architecture** | Functional domain groupings |
-| **Allocation Matrix** | Signal × ECU-pin allocation grid |
-| **Wiring Diagram** | Pin-level wiring connections |
+| Document | Generator | What it shows |
+|---|---|---|
+| **Architecture Console** | `generate_architecture_console_html.py` | Navigable index linking every other document, grouped by workspace |
+| **Bus Diagram** | `generate_architecture_bus_diagram_html.py` | Named buses from `buses[]` with ECU nodes, bitrate, signal count; never inferred from pin counts |
+| **Bus Backbone** | `generate_network_bus_backbone_html.py` | Visual backbone with ECU cards connected to named bus lanes; JS-drawn connection lines |
+| **Architecture Topology** | `generate_architecture_topology_html.py` | ECU-to-ECU connectivity graph |
+| **Architecture Tree** | `generate_architecture_tree_html.py` | Full hierarchical object tree (system → device → pin → signal) |
+| **Logical Architecture** | `generate_logical_architecture_html.py` | Functional domain groupings |
+| **Allocation Matrix** | `generate_architecture_allocation_matrix_html.py` | Signal × ECU-pin allocation grid (the IO Needs Matrix, [Section 7](#7-io-needs--ecu-estimation)) |
+| **Wiring Diagram** | `generate_architecture_wiring_html.py` | Pin-level wiring connections |
 
 ### Signal & data flow views
 
-| Document | What it shows |
-|---|---|
-| **Signal Flow** | Signal paths from device pin to ECU pin |
-| **Signal Flow v2** | Enhanced with interface-type filtering |
-| **Signal Dictionary** | Complete catalogue: signal, system, device, interface, unit, range, safety, ECU, pin |
-| **DFD Level 0** | Tractor context diagram — external entities ↔ E/E architecture ↔ ECUs with sensor/actuator icons |
-| **DFD Level 1** | Per-system: sensors (with icons) → system logic → ECUs (with icons) → actuators (with icons) |
-| **Communication Matrix** | Which ECUs exchange which signals over which bus |
+| Document | Generator | What it shows |
+|---|---|---|
+| **Signal Flow** | `generate_signal_flow_html.py` | Signal paths from device pin to ECU pin |
+| **Signal Flow v2** | `generate_architecture_signal_flow_v2_html.py` | Enhanced with interface-type filtering |
+| **Signal Dictionary** | `generate_signal_dictionary_enhanced.py` | Complete catalogue: signal, system, device, interface, unit, range, safety, ECU, pin |
+| **Dataflow Diagram** | `generate_dataflow_system_diagram_html.py` | Per-system: sensors → system logic → ECUs → actuators, with icons |
+| **ECU Dataflow** | `generate_ecu_dataflow_diagram_html.py` / `generate_ecu_dataflow_from_json_html.py` | Per-ECU signal dataflow view |
 
 ### Hardware & harness views
 
-| Document | What it shows |
-|---|---|
-| **ECU Pinout (per ECU)** | Full connector pinout for each controller |
-| **Library ECU Pinouts** | Pinout reference for all library ECU variants |
-| **Architecture Pinouts** | All ECU pinouts stacked in one view |
-| **Harness Connector Book** | Connector-by-connector harness documentation |
-| **Wiring Netlist** | Net-level from/to list per signal |
-| **Power Distribution** | Supply rail architecture and current budgets |
-| **Grounding Architecture** | Ground class topology and isolation |
+| Document | Generator | What it shows |
+|---|---|---|
+| **ECU Pinout (per ECU)** | `generate_architecture_html_pinout.py` | Full connector pinout for each controller |
+| **Library ECU Pinouts** | `generate_library_ecu_pinout_html.py` / `generate_library_ecu_pinout_single.py` | Pinout reference for all library ECU variants |
+| **ECU Pinouts Stacked** | `generate_ecu_pinouts_stacked_html.py` | All ECU pinouts stacked in one view |
+| **ECU Config Validation** | `generate_ecu_v3_config_validation_html.py` | Per-ECU pinout with function badges, wiring-schema inspector, and a cross-reference validation pass |
+| **Connection Schematic / Connector View** | `generate_connection_schematic_html.py` / `generate_connector_view_html.py` | Point-to-point and per-connector wiring views |
+| **Multi-ECU Wiring** | `generate_professional_multi_ecu_wiring_html.py` | Multi-controller wiring overview |
 
 ### Quality & safety views
 
-| Document | What it shows |
-|---|---|
-| **Safety Concept Trace** | AgPL signal coverage, diagnostic mapping, V13 violations (ISO 25119 agricultural machinery safety) |
-| **Diagnostics Matrix** | OBD/DTC coverage per signal and ECU pin |
-| **Completeness Report** | Unmapped signals, incomplete pins, quality gaps |
-| **Verification Report** | 23-rule pass/fail/warn (text file + embedded in overview) |
+| Document | Generator | What it shows |
+|---|---|---|
+| **Completeness Report** | `generate_architecture_completeness_report_html.py` | Unmapped signals, incomplete pins, quality gaps |
+| **Naming Convention Report** | `generate_signal_naming_convention_html.py` | Signal naming-convention compliance |
+| **Verification Report** | (`EEC_Verify_architecture`, not a Python generator) | 23-rule pass/fail/warn as text (`verify_report.txt`) — the source of truth for AgPL/V12/V13 safety coverage and P1 power budget ([Section 6](#6-pre-validation-engine--23-checks)) |
 
 ### Project & change views
 
-| Document | What it shows |
-|---|---|
-| **Change Impact Report** | Diff between two architecture snapshots |
-| **Architecture Estimation** | ECU sizing recommendations and BOM comparison |
-| **Variant Option Matrix** | Feature/option combinations vs. ECU fit |
-| **Documentation Index** | Master index linking all generated documents |
+| Document | Generator | What it shows |
+|---|---|---|
+| **Architecture Estimation** | `generate_estimation_html.py` | ECU sizing recommendations and BOM comparison |
+| **Documentation Index** | `generate_full_architecture_documentation_index.py` | Master index linking all generated documents |
+
+**Not yet built** (concepts only — see *Next Possible Improvements*): a dedicated Change Impact Report (diff between two architecture snapshots — today done via `git diff` on the JSON export, [Section 8](#8-architecture-comparison--change-impact)), a Harness Connector Book and Wiring Netlist (connector/net-level harness documentation), a Communication Matrix (which ECUs exchange which signals over which bus), a Safety Concept Trace and Diagnostics Matrix as their own documents (the underlying AgPL/diagnostic data is already in `verify_report.txt`), Power Distribution and Grounding Architecture views (the underlying checks are rules P1 and V12), and a Variant Option Matrix (feature/option combinations vs. ECU fit).
 
 ---
 
@@ -699,6 +689,8 @@ git diff main..HEAD -- generated_doc/exports/exported_architecture.json
 
 ### Baseline / delta workflow
 
+Until a dedicated change-impact HTML report exists ([Section 8](#8-architecture-comparison--change-impact)), the same review is done with git directly:
+
 ```bash
 # 1. Save a baseline before starting a change
 cp generated_doc/exports/exported_architecture.json generated_doc/exports/baseline_v2_0.json
@@ -706,11 +698,8 @@ cp generated_doc/exports/exported_architecture.json generated_doc/exports/baseli
 # 2. Make changes in main.c / library JSONs, rebuild
 ./app
 
-# 3. Generate change impact report
-python tools/scripts/generate_change_impact_report_html.py \
-  --baseline generated_doc/exports/baseline_v2_0.json --root . --outdir generated_doc/architecture_html
-
-# 4. Review change_impact_report.html before merging
+# 3. Review the diff before merging
+git diff --no-index generated_doc/exports/baseline_v2_0.json generated_doc/exports/exported_architecture.json
 ```
 
 ---
@@ -741,11 +730,11 @@ Every commit that touches `main.c` or any library JSON runs this gate. A previou
 
 ### Architecture-level change tracking
 
-The **Change Impact Report** serves as a permanent record of what changed between any two builds. Combined with git commit history, it provides a full audit trail:
+The committed JSON exports, combined with git commit history, already provide a full audit trail of what changed between any two builds (a dedicated change-impact HTML report is not yet built — see [Section 8](#8-architecture-comparison--change-impact)):
 
 - *Who* changed the architecture (git author)
 - *When* (git timestamp)
-- *What* changed (change_impact_report.html diff)
+- *What* changed (`git diff` on `exported_architecture.json`)
 - *Why it's valid* (verify_report.txt STATUS: OK)
 
 ---
@@ -758,12 +747,12 @@ Every generated HTML is a **self-contained single file** — open in any browser
 
 | Audience | Documents |
 |---|---|
-| Wiring / harness engineers | `harness_connector_book.html` · `wiring_netlist.html` · `architecture_wiring_diagram.html` |
-| Safety engineers | `safety_concept_trace.html` · `diagnostics_matrix.html` · `verify_report.txt` |
-| System / SW engineers | `signal_dictionary.html` · `communication_matrix.html` · `dataflow_*.html` |
-| ECU software teams | `allocation_matrix.html` · `architecture_bus_diagram.html` · pinout HTML files |
+| Wiring / harness engineers | `architecture_wiring_diagram.html` · `professional_multi_ecu_wiring.html` · `connector_view.html` · per-ECU pinout HTML files |
+| Safety engineers | `verify_report.txt` (AgPL/V12/V13 coverage, [Section 5](#5-traceability)) · `architecture_completeness_report.html` |
+| System / SW engineers | `signal_dictionary.html` · `network_bus_backbone.html` · `dataflow_system_diagram.html` |
+| ECU software teams | `architecture_allocation_matrix.html` · `architecture_bus_diagram.html` · pinout HTML files |
 | Procurement | `architecture_estimation.html` (BOM sizing) |
-| Project leads / reviews | `system_overview.html` · `change_impact_report.html` |
+| Project leads / reviews | `architecture_documentation_index.html` · `architecture_completeness_report.html` |
 
 ### Polarion integration
 
@@ -834,7 +823,7 @@ Traditional E/E architecture work is done in spreadsheets, PowerPoint, and propr
 | **Requirements integration** | Structured requirements pushed to Polarion with a single script |
 | **Version history** | Git diffs on deterministic JSON exports give exact, auditable architecture history |
 | **Bug tracking** | 23 rules as a non-regression CI gate; failures identify the exact rule, signal, ECU, and pin |
-| **Documentation at no cost** | 44 HTML documents auto-generated on every build — no manual authoring, no stale docs |
+| **Documentation at no cost** | 17 HTML documents auto-generated on every build — no manual authoring, no stale docs |
 
 ### Architecture maturity levels this framework supports
 
@@ -858,16 +847,16 @@ Traditional E/E architecture work is done in spreadsheets, PowerPoint, and propr
    → grep "STATUS: OK" generated_doc/exports/verify_report.txt
 
 3. Review impact:
-   → python tools/scripts/generate_change_impact_report_html.py --baseline …
-   → Open system_overview.html — IO needs changed? Bus load increased?
+   → git diff the exported architecture JSON against a saved baseline (Section 8)
+   → Open architecture_tree.html / architecture_allocation_matrix.html — IO needs changed? Bus load increased?
 
 4. Generate full documentation:
    → python tools/scripts/generate_all_architecture_docs.py --root .
 
 5. Distribute:
-   → harness_connector_book.html → wiring team
+   → architecture_wiring_diagram.html → wiring team
    → signal_dictionary.html → SW teams
-   → safety_concept_trace.html → safety engineer
+   → verify_report.txt → safety engineer
 
 6. Release:
    → python tools/scripts/package_release.py --tag v2.1.0
@@ -903,15 +892,14 @@ EE_Architect_Design/
 │       ├── eec_archdoc_common.py  CSS theme, SVG icons, bus helpers, table/pill utilities
 │       ├── eec_report_common.py   Shared helpers for the architecture-report suite
 │       ├── eec_json_common.py     Shared JSON contract / workspace discovery helpers
-│       ├── generate_system_overview_html.py       All-in-one overview
+│       ├── generate_architecture_tree_html.py     All-in-one object tree overview
 │       ├── generate_architecture_bus_diagram_html.py  Bus topology from buses[]
-│       ├── generate_signal_dictionary_html.py     Signal catalogue + CSV
-│       ├── generate_dataflow_context_diagram_html.py  DFD Level 0
-│       ├── generate_dataflow_system_diagram_html.py   DFD Level 1
-│       ├── generate_change_impact_report_html.py  Architecture diff
-│       ├── generate_safety_concept_trace_html.py  Safety traceability
-│       ├── generate_communication_matrix_html.py  Bus signal matrix
-│       ├── generate_harness_connector_book_html.py  Connector-level harness docs
+│       ├── generate_signal_dictionary_enhanced.py Signal catalogue + CSV
+│       ├── generate_network_bus_backbone_html.py  System-level bus/node topology
+│       ├── generate_dataflow_system_diagram_html.py   DFD-style system dataflow
+│       ├── generate_estimation_html.py            ECU sizing / IO needs report
+│       ├── generate_ecu_v3_config_validation_html.py  Per-ECU pinout + cross-reference validation
+│       ├── generate_signal_naming_convention_html.py  Naming-convention compliance report
 │       ├── generate_system_configuration_viewer_html.py  Standalone config/IO viewer
 │       ├── generate_all_architecture_docs.py      Master orchestrator (doc suite)
 │       ├── generate_all_reports.py                Master orchestrator (report suite)
@@ -931,9 +919,9 @@ EE_Architect_Design/
 │   │   ├── pin_allocation_report.txt
 │   │   └── *.html               Allocation matrix, bus diagrams, pinouts, signal flow…
 │   ├── architecture_html/       Documentation-suite HTML
-│   │   ├── system_overview.html
+│   │   ├── architecture_tree.html
 │   │   ├── signal_dictionary.html
-│   │   └── *.html               DFD, safety trace, harness book, change impact…
+│   │   └── *.html               Bus backbone, dataflow, pinouts, naming-convention report…
 │   └── system_viewer/           Standalone system configuration viewer
 │       ├── index.html
 │       ├── system_io_matrix.csv
@@ -1038,7 +1026,7 @@ EE_Architect_Design/
 | **Multi-Architecture Workspace** | Load/compare 5–10 architecture variants in parallel | Support platform derivative analysis |
 | **Incremental Build** | Only regenerate changed signals/systems, skip unchanged exports | Faster iteration on large architectures |
 | **Streaming JSON Parser** | Handle 100K+ signal architectures without full memory load | Support massive platform architectures (e.g., heavy-duty trucks) |
-| **Parallel Report Generation** | Run 44 generators concurrently on multi-core systems | Reduce full-build time from 30s to 5s |
+| **Parallel Report Generation** | Run generators concurrently on multi-core systems | Reduce full-build time from 30s to 5s |
 | **Database Backend Option** | Replace JSON file storage with SQLite / PostgreSQL | Support cloud / SaaS deployment and concurrent team access |
 
 ### **User Experience & Accessibility**
