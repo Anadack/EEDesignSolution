@@ -383,7 +383,10 @@ typedef struct EEC_Message_s {
     char     name[64];                           /**< Message name (DBC BO_). */
     uint32_t frame_id;                           /**< CAN identifier (11 or 29 bit). */
     bool     is_extended;                        /**< True = 29-bit (J1939), false = 11-bit. */
-    uint32_t pgn;                                /**< J1939 PGN (0 if not applicable). */
+    uint32_t pgn;                                /**< J1939 PGN, auto-derived from frame_id by
+                                                        EEC_Swc_CreateMessage() for extended (29-bit)
+                                                        messages (see EEC_J1939_PgnFromFrameId());
+                                                        0 for standard 11-bit messages. */
     uint8_t  dlc;                                /**< Data length code in bytes. */
     EEC_ObjectPriority_t priority;               /**< Relative urgency. */
     EEC_SafetyClass_t    safety;                 /**< Safety classification. */

@@ -5,6 +5,7 @@
  * @date    2026
  */
 
+#include <stdio.h>
 #include "EEC_message.h"
 #include "EEC_log.h"
 
@@ -44,8 +45,7 @@ static void msg_copy_string(char *dest, size_t dest_size, const char *src)
         dest[0] = '\0';
         return;
     }
-    strncpy(dest, src, dest_size - 1U);
-    dest[dest_size - 1U] = '\0';
+    snprintf(dest, dest_size, "%s", src);
 }
 
 /* ── SWC lifecycle ─────────────────────────────────────────────────────── */
@@ -208,6 +208,20 @@ void EEC_System_DestroySwcs(EEC_System_t *system)
 
 /* ── Message lifecycle ─────────────────────────────────────────────────── */
 
+uint32_t EEC_J1939_PgnFromFrameId(uint32_t frame_id)
+{
+    uint32_t data_page = (frame_id >> 24) & 0x01U;
+    uint32_t pdu_format = (frame_id >> 16) & 0xFFU;
+    uint32_t pdu_specific = (frame_id >> 8) & 0xFFU;
+
+    if (pdu_format < 240U) {
+        /* PDU1 (peer-to-peer): PS is a destination address, not part of the PGN. */
+        return (data_page << 16) | (pdu_format << 8);
+    }
+    /* PDU2 (broadcast): PS is a group extension and belongs to the PGN. */
+    return (data_page << 16) | (pdu_format << 8) | pdu_specific;
+}
+
 EEC_Message_t *EEC_Swc_CreateMessage(EEC_Swc_t *swc, const char *name,
                                      uint32_t frame_id, bool is_extended, uint8_t dlc)
 {
@@ -227,6 +241,10 @@ EEC_Message_t *EEC_Swc_CreateMessage(EEC_Swc_t *swc, const char *name,
     msg->frame_id = frame_id;
     msg->is_extended = is_extended;
     msg->dlc = dlc;
+    /* Extended 29-bit identifiers in this ag/off-highway domain are J1939 PGNs
+       (see EEC_dbc.c's VFrameFormat=J1939PG export); derive it here so the
+       field is always populated and never silently stale. */
+    msg->pgn = is_extended ? EEC_J1939_PgnFromFrameId(frame_id) : 0U;
     msg->priority = EEC_PRIORITY_LOW;
     msg->safety = EEC_SAFETY_QM;
     msg->owner_swc = swc;

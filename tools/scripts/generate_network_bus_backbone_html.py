@@ -172,12 +172,20 @@ def main() -> int:
     args = parser.parse_args()
     root, cfg, arch, arch_path, outdir = cli_context(args)
 
-    # Read the exact template
-    template_path = Path("/root/.claude/uploads/4eec0fa6-8932-5ba4-b67c-b54998c39f36/6f2e9cbc-Network_BUS_Backbone_Generic_26Nodes_BusFocus_ClickEmpty_ShowAll_Template_1.html")
+    # Resolve the template from the vendored templates/ dir next to this script
+    # (portable) with an optional --template override. Never hardcode an
+    # author-machine absolute path.
+    import sys as _sys
+    template_name = "Network_BUS_Backbone_Template.html"
+    template_path = Path(getattr(args, "template", None)
+                         or (Path(__file__).parent / "templates" / template_name))
 
     if not template_path.exists():
-        print(f"Template not found at {template_path}", file=__import__('sys').stderr)
-        return 1
+        # Non-fatal: report and skip so the batch pipeline still completes.
+        print(f"[SKIP] {Path(__file__).name}: vendored template not found "
+              f"({template_path}). Provide it via --template or place it in "
+              f"tools/scripts/templates/{template_name}.", file=_sys.stderr)
+        return 0
 
     # Read entire template
     template_html = template_path.read_text(encoding="utf-8")

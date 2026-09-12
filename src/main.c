@@ -60,10 +60,12 @@
 
 /** ECU catalogue: path → instance name assigned at runtime.
  *
- * This example demonstrates a 6-ECU distributed architecture spanning
+ * This example demonstrates a 7-ECU distributed architecture spanning
  * multiple zones (cabin, powertrain, rear, validation). Some ECU templates
  * are instantiated multiple times with different names for zone-specific
- * variants (e.g., AEC_LARGE_01 and AEC_LARGE_02 in different rear zones).
+ * variants (e.g., AEC_LARGE_01 and AEC_LARGE_02 in different rear zones) —
+ * import_library_ecus() automatically remaps the CAN addresses of every
+ * repeated preset so no two ECUs collide (rule V1).
  */
 static const LibraryEcuImport_t k_ecus[] = {
     /* Cabin/Instrument zone */
@@ -78,8 +80,13 @@ static const LibraryEcuImport_t k_ecus[] = {
     { "library/ecus/AEC_LARGE_3CAN.json",    "AEC_REAR_HITCH_01"  },
     { "library/ecus/AEC_SMALL_2CAN.json",    "AEC_TRAILER_01"     },
 
-    /* Validation/Test fixtures (optional) */
-    /* { "library/ecus/VALIDATION_IO_ECU.json", "VALIDATION_IO_ECU"  }, */
+    /* Validation/Test fixtures — provides generic 4-20mA CURRENT-loop input
+     * pins. Without it, 6 analog current-loop sensors in the demo library
+     * (HYDAC HAT1200/HDA4300/ETS4100, elobau 424A/424SD11D) have no
+     * CURRENT-capable ECU pin anywhere in the architecture and are reported
+     * as unmapped (rule V5) — none of the AEC_* presets expose that
+     * interface. Zoned under "Rear" in library/zones.json. */
+    { "library/ecus/VALIDATION_IO_ECU.json", "VALIDATION_IO_ECU"  },
 };
 static const size_t k_ecu_count = sizeof(k_ecus) / sizeof(k_ecus[0]);
 
@@ -136,7 +143,7 @@ int main(void)
     char estimation_json_path[PATH_MAX];
 
     EEC_Architecture_t *arch  = NULL;
-    EEC_Ecu_t          *ecus[6];  /* Support 6 ECU instances (multi-zone) */
+    EEC_Ecu_t          *ecus[7];  /* Support 7 ECU instances (multi-zone) */
     unsigned int        ecu_count    = 0U;
     unsigned int        system_count = 0U;
     int                 mapped_total = 0;
@@ -192,7 +199,7 @@ int main(void)
      * The eec-component-1.0 schema groups individual sensor and actuator
      * catalogue files under a single component record. This example creates
      * two programmatic systems to augment the five pre-built systems from
-     * the library, demonstrating a complete 6-ECU, 7-system architecture.
+     * the library, demonstrating a complete 7-ECU, 7-system architecture.
      *
      * Object hierarchy produced per system:
      *
@@ -356,20 +363,6 @@ int main(void)
     }
     printf("[INFO] Total signals mapped: %d\n", mapped_total);
 
-    /* Zone distribution snapshot + consistency check (only when zones exist). */
-    if (arch->zone_count > 0U) {
-        char zones_json_path[PATH_MAX];
-        int zone_errors;
-        join_path(zones_json_path, sizeof(zones_json_path), exports_dir, "zones.json");
-        if (EEC_Export_zones_json(arch, zones_json_path) == 0) {
-            printf("[INFO] Zones JSON → %s\n", zones_json_path);
-        }
-        zone_errors = EEC_Verify_zones(arch, stdout);
-        if (zone_errors > 0) {
-            printf("[WARN] Zone verification: %d issue(s)\n", zone_errors);
-        }
-    }
-
     /* ------------------------------------------------------------------
      * 6. Configure communication buses
      *
@@ -382,7 +375,7 @@ int main(void)
     /* ------------------------------------------------------------------
      * 6b. Import SWC / CAN definitions from data files (fully data-driven).
      *     Bit layout and DLC are auto-derived; ECUs and buses are resolved
-     *     by name. Editing library/swc/*.json changes every CAN output.
+     *     by name. Editing library/swc/ JSON files changes every CAN output.
      * ------------------------------------------------------------------ */
     {
         size_t si;
@@ -397,6 +390,21 @@ int main(void)
             EEC_Architecture_RebuildHostedSwcs(arch);
             EEC_Architecture_RebuildBusMessages(arch);
             printf("[OK] Imported %d SWC(s) from data files\n", swc_total);
+        }
+    }
+
+    /* Zone distribution snapshot + consistency check. Runs AFTER buses are
+     * configured so the inter-zone connectivity rule (Z3) sees real topology. */
+    if (arch->zone_count > 0U) {
+        char zones_json_path[PATH_MAX];
+        int zone_errors;
+        join_path(zones_json_path, sizeof(zones_json_path), exports_dir, "zones.json");
+        if (EEC_Export_zones_json(arch, zones_json_path) == 0) {
+            printf("[INFO] Zones JSON → %s\n", zones_json_path);
+        }
+        zone_errors = EEC_Verify_zones(arch, stdout);
+        if (zone_errors > 0) {
+            printf("[WARN] Zone verification: %d issue(s)\n", zone_errors);
         }
     }
 
@@ -453,6 +461,15 @@ int main(void)
         int dbc_files = EEC_Export_dbc_all(arch, dbc_dir);
         if (dbc_files > 0) {
             printf("[INFO] DBC export → %d file(s) in %s\n", dbc_files, dbc_dir);
+        }
+        /* Report DBC-level errors (frame overflow, overlap, dup id, etc.). */
+        {
+            int dbc_errors = EEC_Dbc_Validate_all(arch, stdout);
+            if (dbc_errors > 0) {
+                printf("[WARN] DBC validation: %d error(s) — see [DBC:*] lines above\n", dbc_errors);
+            } else {
+                printf("[OK] DBC validation: no errors\n");
+            }
         }
     }
 

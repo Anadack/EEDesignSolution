@@ -1,7 +1,7 @@
 # E/E Architect Design
 
 > **A data-driven Electrical/Electronic Architecture framework for automotive and agricultural equipment.**  
-> Define systems once in JSON, auto-map to ECU hardware, validate 21 rules, estimate sizing, generate a full documentation suite — all from a single build command.
+> Define systems once in JSON, auto-map to ECU hardware, validate 23 architecture rules plus zone-integrity and DBC-level checks, estimate sizing, generate a full documentation suite — all from a single build command.
 
 ---
 
@@ -12,7 +12,7 @@
 3. [Getting Started](#3-getting-started)
 4. [Component Library & Reusability](#4-component-library--reusability)
 5. [Traceability](#5-traceability)
-6. [Pre-Validation Engine — 21 Checks](#6-pre-validation-engine--21-checks)
+6. [Pre-Validation Engine — 23 Checks](#6-pre-validation-engine--23-checks)
 7. [IO Needs & ECU Estimation](#7-io-needs--ecu-estimation)
 8. [Architecture Comparison & Change Impact](#8-architecture-comparison--change-impact)
 9. [Release Management](#9-release-management)
@@ -34,13 +34,13 @@ It spans the full architecture lifecycle:
 
 ```
 System JSON library  →  C compilation  →  Verification  →  Export  →  HTML documentation
-      (library/)           (src/ + inc/)      (21 rules)    (generated_doc/exports/)    (tools/scripts/)
+      (library/)           (src/ + inc/)      (23 rules)    (generated_doc/exports/)    (tools/scripts/)
 ```
 
 At the centre is a **C11 application** that:
 - Loads reusable **system** and **ECU** definitions from a JSON component library
 - Runs **smart auto-mapping** — assigns device signals to physical ECU pins based on interface type, role, electrical requirements, and safety class
-- Executes **21 architectural verification rules** (V1–V13, B1–B8) and produces a PASS/WARN/FAIL report
+- Executes **23 architectural verification rules** (V1–V13, B1–B9, P1), plus zone integrity (Z1–Z3) and DBC-level checks (D1–D8) and produces a PASS/WARN/FAIL report
 - Exports **architecture JSON** snapshots (logical + physical), estimation results, and text reports
 - Feeds a **Python documentation pipeline** of 44 HTML generators covering bus diagrams, signal dictionaries, IO needs matrices, DFD data-flow diagrams, harness books, safety traces, change impact reports, and more
 
@@ -63,7 +63,7 @@ Every output is **generated from data** — no manual HTML editing. Change a sys
 │  src/main.c          — orchestration, platform loading              │
 │  src/EEC_library.c   — JSON library import/export, batch signals    │
 │  src/EEC_architecture.c — auto-mapping engine, pin assignment       │
-│  src/EEC_verify.c    — 21 verification rules (V1–V13, B1–B8)       │
+│  src/EEC_verify.c    — 23 verification rules (V1–V13, B1–B9, P1)   │
 │  src/EEC_estimation.c — 7-step ECU sizing pipeline (R1–R6 rules)   │
 │  src/EEC_export.c    — JSON/text export                             │
 │  src/EEC_connect.c   — bus topology management                      │
@@ -76,7 +76,7 @@ Every output is **generated from data** — no manual HTML editing. Change a sys
 │  exported_physical_architecture.json (pin-level physical view)       │
 │  estimation_result.json              (ECU sizing recommendation)     │
 │  pin_allocation_report.txt           (per-ECU utilisation summary)  │
-│  verify_report.txt                   (21-rule verification result)  │
+│  verify_report.txt                   (23-rule verification result)  │
 └────────────────────────────┬────────────────────────────────────────┘
                              │ consumed by
                              ▼
@@ -129,6 +129,14 @@ generated_doc/exports/estimation_result.json
 generated_doc/exports/pin_allocation_report.txt
 generated_doc/exports/verify_report.txt
 ```
+
+### Run the test suite
+
+```bash
+./qa/run_tests.sh
+```
+
+Builds and runs every hermetic test in `qa/` against the real engine (no mocks): naming convention, library import/export round-trips, DBC import/export round-trip, the ES3 generic-ECU pinout import, B9 busload, the DBC validator, J1939 PGN derivation (against known real SAE J1939 frame/PGN pairs), and the P1 power-budget rule. Each test links against the full `src/EEC_*.c` set and uses only `tmpfile()` / a portable temp directory, so it runs unmodified on any machine and from CI. Naming-convention-specific tests can also be run standalone with `./qa/run_naming_tests.sh`.
 
 ### Generate documentation
 
@@ -290,9 +298,9 @@ Structured requirement files (`REQ-ID: description`) can be pushed directly to P
 
 ---
 
-## 6. Pre-Validation Engine — 21 Checks
+## 6. Pre-Validation Engine — 23 Checks
 
-Every build executes 21 architectural rules before exporting. This prevents design errors from reaching CAD tools, wiring harness design, or hardware procurement.
+Every build executes 23 architectural rules before exporting (13 signal-level + 9 bus-level + 1 power-budget), plus two independent rule families that run at export time: zone integrity (Z1–Z3, ZONAL mode only) and DBC-level validation (D1–D8, CAN/ISOBUS buses only). This prevents design errors from reaching CAD tools, wiring harness design, or hardware procurement.
 
 ### Signal-level rules (V1–V13)
 
@@ -312,7 +320,7 @@ Every build executes 21 architectural rules before exporting. This prevents desi
 | V12 | Ground class mixing | Signal GND and chassis GND mixed on the same pin group |
 | V13 | Safety signal diagnostic | AgPL_A–E rated signal has no diagnostic monitoring configured |
 
-### Bus-level rules (B1–B8)
+### Bus-level rules (B1–B9)
 
 | Rule | Name | What it catches |
 |---|---|---|
@@ -324,6 +332,44 @@ Every build executes 21 architectural rules before exporting. This prevents desi
 | B6 | Unique CAN addresses per bus | Two ECUs sharing a CAN address on the same bus |
 | B7 | Bus-type signals assigned to a bus | CAN signal declared but not assigned to any bus object |
 | B8 | Bus bitrate > 0 when nodes connected | Bus has connected ECUs but bitrate remains at 0 |
+| B9 | CAN busload within safe utilization | Worst-case periodic traffic (ISO 11898-1 stuffed-bit estimate, summed over all messages with a non-zero cycle time) exceeds a safe fraction of the bus bitrate — `WARNING` at ≥50%, `ERROR` above 80% (the practical classic-CAN ceiling). Event-driven frames (cycle time 0) are reported separately, not summed into the load |
+
+### Zone-level rules (Z1–Z3)
+
+Only evaluated when the architecture uses **ZONAL** distribution mode (`arch->mode == EEC_ARCH_MODE_ZONAL`, populated from `library/zones.json` — see `EEC_ZONES` below). Run by `EEC_Verify_zones()` after buses are configured, so the connectivity check (Z3) sees real topology.
+
+| Rule | Name | What it catches |
+|---|---|---|
+| Z1 | ECU in at most one zone | Same ECU assigned to two or more zones |
+| Z2 | Every ECU is zoned | An ECU exists in the architecture but was never assigned to any zone |
+| Z3 | Inter-zone backbone connectivity | With more than one zone, a zone has no ECU sitting on a bus shared with another zone — an **islanded zone** whose cross-zone signals cannot be routed |
+
+To exercise ZONAL mode: `EEC_ZONES=library/zones.json ./app`.
+
+### DBC-level validation (D1–D8)
+
+Runs after CAN database (`.dbc`) export, once per CAN/ISOBUS bus, via `EEC_Dbc_Validate_all()`. These catch defects that Vector CANdb+ / `cantools` would reject or that silently corrupt decoding — independent of the V/B rules above, which validate the *architecture model*, not the *exported file*.
+
+| Rule | Name | What it catches |
+|---|---|---|
+| D1 | Frame overflow | Signal bit range exceeds the message's DLC-derived frame width |
+| D2 | Signal overlap | Two signals in the same message claim overlapping bits |
+| D3 | Duplicate frame ID | Two messages on the same bus share a CAN identifier |
+| D4 | Duplicate signal name | Two signals in the same message share a name |
+| D5 | DLC out of range | Message DLC is 0 or greater than 8 (classic CAN) |
+| D6 | Zero-length signal | A signal placement has length 0 |
+| D7 | Min greater than max | Signal's engineering range has min > max |
+| D8 | Node not in `BU_` | A message's transmitter or a signal's receiver ECU is not actually a node on that bus |
+
+Output is `[DBC:<bus name>] N error(s)` per bus, printed by `./app` right after DBC export.
+
+### Power budget (P1)
+
+| Rule | Name | What it catches |
+|---|---|---|
+| P1 | Per-connector power budget | Sum of declared `nominal_current` across every device mapped onto one ECU connector exceeds that connector's aggregate current-carrying capacity, approximated as `rated_current` (A per contact) × `total_cavities` — `WARNING` at ≥80%, `ERROR` above 100% |
+
+This is a documented simplification, not a full harness power-budget analysis: a real connector's aggregate rating is usually lower than contacts × per-contact rating (thermal derating from adjacent loaded contacts), and the check has no wire-gauge, fuse, or supply-rail-topology data (one connector can carry several independent supply rails). It still catches the concrete, common defect of piling many high-current loads (coils, lamps, motors) onto one small connector. A full per-rail/fuse budget needs wire gauge and fuse-rating fields the data model does not yet have (see `README.md` → *Next Possible Improvements*).
 
 ### Verification output
 
@@ -338,11 +384,13 @@ ECUs:     4    Systems:  5    Signals:  82    Buses:  1
   [PASS] V2  All occupied pins have signals, all signals on occupied pins
   WARNING:   electrical mismatch for signal X on AEC_LARGE_01 X1/83 …
   [PASS] V5-V9  All signal mappings valid (role, electrical, pull resistor)
-  [PASS] B1-B8  All bus rules passed
+  [PASS] B1-B9  All bus rules passed
 
 SUMMARY:  4 check group(s) passed, 0 failed, 0 error(s)
 STATUS: OK
 ========================================================================
+[DBC:Tractor_Bus] 0 error(s).
+[OK] DBC validation: no errors
 ```
 
 `STATUS: OK` / `STATUS: FAIL` can be used as a CI gate.
@@ -537,21 +585,27 @@ Creates `releases/EE_Architect_Design_release_v2.1.0.zip` containing all HTML do
 ### CI gate
 
 ```bash
-# 1. build
-gcc -std=c11 -O2 -Iinc src/*.c -o app -lm
+# 1. strict build (warnings are errors)
+gcc -std=c11 -Wall -Wextra -pedantic -Werror -O2 -Iinc src/*.c -o app -lm
 
-# 2. run (generates all exports)
+# 2. hermetic unit tests (library/DBC round-trip, B9, DBC validator, …)
+./qa/run_tests.sh
+
+# 3. run (generates all exports + prints [DBC:*] validation lines)
 ./app
 
-# 3. gate on verification status
+# 4. gate on verification status
 grep "STATUS: OK" generated_doc/exports/verify_report.txt || exit 1
 
-# 4. generate documentation
-python tools/scripts/generate_all_architecture_docs.py --root .
+# 5. generate documentation (all 44 generators; --strict fails the build on
+#    any skip too)
+python tools/scripts/generate_all_architecture_docs.py --root . --strict
 
-# 5. package release
+# 6. package release
 python tools/scripts/package_release.py --tag ${GIT_TAG}
 ```
+
+A GitHub Actions workflow enforcing all of this — strict build, `qa/run_tests.sh`, an ASan/UBSan sanitizer run in both CENTRAL and ZONAL mode, DBC round-trip validation with `cantools`, the full documentation suite in `--strict` mode, and an export-reproducibility check — runs automatically on every push/PR via `.github/workflows/ci.yml`.
 
 ### Architecture naming in exports
 
@@ -611,7 +665,7 @@ All 44 documents share the same dark design theme, CSS token system (`--bg`, `--
 | **Safety Concept Trace** | AgPL signal coverage, diagnostic mapping, V13 violations (ISO 25119 agricultural machinery safety) |
 | **Diagnostics Matrix** | OBD/DTC coverage per signal and ECU pin |
 | **Completeness Report** | Unmapped signals, incomplete pins, quality gaps |
-| **Verification Report** | 21-rule pass/fail/warn (text file + embedded in overview) |
+| **Verification Report** | 23-rule pass/fail/warn (text file + embedded in overview) |
 
 ### Project & change views
 
@@ -771,7 +825,7 @@ Traditional E/E architecture work is done in spreadsheets, PowerPoint, and propr
 |---|---|
 | **Single source of truth** | All information lives in JSON; HTML is generated, never edited manually |
 | **Full traceability** | Continuous chain from system JSON → device → signal → ECU pin → bus node |
-| **Pre-validation before hardware** | 21 rules catch electrical mismatches, missing diagnostics, ground mixing, bus errors at compile time |
+| **Pre-validation before hardware** | 23 rules catch electrical mismatches, missing diagnostics, ground mixing, bus errors at compile time |
 | **Reusability** | A sensor defined once reuses across all variants; update once, all architectures update |
 | **Accurate IO needs** | Bus connections from `buses[]` (not pin counts); IO channels per physical pin — no double-counting |
 | **ECU estimation** | 7-step sizing engine with 6 design rules produces hardware recommendations in seconds |
@@ -779,7 +833,7 @@ Traditional E/E architecture work is done in spreadsheets, PowerPoint, and propr
 | **Release packaging** | One command creates a dated zip with all documents and a manifest |
 | **Requirements integration** | Structured requirements pushed to Polarion with a single script |
 | **Version history** | Git diffs on deterministic JSON exports give exact, auditable architecture history |
-| **Bug tracking** | 21 rules as a non-regression CI gate; failures identify the exact rule, signal, ECU, and pin |
+| **Bug tracking** | 23 rules as a non-regression CI gate; failures identify the exact rule, signal, ECU, and pin |
 | **Documentation at no cost** | 44 HTML documents auto-generated on every build — no manual authoring, no stale docs |
 
 ### Architecture maturity levels this framework supports
@@ -789,7 +843,7 @@ Traditional E/E architecture work is done in spreadsheets, PowerPoint, and propr
 | **Concept** | System list, IO demand sizing | `generate_estimation_html.py`, IO needs matrix |
 | **Preliminary** | ECU assignment, bus topology | Auto-mapping, bus diagram, allocation matrix |
 | **Detailed** | Pin-level harness design | Connector book, wiring netlist, pinout HTML |
-| **Validated** | Compliance check | 21 verification rules, safety trace, diagnostics matrix |
+| **Validated** | Compliance check | 23 verification rules, safety trace, diagnostics matrix |
 | **Released** | Formal deliverable | Release package, Polarion push, change impact record |
 
 ### How a Solution Architect uses it day to day
@@ -830,7 +884,7 @@ EE_Architect_Design/
 ├── src/                         C11 core application
 │   ├── main.c                   Platform setup, ECU/system loading, orchestration
 │   ├── EEC_architecture.c       Auto-mapping engine, pin assignment logic
-│   ├── EEC_verify.c             21 verification rules (V1–V13, B1–B8)
+│   ├── EEC_verify.c             23 verification rules (V1–V13, B1–B9, P1)
 │   ├── EEC_estimation.c         7-step ECU sizing pipeline (R1–R6 rules)
 │   ├── EEC_library.c            JSON library import, batch signals, connector metadata
 │   ├── EEC_export.c             Architecture + estimation JSON export
@@ -901,12 +955,11 @@ EE_Architect_Design/
 
 ### **CAN Database & Protocol Support**
 
+✅ **Shipped:** DBC (Vector CAN Database) export and import (`EEC_Export_dbc_bus/_all`, `EEC_Import_dbc`), CAN message packing (message ID, DLC, cycle time, per-signal start-bit/length/byte-order via `EEC_Swc_CreateMessage`/`EEC_Message_AddSignal`/`EEC_Message_AddTxPort`), Vector attribute fidelity (`GenMsgCycleTime`, `VFrameFormat=J1939PG`), and a DBC-level validator (rules D1–D8, see [Section 6](#6-pre-validation-engine--23-checks)). All exported DBCs are round-trip validated with `cantools`.
+
 | Feature | Scope | Impact |
 |---------|-------|--------|
-| **DBC (Vector CAN Database) Export** | Generate .dbc files from architecture signals for CANoe / Vector tools | Enables downstream CAN message definition in industry-standard tools |
-| **DBC Import** | Parse existing .dbc files to import CAN message definitions | Bridges legacy CAN databases into the framework |
-| **CAN Message Packing** | Assign message IDs, cycle times, DLC, signal start-bits, byte order | Complete CAN message-level database (not just signal routing) |
-| **J1939 PGN Assignment** | Auto-assign PGN (Parameter Group Numbers), validate PS/PF structure | Full J1939 protocol support for agricultural equipment |
+| **J1939 PGN Assignment** | Auto-assign PGN (Parameter Group Numbers), validate PS/PF structure — the `pgn` field exists on `EEC_Message_t` but is not yet populated or checked | Full J1939 protocol support for agricultural equipment |
 | **CANopen Object Dictionary** | Generate ODX / ODX.diag files, map signals to COB-IDs | Support CANopen protocol-specific message definitions |
 | **ARXML (Autosar) Export** | Export system description to Autosar XML format | Standardized integration with OEM Autosar tools |
 
@@ -925,9 +978,9 @@ EE_Architect_Design/
 
 | Feature | Scope | Impact |
 |---------|-------|--------|
-| **Bandwidth Analysis** | Calculate bus load per CAN/LIN/ETH message, warn on overload | Prevent runtime communication failures |
+| **Bandwidth Analysis (LIN / Ethernet)** | Calculate bus load per LIN/ETH message, warn on overload — CAN/ISOBUS busload is shipped as rule B9 (ISO 11898-1 worst-case estimate, see [Section 6](#6-pre-validation-engine--23-checks)) | Prevent runtime communication failures |
 | **Latency & Timing Constraints** | Track signal deadlines, end-to-end latency budgets | Support real-time and safety-critical validation |
-| **Power Budget Analysis** | Sum per-ECU power draw, validate against supply capacity | Prevent power-delivery bottlenecks |
+| **Power Budget Analysis (per-rail/fuse)** | Sum current per supply rail against fuse/breaker rating, harness voltage drop (needs wire gauge/length, fuse ratings, rail topology) — per-connector budget vs. contact rating × cavity count is shipped as rule P1 (see [Section 6](#6-pre-validation-engine--23-checks)) | Prevent power-delivery bottlenecks |
 | **Thermal Analysis** | Estimate ECU/component dissipation, validate against limits | Prevent thermal runaway in harsh environments |
 | **EMC / EMI Analysis** | Validate shielding, grounding, differential pair routing | Support compliance with automotive EMC standards |
 | **Functional Safety (SOTIF)** | Track diagnostic coverage per safety level, validate fault reaction | ISO 26262 / ISO 21448 compliance traceability |
@@ -960,7 +1013,7 @@ EE_Architect_Design/
 
 | Feature | Scope | Impact |
 |---------|-------|--------|
-| **Unit Test Coverage Expansion** | Add tests for all 21 verification rules, edge cases, regression suite | Production-grade code stability |
+| **Unit Test Coverage Expansion** | `qa/run_tests.sh` covers library import/export, DBC round-trip, ES3 ECU import, B9 busload, and DBC validation; extend to cover every V/B/Z/D rule individually, not just the ones with dedicated fixtures | Production-grade code stability |
 | **Property-Based Testing** | Generate randomized architecture scenarios, validate rules systematically | Discover corner cases automatically |
 | **Performance Benchmarking** | Track compile time, export speed, memory usage, rule evaluation time | Identify bottlenecks for 1000+ ECU architectures |
 | **Regression Test Suite** | Pre-commit checks for unintended changes to verification logic | Catch breaking changes before release |

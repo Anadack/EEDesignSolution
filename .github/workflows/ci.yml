@@ -1,0 +1,85 @@
+# EE Architect Design — CI validation gate
+#
+# Bakes in the checks used during production hardening so regressions
+# (memory bugs, missing -lm, broken generators, non-reproducible exports)
+# cannot return silently.
+
+name: EE Architect CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Strict build (-Werror)
+        run: gcc -std=c11 -Wall -Wextra -pedantic -Werror -O2 -Iinc src/*.c -o app -lm
+
+      - name: Sanitizer build + run (ASan/UBSan) — CENTRAL and ZONAL
+        run: |
+          gcc -std=c11 -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer \
+              -Iinc src/*.c -o app_asan -lm
+          ./app_asan
+          EEC_ZONES=library/zones.json ASAN_OPTIONS=detect_leaks=0 ./app_asan
+
+      - name: Run demo (generate exports)
+        run: ./app || true   # demo data intentionally contains verify errors
+
+      - name: "Verification gate (fail if STATUS: FAIL)"
+        run: |
+          grep -q "STATUS: OK" generated_doc/exports/verify_report.txt
+
+      - name: C unit tests (all qa/test_*.c suites)
+        run: ./qa/run_tests.sh
+
+      - name: Validate exported DBC with cantools (Vector-format parser)
+        run: |
+          pip install cantools
+          ./app || true
+          python3 - <<'PY'
+          import cantools, glob, sys
+          bad = 0
+          for f in glob.glob("generated_doc/DBC/*.dbc"):
+              try:
+                  db = cantools.database.load_file(f)
+                  for m in db.messages:            # exercise bit layouts
+                      m.decode(m.encode({s.name: (s.minimum or 0) for s in m.signals}))
+                  print("OK  ", f)
+              except Exception as e:
+                  print("FAIL", f, e); bad += 1
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: Full documentation suite (strict — any skip/fail is a gate failure)
+        run: python3 tools/scripts/generate_all_architecture_docs.py --root . --strict
+
+      - name: Validate all exported JSON is well-formed
+        run: |
+          for f in generated_doc/exports/*.json; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" || exit 1
+          done
+
+      - name: Reproducibility (regenerate exports; fail if they drift)
+        run: |
+          ./app || true
+          if ! git diff --quiet -- generated_doc/exports/*.json generated_doc/exports/*.txt; then
+            echo "Exports are not byte-reproducible — commit regenerated exports."
+            git --no-pager diff --stat -- generated_doc/exports/
+            exit 1
+          fi
+
+      - name: Guard against hardcoded author-machine paths
+        run: |
+          if grep -rIn -E "/root/|/Users/|\.claude/uploads" tools/ src/ inc/; then
+            echo "Hardcoded absolute paths found — use repo-relative paths."
+            exit 1
+          fi

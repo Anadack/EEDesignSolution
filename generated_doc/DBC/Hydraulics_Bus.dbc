@@ -32,3 +32,7 @@ BS_:
 
 BU_: AEC_REAR_HITCH_01 AEC_TRANSMISSION_01
 
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 65535;
+BA_DEF_ BO_  "VFrameFormat" ENUM  "StandardCAN","ExtendedCAN","reserved","J1939PG";
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+BA_DEF_DEF_  "VFrameFormat" "StandardCAN";

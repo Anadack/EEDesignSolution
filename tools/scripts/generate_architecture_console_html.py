@@ -82,10 +82,9 @@ WORKSPACES: list[dict[str, Any]] = [
             {"file": "wiring_netlist.html", "dir": "architecture_html", "title": "Wiring Netlist", "description": "Point-to-point netlist of every wired connection."},
             {"file": "architecture_wiring_diagram.html", "dir": "exports", "title": "Wiring Diagram", "description": "Overall wiring overview across the platform."},
             {"file": "library_ecu_pinouts.html", "dir": "exports", "title": "Library ECU Pinouts", "description": "Pinout reference for every ECU in the component library."},
-            {"file": "AEC_LARGE_01_pinout.html", "dir": "exports", "title": "AEC_LARGE_01 Pinout", "description": "Physical pinout for ECU AEC_LARGE_01."},
-            {"file": "AEC_MEDIUM_01_pinout.html", "dir": "exports", "title": "AEC_MEDIUM_01 Pinout", "description": "Physical pinout for ECU AEC_MEDIUM_01."},
-            {"file": "AEC_SMALL_01_pinout.html", "dir": "exports", "title": "AEC_SMALL_01 Pinout", "description": "Physical pinout for ECU AEC_SMALL_01."},
-            {"file": "VALIDATION_IO_ECU_pinout.html", "dir": "exports", "title": "VALIDATION_IO_ECU Pinout", "description": "Physical pinout for the validation I/O ECU."},
+            # Per-ECU pinout tabs are injected dynamically from the actual
+            # architecture in main() — see inject_ecu_pinout_tabs(). No ECU
+            # names are hardcoded here.
         ],
     },
     {
@@ -477,7 +476,26 @@ def main() -> int:
     outdir.mkdir(parents=True, exist_ok=True)
     out_path = outdir / args.filename
 
-    workspaces, views, skipped = collect_workspaces(root, WORKSPACES)
+    # Build per-ECU pinout tabs from the ACTUAL architecture, not a demo list.
+    import copy as _copy
+    ws_def = _copy.deepcopy(WORKSPACES)
+    ecu_tabs = []
+    for _ecu in iter_ecus(arch):
+        _name = _ecu.get("name") if isinstance(_ecu, dict) else None
+        if not _name:
+            continue
+        ecu_tabs.append({
+            "file": f"{_name}_pinout.html", "dir": "exports",
+            "title": f"{_name} Pinout",
+            "description": f"Physical pinout for ECU {_name}.",
+        })
+    if ecu_tabs:
+        for _ws in ws_def:
+            if _ws.get("id") == "wiring":
+                _ws["tabs"].extend(ecu_tabs)
+                break
+
+    workspaces, views, skipped = collect_workspaces(root, ws_def)
     kpis = gather_kpis(arch)
     project_title = cfg.get("html", {}).get("project_title", "E/E Architect Design")
     arch_name = str(arch.get("name") or "Imported Architecture")

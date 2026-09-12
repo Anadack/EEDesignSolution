@@ -1107,7 +1107,7 @@ buildDBC = function(sys=getSystem()||state.arch.systems[0]){
   lines.push(`BA_ "DBName" "${dbcEscape(sys.name||'EE_System_Modelling_CAN')}";`);
   getCanMessages(sys).forEach(m=>{
     const id = dbcMessageId(m.frame_id,m.is_extended);
-    lines.push(`BA_ "VFrameFormat" BO_ ${id} ${m.is_extended?1:0};`);
+    lines.push(`BA_ "VFrameFormat" BO_ ${id} ${m.is_extended?3:0};`);
     lines.push(`BA_ "GenMsgCycleTime" BO_ ${id} ${Number(m.cycle_time_ms||0)};`);
     if(m.send_type) lines.push(`BA_ "GenMsgSendType" BO_ ${id} "${dbcEscape(dbcSendTypeForVector(m.send_type))}";`);
   });

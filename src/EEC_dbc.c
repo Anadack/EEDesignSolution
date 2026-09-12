@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define EEC_DBC_EXT_FLAG 0x80000000U
 #define EEC_DBC_STD_MASK 0x7FFU
@@ -74,6 +75,38 @@ static bool dbc_msg_on_bus(const EEC_Message_t *msg, const EEC_Bus_t *bus)
 }
 
 /* ── Export ────────────────────────────────────────────────────────────── */
+
+/* Format a double for DBC output WITHOUT scientific notation, which some DBC
+ * parsers and older CANdb+ builds reject. Integer-valued numbers print with no
+ * decimal point; fractional numbers print with trailing zeros trimmed. */
+static void dbc_fmt_num(char *buf, size_t n, double v)
+{
+    if (v == (double)(long long)v && fabs(v) < 1e15) {
+        snprintf(buf, n, "%lld", (long long)v);
+        return;
+    }
+    snprintf(buf, n, "%.10f", v);
+    {
+        char *dot = strchr(buf, '.');
+        if (dot) {
+            char *end = buf + strlen(buf) - 1;
+            while (end > dot && *end == '0') { *end-- = '\0'; }
+            if (end == dot) { *end = '\0'; }
+        }
+    }
+}
+
+/* Cycle time (ms) of a message on a given bus, 0 if event-driven/not found. */
+static uint32_t dbc_msg_cycle_ms(const EEC_Message_t *msg, const EEC_Bus_t *bus)
+{
+    uint32_t t;
+    for (t = 0U; t < msg->tx_count; ++t) {
+        if (msg->tx_ports[t].bus == bus) {
+            return msg->tx_ports[t].cycle_time_ms;
+        }
+    }
+    return 0U;
+}
 
 static void dbc_write_header(FILE *f, const EEC_Bus_t *bus)
 {
@@ -157,17 +190,21 @@ int EEC_Export_dbc_bus(const EEC_Architecture_t *arch, const EEC_Bus_t *bus,
                     }
                     sign_char = dbc_type_is_signed(sig->type) ? '-' : '+';
 
-                    fprintf(f, " SG_ %s : %u|%u@%d%c (%g,%g) [%g|%g] \"%s\"",
-                            (sig->name[0] != '\0') ? sig->name : "UnnamedSig",
-                            (unsigned)ms->start_bit,
-                            (unsigned)ms->length,
-                            ms->little_endian ? 1 : 0,
-                            sign_char,
-                            (double)ms->scale,
-                            (double)ms->offset,
-                            (double)sig->min_value,
-                            (double)sig->max_value,
-                            dbc_unit_str(sig->unit));
+                    {
+                        char sc[32], of[32], mn[32], mx[32];
+                        dbc_fmt_num(sc, sizeof(sc), (double)ms->scale);
+                        dbc_fmt_num(of, sizeof(of), (double)ms->offset);
+                        dbc_fmt_num(mn, sizeof(mn), (double)sig->min_value);
+                        dbc_fmt_num(mx, sizeof(mx), (double)sig->max_value);
+                        fprintf(f, " SG_ %s : %u|%u@%d%c (%s,%s) [%s|%s] \"%s\"",
+                                (sig->name[0] != '\0') ? sig->name : "UnnamedSig",
+                                (unsigned)ms->start_bit,
+                                (unsigned)ms->length,
+                                ms->little_endian ? 1 : 0,
+                                sign_char,
+                                sc, of, mn, mx,
+                                dbc_unit_str(sig->unit));
+                    }
 
                     for (r = 0U; r < ms->receiver_count; ++r) {
                         if (ms->receivers[r]) {
@@ -186,9 +223,221 @@ int EEC_Export_dbc_bus(const EEC_Architecture_t *arch, const EEC_Bus_t *bus,
         }
     }
 
+    /* Attribute definitions (Vector standard). Placed after all BO_ records.
+     * GenMsgCycleTime carries the message period so CANoe/CANalyzer can run a
+     * residual-bus simulation; VFrameFormat marks extended messages as J1939 PG
+     * so CANdb+ recognizes them as J1939 rather than generic extended CAN. */
+    fprintf(f, "BA_DEF_ BO_  \"GenMsgCycleTime\" INT 0 65535;\n");
+    fprintf(f, "BA_DEF_ BO_  \"VFrameFormat\" ENUM  \"StandardCAN\",\"ExtendedCAN\",\"reserved\",\"J1939PG\";\n");
+    fprintf(f, "BA_DEF_DEF_  \"GenMsgCycleTime\" 0;\n");
+    fprintf(f, "BA_DEF_DEF_  \"VFrameFormat\" \"StandardCAN\";\n");
+
+    /* Second pass: per-message attribute values. */
+    for (i = 0U; i < arch->system_count; ++i) {
+        const EEC_System_t *sys = arch->systems[i];
+        if (!sys) continue;
+        for (s = 0U; s < sys->swc_count; ++s) {
+            const EEC_Swc_t *swc = sys->swcs[s];
+            if (!swc) continue;
+            for (m = 0U; m < swc->message_count; ++m) {
+                const EEC_Message_t *msg = swc->messages[m];
+                uint32_t dbc_id, cycle;
+                if (!msg || !dbc_msg_on_bus(msg, bus)) continue;
+                dbc_id = msg->is_extended
+                       ? ((msg->frame_id & EEC_DBC_EXT_MASK) | EEC_DBC_EXT_FLAG)
+                       : (msg->frame_id & EEC_DBC_STD_MASK);
+                cycle = dbc_msg_cycle_ms(msg, bus);
+                if (cycle > 0U) {
+                    fprintf(f, "BA_ \"GenMsgCycleTime\" BO_ %u %u;\n",
+                            dbc_id, cycle);
+                }
+                /* VFrameFormat: 1 = ExtendedCAN, 3 = J1939PG, 0 = StandardCAN.
+                 * Extended IDs in this ag domain are J1939 PGs. */
+                fprintf(f, "BA_ \"VFrameFormat\" BO_ %u %d;\n",
+                        dbc_id, msg->is_extended ? 3 : 0);
+            }
+        }
+    }
+
     fclose(f);
     EEC_Log_Printf(EEC_LOG_INFO, "DBC export: %d message(s) → %s", written, filename);
     return written;
+}
+
+/* ── Validation ────────────────────────────────────────────────────────── */
+
+/* Is an ECU a node on this bus (i.e. present in BU_)? */
+static bool dbc_node_on_bus(const EEC_Bus_t *bus, const EEC_Ecu_t *ecu)
+{
+    uint32_t n;
+    if (!ecu) return false;
+    for (n = 0U; n < bus->node_count; ++n) {
+        if (bus->nodes[n].ecu == ecu) return true;
+    }
+    return false;
+}
+
+/* Validate the DBC that would be exported for one bus and report DBC-level
+ * errors (the kind CANdb+ would reject or that corrupt decoding). Returns the
+ * number of errors found. Checks: D1 frame overflow, D2 signal overlap,
+ * D3 duplicate frame-id, D4 duplicate signal name in a message, D5 DLC range,
+ * D6 zero-length signal, D7 min>max, D8 sender/receiver not in BU_. */
+int EEC_Dbc_Validate_bus(const EEC_Architecture_t *arch, const EEC_Bus_t *bus,
+                         FILE *report)
+{
+    int errors = 0;
+    uint32_t i, s, m, e, e2, r;
+
+    if (!arch || !bus) return -1;
+
+    /* D3: duplicate frame-id across all messages on the bus. */
+    for (i = 0U; i < arch->system_count; ++i) {
+        const EEC_System_t *sys = arch->systems[i];
+        if (!sys) continue;
+        for (s = 0U; s < sys->swc_count; ++s) {
+            const EEC_Swc_t *swc = sys->swcs[s];
+            if (!swc) continue;
+            for (m = 0U; m < swc->message_count; ++m) {
+                const EEC_Message_t *msg = swc->messages[m];
+                uint64_t bits = 0U;   /* occupied-bit mask, Intel layout */
+                uint32_t frame_bits;
+                if (!msg || !dbc_msg_on_bus(msg, bus)) continue;
+                frame_bits = 8U * (uint32_t)msg->dlc;
+
+                /* D5: DLC range (classic CAN). */
+                if (msg->dlc == 0U || msg->dlc > 8U) {
+                    ++errors;
+                    if (report) fprintf(report, "  [FAIL] D5 msg '%s': DLC %u out of range (1..8)\n",
+                                        msg->name, (unsigned)msg->dlc);
+                }
+                /* D8: sender must be a node on the bus. */
+                if (swc->allocated_ecu && !dbc_node_on_bus(bus, swc->allocated_ecu)) {
+                    ++errors;
+                    if (report) fprintf(report, "  [FAIL] D8 msg '%s': transmitter '%s' not in BU_ (not on bus)\n",
+                                        msg->name, swc->allocated_ecu->name);
+                }
+
+                for (e = 0U; e < msg->entry_count; ++e) {
+                    const EEC_MessageSignal_t *ms = &msg->entries[e];
+                    const EEC_Signal_t *sig = ms->signal;
+                    if (!sig) continue;
+
+                    /* D6: zero length. */
+                    if (ms->length == 0U) {
+                        ++errors;
+                        if (report) fprintf(report, "  [FAIL] D6 msg '%s' sig '%s': zero length\n",
+                                            msg->name, sig->name);
+                        continue;
+                    }
+                    /* D1: frame overflow (Intel layout). */
+                    if (ms->little_endian &&
+                        (ms->start_bit + ms->length) > frame_bits) {
+                        ++errors;
+                        if (report) fprintf(report, "  [FAIL] D1 msg '%s' sig '%s': bits %u..%u exceed frame (%u bits)\n",
+                                            msg->name, sig->name,
+                                            (unsigned)ms->start_bit,
+                                            (unsigned)(ms->start_bit + ms->length - 1U),
+                                            frame_bits);
+                    }
+                    /* D2: overlap (Intel layout, up to 64 bits). */
+                    if (ms->little_endian && frame_bits <= 64U) {
+                        uint32_t bpos;
+                        for (bpos = ms->start_bit;
+                             bpos < ms->start_bit + ms->length && bpos < 64U; ++bpos) {
+                            uint64_t mask = (uint64_t)1U << bpos;
+                            if (bits & mask) {
+                                ++errors;
+                                if (report) fprintf(report, "  [FAIL] D2 msg '%s' sig '%s': overlaps bit %u\n",
+                                                    msg->name, sig->name, bpos);
+                                break;
+                            }
+                            bits |= mask;
+                        }
+                    }
+                    /* D7: min > max. */
+                    if (sig->min_value > sig->max_value) {
+                        ++errors;
+                        if (report) fprintf(report, "  [FAIL] D7 msg '%s' sig '%s': min %g > max %g\n",
+                                            msg->name, sig->name,
+                                            (double)sig->min_value, (double)sig->max_value);
+                    }
+                    /* D4: duplicate signal name within the message. */
+                    for (e2 = e + 1U; e2 < msg->entry_count; ++e2) {
+                        const EEC_Signal_t *o = msg->entries[e2].signal;
+                        if (o && o->name[0] && strcmp(o->name, sig->name) == 0) {
+                            ++errors;
+                            if (report) fprintf(report, "  [FAIL] D4 msg '%s': duplicate signal name '%s'\n",
+                                                msg->name, sig->name);
+                        }
+                    }
+                    /* D8: each receiver must be a node on the bus. */
+                    for (r = 0U; r < ms->receiver_count; ++r) {
+                        if (ms->receivers[r] && !dbc_node_on_bus(bus, ms->receivers[r])) {
+                            ++errors;
+                            if (report) fprintf(report, "  [FAIL] D8 msg '%s' sig '%s': receiver '%s' not in BU_\n",
+                                                msg->name, sig->name, ms->receivers[r]->name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /* D3: duplicate frame-id — O(n^2) over messages on this bus. */
+    {
+        uint32_t i2, s2, m2;
+        for (i = 0U; i < arch->system_count; ++i) {
+            const EEC_System_t *sysa = arch->systems[i];
+            if (!sysa) continue;
+            for (s = 0U; s < sysa->swc_count; ++s) {
+                const EEC_Swc_t *swca = sysa->swcs[s];
+                if (!swca) continue;
+                for (m = 0U; m < swca->message_count; ++m) {
+                    const EEC_Message_t *ma = swca->messages[m];
+                    if (!ma || !dbc_msg_on_bus(ma, bus)) continue;
+                    for (i2 = i; i2 < arch->system_count; ++i2) {
+                        const EEC_System_t *sysb = arch->systems[i2];
+                        if (!sysb) continue;
+                        for (s2 = (i2 == i ? s : 0U); s2 < sysb->swc_count; ++s2) {
+                            const EEC_Swc_t *swcb = sysb->swcs[s2];
+                            if (!swcb) continue;
+                            for (m2 = (i2 == i && s2 == s ? m + 1U : 0U);
+                                 m2 < swcb->message_count; ++m2) {
+                                const EEC_Message_t *mb = swcb->messages[m2];
+                                if (!mb || !dbc_msg_on_bus(mb, bus)) continue;
+                                if (ma->frame_id == mb->frame_id &&
+                                    ma->is_extended == mb->is_extended) {
+                                    ++errors;
+                                    if (report) fprintf(report, "  [FAIL] D3 duplicate frame-id 0x%X ('%s' and '%s')\n",
+                                                        ma->frame_id, ma->name, mb->name);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (report) {
+        fprintf(report, "[DBC:%s] %d error(s).\n", bus->name, errors);
+    }
+    return errors;
+}
+
+int EEC_Dbc_Validate_all(const EEC_Architecture_t *arch, FILE *report)
+{
+    uint32_t b;
+    int total = 0;
+    if (!arch) return -1;
+    for (b = 0U; b < arch->bus_count; ++b) {
+        const EEC_Bus_t *bus = arch->buses[b];
+        if (!bus) continue;
+        if (bus->type == EEC_BUS_TYPE_CAN || bus->type == EEC_BUS_TYPE_ISOBUS) {
+            total += EEC_Dbc_Validate_bus(arch, bus, report);
+        }
+    }
+    return total;
 }
 
 int EEC_Export_dbc_all(const EEC_Architecture_t *arch, const char *dir)

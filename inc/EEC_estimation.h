@@ -21,8 +21,14 @@ extern "C" {
 /** @brief Maximum number of systems that a platform file can reference. */
 #define EEC_EST_MAX_SYSTEMS     64U
 
-/** @brief Maximum number of distinct signal-interface buckets tracked. */
-#define EEC_EST_MAX_IFACE_TYPES 10U
+/** @brief Maximum number of distinct signal-interface buckets tracked.
+ *
+ *  MUST be >= EEC_SIGNAL_INTERFACE_RESERVED, because per_iface[] is indexed
+ *  directly by the EEC_SignalInterface_t enum value (see EEC_estimation.c).
+ *  Previously this was 10 while the enum has 13 usable values (DIGITAL..GROUND),
+ *  causing out-of-bounds writes for FLEXRAY/POWER/GROUND pins. A compile-time
+ *  assertion in EEC_estimation.c guards this invariant. */
+#define EEC_EST_MAX_IFACE_TYPES 16U
 
 /** @brief Number of AGCO ECU variants (SMALL, MEDIUM, LARGE). */
 #define EEC_EST_VARIANT_COUNT   3U

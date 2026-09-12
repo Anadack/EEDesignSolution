@@ -134,6 +134,124 @@ static uint32_t eec_count_signal_assignments(const EEC_Architecture_t *arch, con
     return count;
 }
 
+/* Find the logical device pin (sensor or actuator) whose .signal == signal,
+ * and return its declared current draw. Used by the P1 power-budget check to
+ * turn an ECU pin's connected_signal back into the current the device that
+ * drives/reads it actually draws (the ECU pin itself only stores a current
+ * CAPACITY (current_max), not an actual draw). Returns false if no device
+ * pin references this signal (e.g. bus/GROUND signals with no current spec). */
+static bool eec_find_device_pin_current(const EEC_Architecture_t *arch, const EEC_Signal_t *signal,
+                                        float *out_nominal, float *out_inrush)
+{
+    uint32_t i, c, j;
+
+    if (out_nominal) *out_nominal = 0.0f;
+    if (out_inrush) *out_inrush = 0.0f;
+    if (!arch || !signal) {
+        return false;
+    }
+
+    for (i = 0U; i < arch->system_count; ++i) {
+        const EEC_System_t *system = arch->systems[i];
+        if (!system) continue;
+        for (c = 0U; c < system->component_count; ++c) {
+            const EEC_Component_t *comp = system->components[c];
+            if (!comp) continue;
+            for (j = 0U; j < comp->sensor_count; ++j) {
+                const EEC_Sensor_t *sensor = comp->sensors[j];
+                uint32_t p;
+                if (!sensor) continue;
+                for (p = 0U; p < sensor->pin_count; ++p) {
+                    if (sensor->pins[p].signal == signal) {
+                        if (out_nominal) *out_nominal = sensor->pins[p].nominal_current;
+                        if (out_inrush) *out_inrush = sensor->pins[p].inrush_current;
+                        return true;
+                    }
+                }
+            }
+            for (j = 0U; j < comp->actuator_count; ++j) {
+                const EEC_Actuator_t *actuator = comp->actuators[j];
+                uint32_t p;
+                if (!actuator) continue;
+                for (p = 0U; p < actuator->pin_count; ++p) {
+                    if (actuator->pins[p].signal == signal) {
+                        if (out_nominal) *out_nominal = actuator->pins[p].nominal_current;
+                        if (out_inrush) *out_inrush = actuator->pins[p].inrush_current;
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  Power budget rule (P1)
+ * ══════════════════════════════════════════════════════════════════════════
+ *  Sums the declared nominal current of every device mapped onto a connector
+ *  and compares it to that connector's aggregate current-carrying capacity,
+ *  approximated as rated_current (per contact) x total_cavities. This is a
+ *  documented simplification, not a full harness power-budget analysis: a
+ *  real connector's aggregate rating is usually lower than contacts x
+ *  per-contact rating due to thermal derating from adjacent loaded contacts,
+ *  and this check has no wire-gauge, fuse, or supply-rail-topology data (a
+ *  connector can carry signals from several supply rails). It still catches
+ *  the concrete, common defect of piling many high-current loads (coils,
+ *  lamps, motors) onto one small connector — closing the "power budget"
+ *  backlog item for the slice that today's data model can support without
+ *  new fields (a full per-rail/fuse budget needs wire gauge and fuse rating,
+ *  which are not yet modeled). WARNING >= 80% of capacity, ERROR above 100%.
+ */
+static int eec_verify_power_budget(const EEC_Architecture_t *arch, FILE *report)
+{
+    int errors = 0;
+    uint32_t ei;
+
+    for (ei = 0U; ei < arch->ecu_count; ++ei) {
+        const EEC_Ecu_t *ecu = arch->ecus[ei];
+        uint32_t ci;
+        if (!ecu) continue;
+
+        for (ci = 0U; ci < ecu->connector_count; ++ci) {
+            const EEC_Connector_t *conn = &ecu->connectors[ci];
+            double total_current = 0.0;
+            uint32_t pi;
+            bool any_current = false;
+
+            for (pi = 0U; pi < ecu->pin_count; ++pi) {
+                const EEC_EcuPin_t *pin = &ecu->pins[pi];
+                float nominal;
+                if (strcmp(pin->connector_name, conn->name) != 0) continue;
+                if (!pin->is_occupied || !pin->connected_signal) continue;
+                if (eec_find_device_pin_current(arch, pin->connected_signal, &nominal, NULL) && nominal > 0.0f) {
+                    total_current += (double)nominal;
+                    any_current = true;
+                }
+            }
+
+            if (any_current && conn->rated_current > 0.0f && conn->total_cavities > 0U) {
+                double capacity = (double)conn->rated_current * (double)conn->total_cavities;
+                double pct = 100.0 * total_current / capacity;
+                if (pct > 100.0) {
+                    ++errors;
+                    fprintf(report,
+                            "ERROR: connector '%s' on ECU '%s': P1 power budget %.1f%% exceeds capacity "
+                            "(%.2f A of %.2f A = %u contact(s) x %.2f A/contact)\n",
+                            conn->name, ecu->name, pct, total_current, capacity,
+                            conn->total_cavities, (double)conn->rated_current);
+                } else if (pct >= 80.0) {
+                    fprintf(report,
+                            "WARNING: connector '%s' on ECU '%s': P1 power budget %.1f%% is high "
+                            "(target <80%% for headroom)\n",
+                            conn->name, ecu->name, pct);
+                }
+            }
+        }
+    }
+    return errors;
+}
+
 static bool eec_parse_voltage_range_volts(const char *electrical, float *out_min_v, float *out_max_v)
 {
     const char *p;
@@ -677,6 +795,19 @@ int EEC_Report_pin_allocation(const EEC_Architecture_t *arch, FILE *report)
  *  Bus verification rules B1–B8
  * ══════════════════════════════════════════════════════════════════════════ */
 
+/* Worst-case on-wire bit length of a classic-CAN frame including bit stuffing,
+ * per ISO 11898-1. Fixed framing/overhead + 8*DLC data bits + worst-case stuff
+ * bits (one per 4 bits of the stuffable field). Standard = 11-bit ID, extended
+ * = 29-bit ID (J1939). Used by the B9 busload estimate. */
+static uint32_t eec_can_frame_bits(uint8_t dlc, bool extended)
+{
+    uint32_t data = 8U * (uint32_t)dlc;
+    if (extended) {
+        return 67U + data + ((54U + data) / 4U);
+    }
+    return 47U + data + ((34U + data) / 4U);
+}
+
 static int eec_verify_buses(const EEC_Architecture_t *arch, FILE *report)
 {
     uint32_t b, n, s, b2, n2;
@@ -786,6 +917,51 @@ static int eec_verify_buses(const EEC_Architecture_t *arch, FILE *report)
             fprintf(report,
                     "WARNING: bus '%s': bitrate is 0 but %u nodes are connected\n",
                     bus->name, bus->node_count);
+        }
+
+        /* B9: CAN busload estimate must stay within safe utilization.
+         * Sums worst-case periodic traffic (cycle_time_ms > 0) on CAN/ISOBUS
+         * buses; event-driven frames (cycle 0) are reported, not summed.
+         * WARNING >= 50% (leave headroom; safety buses lower still),
+         * ERROR > 80% (classic-CAN practical ceiling). Uses existing model
+         * fields only: bus->bitrate, msg->dlc/is_extended, tx cycle_time_ms. */
+        if ((bus->type == EEC_BUS_TYPE_CAN || bus->type == EEC_BUS_TYPE_ISOBUS) &&
+            bus->bitrate > 0U && bus->message_count > 0U) {
+            double load_bps = 0.0;
+            uint32_t event_driven = 0U, m;
+            for (m = 0; m < bus->message_count; ++m) {
+                const EEC_Message_t *msg = bus->messages[m];
+                uint32_t cycle_ms = 0U, t;
+                if (!msg) continue;
+                for (t = 0; t < msg->tx_count; ++t) {
+                    if (msg->tx_ports[t].bus == bus) {
+                        cycle_ms = msg->tx_ports[t].cycle_time_ms;
+                        break;
+                    }
+                }
+                if (cycle_ms == 0U) { ++event_driven; continue; }
+                load_bps += (double)eec_can_frame_bits(msg->dlc, msg->is_extended)
+                            * (1000.0 / (double)cycle_ms);
+            }
+            {
+                double pct = 100.0 * load_bps / (double)bus->bitrate;
+                if (pct > 80.0) {
+                    ++errors;
+                    fprintf(report,
+                            "ERROR: bus '%s': B9 busload %.1f%% exceeds 80%% ceiling "
+                            "(%.0f bps periodic of %u bps)\n",
+                            bus->name, pct, load_bps, bus->bitrate);
+                } else if (pct >= 50.0) {
+                    fprintf(report,
+                            "WARNING: bus '%s': B9 busload %.1f%% is high (target <50%% for headroom)\n",
+                            bus->name, pct);
+                }
+                if (event_driven > 0U) {
+                    fprintf(report,
+                            "  [INFO] bus '%s': %u event-driven frame(s) excluded from busload (cycle=0)\n",
+                            bus->name, event_driven);
+                }
+            }
         }
     }
 
@@ -1030,6 +1206,8 @@ int EEC_Verify_architecture(const EEC_Architecture_t *arch, FILE *report)
     fprintf(report, "  B6  Unique CAN addresses per bus\n");
     fprintf(report, "  B7  Bus-type signals assigned to a bus\n");
     fprintf(report, "  B8  Bus bitrate > 0 when nodes connected\n");
+    fprintf(report, "  B9  CAN busload within safe utilization (<80%%)\n");
+    fprintf(report, "  P1  Per-connector power budget within capacity (<100%%)\n");
     fprintf(report, "\n------------------------------------------------------------------------\n");
     fprintf(report, "Results:\n");
     fprintf(report, "------------------------------------------------------------------------\n");
@@ -1107,17 +1285,23 @@ int EEC_Verify_architecture(const EEC_Architecture_t *arch, FILE *report)
     if (check_errors == 0) { fprintf(report, "  [PASS] V5-V9  All signal mappings valid (role, electrical, pull resistor)\n"); checks_passed++; }
     else { fprintf(report, "  [FAIL] V5-V9  %d logical pin error(s)\n", check_errors); checks_failed++; }
 
-    /* B1-B8: Bus verification */
+    /* B1-B9: Bus verification (incl. busload) */
     check_errors = eec_verify_buses(arch, report);
     errors += check_errors;
-    if (check_errors == 0) { fprintf(report, "  [PASS] B1-B8  All bus rules passed\n"); checks_passed++; }
-    else { fprintf(report, "  [FAIL] B1-B8  %d bus verification error(s)\n", check_errors); checks_failed++; }
+    if (check_errors == 0) { fprintf(report, "  [PASS] B1-B9  All bus rules passed\n"); checks_passed++; }
+    else { fprintf(report, "  [FAIL] B1-B9  %d bus verification error(s)\n", check_errors); checks_failed++; }
 
     /* C1-C5: CAN message / SWC coherence */
     check_errors = eec_verify_can(arch, report);
     errors += check_errors;
     if (check_errors == 0) { fprintf(report, "  [PASS] C1-C5  All CAN message rules passed\n"); checks_passed++; }
     else { fprintf(report, "  [FAIL] C1-C5  %d CAN coherence error(s)\n", check_errors); checks_failed++; }
+
+    /* P1: Per-connector power budget */
+    check_errors = eec_verify_power_budget(arch, report);
+    errors += check_errors;
+    if (check_errors == 0) { fprintf(report, "  [PASS] P1  All connector power budgets within capacity\n"); checks_passed++; }
+    else { fprintf(report, "  [FAIL] P1  %d power budget error(s)\n", check_errors); checks_failed++; }
 
     fprintf(report, "\n========================================================================\n");
     fprintf(report, "SUMMARY:  %d check group(s) passed, %d failed, %d total error(s), %d warning(s)\n",

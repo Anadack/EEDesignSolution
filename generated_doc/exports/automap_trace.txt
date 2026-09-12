@@ -5,85 +5,89 @@
   Criteria: mandatory > take_rate > priority > AgPL > SL > iface_diversity > pin_count
   ECU selection: zone_affinity > safety_compat > safety_isolation > capacity_fit
 
-  #1  score=41520  mandatory=1  take_rate=100%  priority=2  safety=2  SL=2  zone=''  name='Rear_Hydraulic_Hitch_System'
-  #2  score=30516  mandatory=1  take_rate=0%  priority=2  safety=0  SL=2  zone=''  name='Example_System_with_Bosch_Rexroth_Coil_Actuators'
-  #3  score=30508  mandatory=1  take_rate=0%  priority=2  safety=0  SL=2  zone=''  name='Example_HYDAC_Coil_Topologies_System'
-  #4  score=29516  mandatory=1  take_rate=0%  priority=2  safety=0  SL=1  zone=''  name='BRAKE_SYSTEM'
-  #5  score=28572  mandatory=1  take_rate=0%  priority=1  safety=0  SL=1  zone=''  name='HYDAC_Selected_Sensor_Examples'
-  #6  score=11500  mandatory=0  take_rate=60%  priority=1  safety=0  SL=1  zone=''  name='Cabin_HVAC_and_Comfort_System'
-  #7  score=8552  mandatory=0  take_rate=0%  priority=1  safety=0  SL=1  zone=''  name='Example_System_with_selected_elobau_angle_sensors'
+  #1  score=46520  mandatory=1  take_rate=100%  priority=2  safety=2  SL=2  zone=''  name='Rear_Hydraulic_Hitch_System'
+  #2  score=33572  mandatory=1  take_rate=0%  priority=1  safety=0  SL=1  zone=''  name='HYDAC_Selected_Sensor_Examples'
+  #3  score=30516  mandatory=1  take_rate=0%  priority=2  safety=0  SL=2  zone=''  name='Example_System_with_Bosch_Rexroth_Coil_Actuators'
+  #4  score=30508  mandatory=1  take_rate=0%  priority=2  safety=0  SL=2  zone=''  name='Example_HYDAC_Coil_Topologies_System'
+  #5  score=29516  mandatory=1  take_rate=0%  priority=2  safety=0  SL=1  zone=''  name='BRAKE_SYSTEM'
+  #6  score=13552  mandatory=0  take_rate=0%  priority=1  safety=0  SL=1  zone=''  name='Example_System_with_selected_elobau_angle_sensors'
+  #7  score=11500  mandatory=0  take_rate=60%  priority=1  safety=0  SL=1  zone=''  name='Cabin_HVAC_and_Comfort_System'
 
-[MAP] 'Rear_Hydraulic_Hitch_System' (score=41520, unmapped=10, zone='')
+[MAP] 'Rear_Hydraulic_Hitch_System' (score=46520, unmapped=10, zone='')
 [AUTO] HAT1200_SUPPLY_24V -> AEC_CABIN_01 X1/1
 [AUTO] HAT1200_0V -> AEC_CABIN_01 X1/9
 [AUTO] HAT1200_Angle_0_10V -> AEC_CABIN_01 X1/75
 [AUTO] HDA4300_LOOP_SUPPLY_PLUS -> AEC_CABIN_01 X1/2
+[AUTO] HDA4300_Pressure_4_20mA -> VALIDATION_IO_ECU T1/81
 [AUTO] HYD_PDR10830_Prop_Press_Vlv_Sup -> AEC_CABIN_01 X1/3
 [AUTO] HYD_PDR10830_Prop_Press_Vlv_Gnd -> AEC_CABIN_01 X1/10
 [AUTO] HYD_PDR10830_Cmd -> AEC_CABIN_01 X1/17
 [AUTO] Coil12PN5_1_50_2345_Cmd -> AEC_CABIN_01 X1/18
 [AUTO] HYD_Sol_Coil_12PN_5_1_50_2345_Gnd -> AEC_CABIN_01 X1/11
+[MAP] 'HYDAC_Selected_Sensor_Examples' (score=33572, unmapped=36, zone='')
+[AUTO] HAT1200_SUPPLY_9_36V -> AEC_CABIN_01 X1/4
+[AUTO] HAT1200_0V -> AEC_CABIN_01 X1/12
+[AUTO] HAT1200_Angle_4_20mA -> VALIDATION_IO_ECU T1/82
+[AUTO] CAN_SHLD -> AEC_CABIN_01 X1/13
+[AUTO] CAN_VPLUS_9_36V -> AEC_CABIN_01 X1/5
+[AUTO] CAN_GND -> AEC_CABIN_01 X1/14
+[AUTO] CAN_H -> AEC_CABIN_01 X2/9
+[AUTO] CAN_L -> AEC_CABIN_01 X2/10
+[AUTO] HDA4300_LOOP_SUPPLY_PLUS -> AEC_CABIN_01 X1/6
+[AUTO] HDA4300_Pressure_4_20mA -> VALIDATION_IO_ECU T1/83
+[AUTO] HDA4300_SUPPLY_24V -> AEC_CABIN_01 X1/7
+[AUTO] HDA4300_0V -> AEC_CABIN_01 X1/15
+[AUTO] HDA4300_Pressure_0_10V -> AEC_CABIN_01 X1/76
+[AUTO] ETS4100_LOOP_SUPPLY_PLUS -> AEC_CABIN_01 X1/8
+[AUTO] ETS4100_Temperature_4_20mA -> VALIDATION_IO_ECU T1/84
+[AUTO] ETS4100_SUPPLY_24V -> AEC_DISPLAY_01 X1000/1
+[AUTO] ETS4100_0V -> AEC_CABIN_01 X1/16
+[AUTO] ETS4100_Temperature_0_10V -> AEC_CABIN_01 X1/77
+[AUTO] EDS410_SUPPLY_PLUS -> AEC_DISPLAY_01 X1000/2
+[AUTO] EDS410_OUT2_PNP -> AEC_CABIN_01 X1/53
+[AUTO] EDS410_0V -> AEC_CABIN_01 X2/4
+[AUTO] EDS410_OUT1_PNP -> AEC_CABIN_01 X1/54
+[AUTO] EDS810_SUPPLY_PLUS -> AEC_DISPLAY_01 X1000/3
+[AUTO] EDS810_OUT2_PNP -> AEC_CABIN_01 X1/55
+[AUTO] EDS810_0V -> AEC_CABIN_01 X2/5
+[AUTO] EDS810_OUT1_PNP -> AEC_CABIN_01 X1/56
+[AUTO] HLT700_CAN_SHLD -> AEC_CABIN_01 X2/6
+[AUTO] HLT700_CAN_VPLUS -> AEC_DISPLAY_01 X1000/4
+[AUTO] HLT700_CAN_GND -> AEC_CABIN_01 X2/7
+[AUTO] HLT700_CAN_H -> AEC_CABIN_01 X2/11
+[AUTO] HLT700_CAN_L -> AEC_CABIN_01 X2/12
+[AUTO] HIT1500_CAN_SHLD -> AEC_DISPLAY_01 X1000/7
+[AUTO] HIT1500_CAN_VPLUS -> AEC_DISPLAY_01 X1000/5
+[AUTO] HIT1500_CAN_GND -> AEC_DISPLAY_01 X1000/8
+[AUTO] HIT1500_CAN_H -> AEC_CABIN_01 X2/13
+[AUTO] HIT1500_CAN_L -> AEC_CABIN_01 X2/14
 [MAP] 'Example_System_with_Bosch_Rexroth_Coil_Actuators' (score=30516, unmapped=8, zone='')
 [AUTO] DirCoilCmd_HS -> AEC_CABIN_01 X1/21
-[AUTO] POWER_GND -> AEC_CABIN_01 X1/12
+[AUTO] POWER_GND -> AEC_DISPLAY_01 X1000/9
 [AUTO] DirCoilCmd_HS -> AEC_CABIN_01 X1/22
 [AUTO] DirCoilReturn_LS -> AEC_CABIN_01 X1/47
 [AUTO] PropCoilCurrentCmd_HS -> AEC_CABIN_01 X1/19
-[AUTO] POWER_GND -> AEC_CABIN_01 X1/13
+[AUTO] POWER_GND -> AEC_DISPLAY_01 X1000/10
 [AUTO] PropCoilCurrentCmd_HS -> AEC_CABIN_01 X1/20
 [AUTO] PropCoilReturn_LS -> AEC_CABIN_01 X1/48
 [MAP] 'Example_HYDAC_Coil_Topologies_System' (score=30508, unmapped=4, zone='')
 [AUTO] HYDAC_4059964_CoilCommand_HS -> AEC_CABIN_01 X1/33
 [AUTO] HYDAC_4059964_CoilReturn_LS -> AEC_CABIN_01 X1/49
 [AUTO] HYDAC_2610160_CoilCommand_HS -> AEC_CABIN_01 X1/23
-[AUTO] HYDAC_2610160_POWER_GND -> AEC_CABIN_01 X1/14
+[AUTO] HYDAC_2610160_POWER_GND -> AEC_DISPLAY_01 X1000/11
 [MAP] 'BRAKE_SYSTEM' (score=29516, unmapped=8, zone='')
-[AUTO] HDA4300_SUPPLY_24V -> AEC_CABIN_01 X1/4
-[AUTO] HDA4300_0V -> AEC_CABIN_01 X1/15
-[AUTO] ParlockPressure -> AEC_CABIN_01 X1/76
-[AUTO] HDA4300_SUPPLY_24V -> AEC_CABIN_01 X1/5
-[AUTO] HDA4300_0V -> AEC_CABIN_01 X1/16
-[AUTO] ParlockPressure -> AEC_CABIN_01 X1/77
+[AUTO] HDA4300_SUPPLY_24V -> AEC_DISPLAY_01 X1000/6
+[AUTO] HDA4300_0V -> AEC_DISPLAY_01 X1000/12
+[AUTO] ParlockPressure -> AEC_CABIN_01 X1/78
+[AUTO] HDA4300_SUPPLY_24V -> AEC_ENGINE_01 X1/1
+[AUTO] HDA4300_0V -> AEC_DISPLAY_01 X1000/67
+[AUTO] ParlockPressure -> AEC_CABIN_01 X1/79
 [AUTO] DirCoilCmd_HS -> AEC_CABIN_01 X1/24
-[AUTO] POWER_GND -> AEC_CABIN_01 X2/4
-[MAP] 'HYDAC_Selected_Sensor_Examples' (score=28572, unmapped=36, zone='')
-[AUTO] HAT1200_SUPPLY_9_36V -> AEC_CABIN_01 X1/6
-[AUTO] HAT1200_0V -> AEC_CABIN_01 X2/5
-[AUTO] CAN_SHLD -> AEC_CABIN_01 X2/6
-[AUTO] CAN_VPLUS_9_36V -> AEC_CABIN_01 X1/7
-[AUTO] CAN_GND -> AEC_CABIN_01 X2/7
-[AUTO] CAN_H -> AEC_CABIN_01 X2/9
-[AUTO] CAN_L -> AEC_CABIN_01 X2/10
-[AUTO] HDA4300_LOOP_SUPPLY_PLUS -> AEC_CABIN_01 X1/8
-[AUTO] HDA4300_SUPPLY_24V -> AEC_DISPLAY_01 X1000/1
-[AUTO] HDA4300_0V -> AEC_DISPLAY_01 X1000/7
-[AUTO] HDA4300_Pressure_0_10V -> AEC_CABIN_01 X1/78
-[AUTO] ETS4100_LOOP_SUPPLY_PLUS -> AEC_DISPLAY_01 X1000/2
-[AUTO] ETS4100_SUPPLY_24V -> AEC_DISPLAY_01 X1000/3
-[AUTO] ETS4100_0V -> AEC_DISPLAY_01 X1000/8
-[AUTO] ETS4100_Temperature_0_10V -> AEC_CABIN_01 X1/79
-[AUTO] EDS410_SUPPLY_PLUS -> AEC_DISPLAY_01 X1000/4
-[AUTO] EDS410_OUT2_PNP -> AEC_CABIN_01 X1/53
-[AUTO] EDS410_0V -> AEC_DISPLAY_01 X1000/9
-[AUTO] EDS410_OUT1_PNP -> AEC_CABIN_01 X1/54
-[AUTO] EDS810_SUPPLY_PLUS -> AEC_DISPLAY_01 X1000/5
-[AUTO] EDS810_OUT2_PNP -> AEC_CABIN_01 X1/55
-[AUTO] EDS810_0V -> AEC_DISPLAY_01 X1000/10
-[AUTO] EDS810_OUT1_PNP -> AEC_CABIN_01 X1/56
-[AUTO] HLT700_CAN_SHLD -> AEC_DISPLAY_01 X1000/11
-[AUTO] HLT700_CAN_VPLUS -> AEC_DISPLAY_01 X1000/6
-[AUTO] HLT700_CAN_GND -> AEC_DISPLAY_01 X1000/12
-[AUTO] HLT700_CAN_H -> AEC_CABIN_01 X2/11
-[AUTO] HLT700_CAN_L -> AEC_CABIN_01 X2/12
-[AUTO] HIT1500_CAN_SHLD -> AEC_DISPLAY_01 X1000/67
-[AUTO] HIT1500_CAN_VPLUS -> AEC_ENGINE_01 X1/1
-[AUTO] HIT1500_CAN_GND -> AEC_DISPLAY_01 X1000/68
-[AUTO] HIT1500_CAN_H -> AEC_CABIN_01 X2/13
-[AUTO] HIT1500_CAN_L -> AEC_CABIN_01 X2/14
-[SKIP] 'Cabin_HVAC_and_Comfort_System': fully mapped
-[MAP] 'Example_System_with_selected_elobau_angle_sensors' (score=8552, unmapped=26, zone='')
+[AUTO] POWER_GND -> AEC_DISPLAY_01 X1000/68
+[MAP] 'Example_System_with_selected_elobau_angle_sensors' (score=13552, unmapped=26, zone='')
 [AUTO] elobau_424SD11D_DH_120deg_GND1 -> AEC_DISPLAY_01 X1000/69
 [AUTO] elobau_424SD11D_DH_120deg_UB1 -> AEC_ENGINE_01 X1/2
+[AUTO] elobau_424SD11D_DH_120deg_ANGLE_4_20MA_OUT1 -> VALIDATION_IO_ECU T1/85
 [AUTO] elobau_424SD11D_DH_120deg_GND2 -> AEC_ENGINE_01 X1/11
 [AUTO] elobau_424SD11D_DH_120deg_UB2 -> AEC_ENGINE_01 X1/3
 [AUTO] elobau_424SD11D_DH_120deg_SWITCH_OUT2_HIGH_SIDE -> AEC_CABIN_01 X1/57
@@ -95,6 +99,7 @@
 [AUTO] elobau_424SD16D_DS_120deg_SWITCH_OUT2_PUSH_PULL -> AEC_CABIN_01 X1/58
 [AUTO] elobau_424A_4_20MA_120deg_SUPPLY -> AEC_ENGINE_01 X1/6
 [AUTO] elobau_424A_4_20MA_120deg_GND -> AEC_ENGINE_01 X1/14
+[AUTO] elobau_424A_4_20MA_120deg_ANGLE_4_20MA -> VALIDATION_IO_ECU T1/86
 [AUTO] elobau_424R_0_5_4_5V_parallel_120deg_GND1 -> AEC_ENGINE_01 X1/15
 [AUTO] elobau_424R_0_5_4_5V_parallel_120deg_UB1 -> AEC_ENGINE_01 X1/7
 [AUTO] elobau_424R_0_5_4_5V_parallel_120deg_ANGLE_OUT1 -> AEC_CABIN_01 X1/81
@@ -106,3 +111,4 @@
 [AUTO] elobau_424C_360deg_CANopen_GND -> AEC_ENGINE_01 X1/18
 [AUTO] elobau_424C_360deg_CANopen_CAN_H -> AEC_CABIN_01 X2/15
 [AUTO] elobau_424C_360deg_CANopen_CAN_L -> AEC_CABIN_01 X2/16
+[SKIP] 'Cabin_HVAC_and_Comfort_System': fully mapped

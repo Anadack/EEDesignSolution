@@ -1,177 +1,13 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Generic Network BUS Backbone Template — No-Overlap Clearance Layout</title>
-<style>
-  :root{
-    --bg:#f7f9fc;
-    --surface:#ffffff;
-    --surface-2:#f3f6fb;
-    --ink:#111827;
-    --muted:#5b6475;
-    --soft:#e6edf7;
-    --line:#c8d3e4;
-    --shadow:0 12px 30px rgba(16,24,40,.10);
-    --shadow-soft:0 6px 18px rgba(16,24,40,.08);
-    --radius:18px;
-    --blue:#2563eb;
-    --green:#16a34a;
-    --orange:#f97316;
-    --purple:#7c3aed;
-    --red:#dc2626;
-    --teal:#0f766e;
-    --cyan:#0891b2;
-    --slate:#475569;
-    --card-w:190px;
-    --card-h:134px;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.35;overflow:hidden}
-  button,select,input,textarea{font:inherit}
-  .app{display:grid;grid-template-rows:auto auto 1fr;height:100vh;min-width:1120px}
-  .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 20px;background:#0f172a;color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
-  .brand{display:flex;align-items:center;gap:12px;min-width:360px}
-  .brand-mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#3b82f6,#14b8a6);display:grid;place-items:center;font-weight:900;color:white;box-shadow:0 10px 22px rgba(37,99,235,.35)}
-  .brand h1{font-size:18px;margin:0;font-weight:800;letter-spacing:-.02em}.brand p{margin:3px 0 0;color:#cbd5e1;font-size:12px}
-  .status-strip{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);font-size:12px;font-weight:700;white-space:nowrap;color:inherit}
-  .pill.light{background:#eef4ff;color:#1e40af;border-color:#d8e6ff}.pill.ok{background:#eafaf0;color:#166534;border-color:#c6efd4}.pill.warn{background:#fff7ed;color:#9a3412;border-color:#fed7aa}.pill.err{background:#fef2f2;color:#991b1b;border-color:#fecaca}
-  .toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 20px;background:rgba(255,255,255,.92);border-bottom:1px solid var(--line);box-shadow:var(--shadow-soft);z-index:4;backdrop-filter:blur(10px)}
-  .filters{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.filters input,.filters select{height:38px;border:1px solid #cbd5e1;border-radius:12px;padding:0 12px;background:white;color:#111827;min-width:150px}.filters input{min-width:360px;flex:1}.actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}.btn{height:38px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;padding:0 12px;font-weight:750;color:#0f172a;cursor:pointer;transition:.15s ease}.btn:hover{border-color:#94a3b8;box-shadow:0 4px 12px rgba(15,23,42,.08);transform:translateY(-1px)}.btn.primary{background:#0f766e;color:white;border-color:#0f766e}.btn.ghost{background:#f8fafc}.btn.tiny{height:30px;border-radius:10px;padding:0 9px;font-size:12px}
-  .main{display:grid;grid-template-columns:minmax(780px,1fr) 380px;min-height:0;overflow:hidden}.left{display:grid;grid-template-rows:auto 1fr;min-width:0;min-height:0}.tabs{display:flex;gap:2px;background:#eef2f7;border-bottom:1px solid var(--line);padding:0 16px}.tab{border:0;background:transparent;padding:12px 14px;font-size:12px;font-weight:800;color:#475569;cursor:pointer;border-bottom:3px solid transparent}.tab.active{color:#0f172a;border-bottom-color:#2563eb;background:#fff;border-radius:12px 12px 0 0}.panel{min-height:0;overflow:hidden;display:none}.panel.active{display:block}.canvas-shell{height:100%;display:grid;grid-template-rows:auto 1fr;background:#f8fbff}.canvas-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line)}.canvas-title{font-weight:850;font-size:15px}.canvas-title small{display:block;color:var(--muted);font-weight:600;font-size:12px;margin-top:2px}.zoom-controls{display:flex;align-items:center;gap:8px}.zoom-value{font-size:12px;font-weight:850;color:#334155;background:#eef2ff;border-radius:999px;padding:5px 9px}.viewport{position:relative;overflow:auto;min-height:0;background-color:#f8fbff;background-image:radial-gradient(#cbd5e1 1px, transparent 1px);background-size:24px 24px;cursor:grab}.viewport.dragging{cursor:grabbing}.world{position:relative;transform-origin:0 0;min-width:1400px;min-height:900px}.connection-layer{position:absolute;inset:0;overflow:visible;pointer-events:none}.connection-layer .clickable{pointer-events:stroke;cursor:pointer}.node-card{position:absolute;width:var(--card-w);height:var(--card-h);background:var(--surface);border:1px solid #d9e2ef;border-radius:18px;box-shadow:var(--shadow-soft);padding:13px 13px 11px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s,opacity .15s;z-index:4}.node-card:hover,.node-card.selected{border-color:#2563eb;box-shadow:0 14px 32px rgba(37,99,235,.18);transform:translateY(-1px)}.node-topline{display:flex;align-items:center;justify-content:space-between;gap:7px}.node-title{display:flex;align-items:center;gap:8px;min-width:0}.node-icon{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:950;flex:0 0 auto}.node-name{font-size:15px;font-weight:900;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.node-kind{font-size:9px;font-weight:850;text-transform:uppercase;color:#475569}.node-subtitle{margin-top:8px;color:#475569;font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.badge-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:999px;font-size:11px;font-weight:850;border:1px solid #dbe4f0;background:#f8fafc;color:#1f2937}.badge.tx{background:#ecfdf5;color:#166534;border-color:#bbf7d0}.badge.rx{background:#fff7ed;color:#9a3412;border-color:#fed7aa}.badge.sw{background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe}.cpu-wrap{margin-top:8px}.cpu-line{display:flex;justify-content:space-between;font-size:10px;color:#64748b;font-weight:800}.cpu-bar{height:5px;background:#e2e8f0;border-radius:999px;margin-top:4px;overflow:hidden}.cpu-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#22c55e,#2563eb)}
-  .lane-card{position:absolute;width:var(--card-w);height:76px;overflow:hidden;background:#fff;border:1px solid #e2e8f0;border-radius:15px;box-shadow:0 6px 14px rgba(15,23,42,.07);padding:9px 10px;transition:.15s;z-index:3}.lane-card.hidden-layer{display:none}.lane-title{font-size:10px;font-weight:950;color:#475569;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}.lane-chips{display:flex;flex-wrap:wrap;gap:5px}.chip{display:inline-flex;align-items:center;gap:4px;max-width:164px;border-radius:999px;border:1px solid #dbe4f0;background:#f8fafc;padding:3px 7px;font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}.chip:hover{border-color:#2563eb;box-shadow:0 3px 8px rgba(37,99,235,.12)}.chip.tx{background:#ecfdf5;color:#166534;border-color:#bbf7d0}.chip.rx{background:#fff7ed;color:#9a3412;border-color:#fed7aa}.chip.sw{background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe}.chip.more{background:#eef2f7;color:#475569}.bus-label{font-size:12px;font-weight:900;fill:#0f172a}.bus-meta{font-size:10px;font-weight:700;fill:#475569}.bus-pill{fill:#fff;stroke:#cbd5e1;stroke-width:1}.bus-line{stroke-linecap:round;cursor:pointer}.bus-line-hit{stroke:transparent;stroke-width:26;cursor:pointer}.bus-group{transition:opacity .15s}.bus-dim{opacity:.18}.bus-selected .bus-line{filter:drop-shadow(0 0 6px rgba(37,99,235,.35))}.connection-line{stroke-width:4.4;stroke-linecap:round;fill:none}.connection-hit{stroke:transparent;stroke-width:20;cursor:pointer;fill:none}.joint{stroke:#fff;stroke-width:3;cursor:pointer}.node-dim{opacity:.24}.trace-highlight{filter:drop-shadow(0 0 5px rgba(37,99,235,.55))}.hint{position:absolute;right:18px;bottom:18px;background:#0f172a;color:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;opacity:.9;box-shadow:var(--shadow)}
-  .side{border-left:1px solid var(--line);background:#fff;display:grid;grid-template-rows:auto 1fr;min-height:0}.side-tabs{display:flex;background:#f1f5f9;border-bottom:1px solid var(--line)}.side-tab{flex:1;border:0;background:transparent;padding:12px 6px;font-size:12px;font-weight:850;color:#475569;cursor:pointer;border-bottom:3px solid transparent}.side-tab.active{background:#fff;color:#0f172a;border-bottom-color:#0f766e}.side-panel{overflow:auto;padding:16px;display:none}.side-panel.active{display:block}.inspector-empty{height:100%;display:grid;place-items:center;color:#64748b;text-align:center;padding:28px}.inspect-card{border:1px solid #e2e8f0;border-radius:18px;padding:14px;background:#fff;box-shadow:var(--shadow-soft);margin-bottom:12px}.inspect-kicker{font-size:10px;font-weight:950;text-transform:uppercase;color:#64748b;letter-spacing:.05em}.inspect-title{font-size:18px;font-weight:900;margin:4px 0 4px;letter-spacing:-.02em}.kv{display:grid;grid-template-columns:120px 1fr;gap:8px;border-top:1px solid #eef2f7;padding-top:9px;margin-top:9px;font-size:12px}.kv b{color:#475569}.section-title{font-size:12px;font-weight:950;text-transform:uppercase;color:#475569;margin:14px 0 8px}.list{display:flex;flex-direction:column;gap:8px}.list-item{border:1px solid #e5edf7;background:#f8fafc;border-radius:12px;padding:9px}.list-item strong{display:block;font-size:12px}.list-item span{display:block;color:#64748b;font-size:11px;margin-top:2px}.validation-item{border-radius:12px;padding:9px;margin-bottom:8px;border:1px solid}.validation-item.err{background:#fef2f2;border-color:#fecaca;color:#7f1d1d}.validation-item.warn{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}.validation-item.ok{background:#ecfdf5;border-color:#bbf7d0;color:#14532d}.table-panel{height:100%;overflow:auto;padding:16px;background:#fff}.data-table{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:12px}.data-table th{text-align:left;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:0 10px 5px}.data-table td{background:#f8fafc;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:10px}.data-table td:first-child{border-left:1px solid #e2e8f0;border-radius:12px 0 0 12px}.data-table td:last-child{border-right:1px solid #e2e8f0;border-radius:0 12px 12px 0}.data-table tr:hover td{background:#eef6ff;border-color:#bfdbfe}.json-panel{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:16px;background:#fff}.json-panel textarea{width:100%;height:100%;resize:none;border:1px solid #cbd5e1;border-radius:14px;padding:12px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px}.contract{padding:16px;overflow:auto;background:#fff;height:100%}.contract pre{background:#0f172a;color:#e2e8f0;border-radius:18px;padding:16px;overflow:auto;font-size:12px}.mini-note{font-size:12px;color:#64748b}.layer-toggles{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.toggle{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:800;color:#334155;background:#f8fafc;border:1px solid #cbd5e1;border-radius:999px;padding:7px 10px;cursor:pointer}.toggle input{width:auto;min-width:0;height:auto}.print-only{display:none}.hidden{display:none!important}
-  @media print{body{overflow:visible;background:#fff}.app{height:auto;display:block}.topbar,.toolbar,.tabs,.side,.canvas-header,.hint{display:none!important}.main,.left,.panel.active,.canvas-shell{display:block;overflow:visible}.viewport{overflow:visible;background:#fff;height:auto}.world{transform:none!important}.print-only{display:block}.node-card,.lane-card{box-shadow:none}.bus-line{stroke-width:4}@page{size:A3 landscape;margin:10mm}}
-</style>
-</head>
-<body>
-<div class="app">
-  <header class="topbar">
-    <div class="brand"><div class="brand-mark">BUS</div><div><h1>Generic Network BUS Backbone Template</h1><p>Data-driven topology · 20 template ECUs · gateway · dashboards · EHS4 valves · terminal</p></div></div>
-    <div class="status-strip" id="summaryPills"></div>
-  </header>
-  <section class="toolbar">
-    <div class="filters"><input id="searchInput" placeholder="Search node, ECU, bus, connector, CAN ID, message, SWC..." /><select id="typeFilter"><option value="all">All node types</option></select><select id="busFilter"><option value="all">All buses</option></select><select id="protocolFilter"><option value="all">All protocols</option></select></div>
-    <div class="actions"><div class="layer-toggles"><label class="toggle"><input type="checkbox" id="swToggle" checked> SW</label><label class="toggle"><input type="checkbox" id="msgToggle" checked> CAN messages</label></div><button class="btn ghost" id="fitBtn">Fit</button><button class="btn ghost" id="zoomOutBtn">−</button><span class="zoom-value" id="zoomValue">100%</span><button class="btn ghost" id="zoomInBtn">+</button><button class="btn" id="printBtn">Print PDF</button></div>
-  </section>
-  <main class="main">
-    <section class="left">
-      <nav class="tabs"><button class="tab active" data-tab="topology">Topology</button><button class="tab" data-tab="nodes">Nodes</button><button class="tab" data-tab="buses">Buses</button><button class="tab" data-tab="messages">CAN messages</button><button class="tab" data-tab="software">Software</button><button class="tab" data-tab="json">JSON feed</button><button class="tab" data-tab="contract">Data contract</button></nav>
-      <section class="panel active" id="topologyPanel">
-        <div class="canvas-shell">
-          <div class="canvas-header"><div class="canvas-title">Network topology canvas <small>One horizontal line = one BUS. Click a BUS to focus only nodes connected to that BUS. Click again, click empty canvas, or Clear focus to show all.</small></div><div class="zoom-controls"><button class="btn tiny hidden" id="clearFocusBtn">Clear BUS focus</button><button class="btn tiny" id="resetBtn">Reset</button><span class="mini-note">Mouse wheel zooms on cursor · drag to pan</span></div></div>
-          <div class="viewport" id="viewport"><div class="world" id="world"><svg class="connection-layer" id="svgLayer"></svg><div id="nodeLayer"></div><div id="laneLayer"></div><div class="hint">Click elements to open inspector</div></div></div>
-        </div>
-      </section>
-      <section class="panel" id="nodesPanel"><div class="table-panel"><table class="data-table" id="nodesTable"></table></div></section>
-      <section class="panel" id="busesPanel"><div class="table-panel"><table class="data-table" id="busesTable"></table></div></section>
-      <section class="panel" id="messagesPanel"><div class="table-panel"><table class="data-table" id="messagesTable"></table></div></section>
-      <section class="panel" id="softwarePanel"><div class="table-panel"><table class="data-table" id="softwareTable"></table></div></section>
-      <section class="panel" id="jsonPanel"><div class="json-panel"><div><strong>Feed data into the template</strong><div class="mini-note">Paste JSON or call <code>window.NetworkBusTemplate.setData(myData)</code>. The renderer computes all node positions and BUS routing automatically.</div></div><textarea id="jsonText"></textarea><div class="actions"><input type="file" id="jsonFile" accept="application/json" /><button class="btn primary" id="applyJsonBtn">Apply JSON</button><button class="btn" id="exportJsonBtn">Export current JSON</button></div></div></section>
-      <section class="panel" id="contractPanel"><div class="contract"><h2>Generic data contract</h2><p>Only the data below should change for a new project. The UI, layout and validation engine are generic.</p><pre id="contractPre"></pre></div></section>
-    </section>
-    <aside class="side">
-      <nav class="side-tabs"><button class="side-tab active" data-side="inspector">Inspector</button><button class="side-tab" data-side="validation">Validation</button></nav>
-      <section class="side-panel active" id="inspectorPanel"><div class="inspector-empty">Select an element on the topology to inspect all details.</div></section>
-      <section class="side-panel" id="validationPanel"></section>
-    </aside>
-  </main>
-</div>
-<script>
-/* ============================================================
-   GENERIC NETWORK BACKBONE TEMPLATE
-   - No per-node hard-coded coordinates.
-   - Edit / import data only.
-   - Layout is generated from DATA.nodes, DATA.buses, DATA.connections.
-============================================================ */
-const TEMPLATE_SETTINGS = {
-  nodeCard: { width: 190, height: 134, gapX: 44 },
-  lanes: { swHeight: 64, messageHeight: 76, gap: 16 },
-  // Generic spacing engine: no per-node coordinates are hard coded.
-  // The order is always: top lanes → top nodes → clear routing zone → buses → clear routing zone → bottom nodes → bottom lanes.
-  layout: { marginX: 90, topMargin: 48, bottomMargin: 72, nodeToBusGap: 100, busStartPad: 80, busEndPad: 80, minWidth: 3200 },
-  buses: { spacing: 58, stroke: 6, connectorStroke: 4.4, dotRadius: 7 },
-  colors: ["#2563eb", "#16a34a", "#f97316", "#7c3aed", "#0f766e", "#dc2626", "#0891b2", "#475569"],
-  icons: { ecu:"▦", gateway:"◆", dashboard:"▣", actuator:"⚙", terminal:"⌁", sensor:"◉", connector:"⌬", generic:"●" }
-};
-function generateTemplateData(options = {}){
-  const ecuCount = options.ecuCount ?? 20;
-  const nodes = [];
-  const connectors = [];
-  const connections = [];
-  const softwareComponents = [];
-  const softwareFlows = [];
-  const messages = [];
-  const buses = [
-    { id:"CAN_PT", name:"CAN Powertrain", protocol:"CAN FD", bitrate:"500 kbit/s / 2 Mbit/s", addressScheme:"29-bit CAN ID", physicalLayer:"ISO 11898-2", termination:"120 Ω at both ends", loadTarget:"< 40%", color:"#2563eb" },
-    { id:"CAN_CH", name:"CAN Chassis", protocol:"CAN FD", bitrate:"500 kbit/s / 2 Mbit/s", addressScheme:"29-bit CAN ID", physicalLayer:"ISO 11898-2", termination:"120 Ω at both ends", loadTarget:"< 45%", color:"#16a34a" },
-    { id:"CAN_BODY", name:"CAN Body", protocol:"CAN", bitrate:"250 kbit/s", addressScheme:"11-bit CAN ID", physicalLayer:"ISO 11898-2", termination:"120 Ω at both ends", loadTarget:"< 35%", color:"#f97316" },
-    { id:"CAN_HMI", name:"CAN HMI", protocol:"CAN", bitrate:"250 kbit/s", addressScheme:"11-bit CAN ID", physicalLayer:"ISO 11898-2", termination:"120 Ω at both ends", loadTarget:"< 35%", color:"#0f766e" },
-    { id:"LIN_AUX", name:"LIN Auxiliary", protocol:"LIN", bitrate:"19.2 kbit/s", addressScheme:"LIN frame ID", physicalLayer:"ISO 17987", termination:"Master pull-up", loadTarget:"< 40%", color:"#dc2626" },
-    { id:"ETH_DIAG", name:"Ethernet Diagnostic", protocol:"Ethernet", bitrate:"100BASE-T1", addressScheme:"IP / DoIP", physicalLayer:"Automotive Ethernet", termination:"PHY integrated", loadTarget:"< 30%", color:"#7c3aed" }
-  ];
-  const busForIndex = i => ["CAN_PT","CAN_CH","CAN_BODY","CAN_HMI"][i % 4];
-  for(let i=1;i<=ecuCount;i++){
-    const id = `ECU_${String(i).padStart(2,"0")}`;
-    const row = i <= Math.ceil(ecuCount/2) ? "top" : "bottom";
-    const primaryBus = busForIndex(i-1);
-    const secondaryBus = i % 5 === 0 ? "ETH_DIAG" : (i % 3 === 0 ? "CAN_BODY" : null);
-    nodes.push({ id, name:`Template ECU ${String(i).padStart(2,"0")}`, shortName:`ECU ${String(i).padStart(2,"0")}`, type:"ecu", row, domain:["Powertrain","Hydraulics","Chassis","Body","HMI"][i%5], diagnosticAddress:`0x7${String(10+i).padStart(2,"0")}`, description:"Reusable template ECU placeholder. Replace with project-specific data.", role:"network participant", status:"template" });
-    connectors.push({ id:`CONN_${id}`, nodeId:id, name:"J1", type:"Main harness", pins:"CAN/LIN/ETH pins from template", sealed:true });
-    connections.push({ id:`C_${id}_${primaryBus}`, nodeId:id, busId:primaryBus, connectorId:`CONN_${id}`, port:`${primaryBus}_PORT`, pins:"P1/P2", role:"node", stubLengthCm: 18 + (i%4)*6, shielding: primaryBus === "ETH_DIAG" ? "shielded pair" : "twisted pair" });
-    if(secondaryBus && secondaryBus !== primaryBus){ connections.push({ id:`C_${id}_${secondaryBus}`, nodeId:id, busId:secondaryBus, connectorId:`CONN_${id}`, port:`${secondaryBus}_PORT`, pins:"P3/P4", role:"node", stubLengthCm: 24, shielding:"as required" }); }
-    softwareComponents.push({ id:`SWC_${id}_APP`, ecuId:id, name:`${id} Application`, shortName:"App", category:"Application", responsibleTeam:`Team ${((i-1)%6)+1}`, owner:"Feature owner", supplier:"Internal", version:`v1.${i%7}.0`, baseline:"TEMPLATE_BASELINE", status:"Proposed", maturity:"Template", asilLevel: i%4===0 ? "ASIL B" : "QM", cpuLoadPercent: +(2.0 + (i%6)*0.7).toFixed(1), ramUsageKb:64 + i*2, flashUsageKb:220 + i*8, inputs:["VehicleState"], outputs:[`${id}_Status`] });
-    softwareComponents.push({ id:`SWC_${id}_COM`, ecuId:id, name:`${id} Communication`, shortName:"Com", category:"Communication", responsibleTeam:"Network Software", owner:"Network architect", supplier:"Internal", version:"v1.0.0", baseline:"TEMPLATE_BASELINE", status:"Proposed", maturity:"Template", asilLevel:"QM", cpuLoadPercent:1.1, ramUsageKb:32, flashUsageKb:90, inputs:[`${id}_TxData`], outputs:[`${id}_RxData`] });
-    messages.push({ id:`MSG_${id}_STATUS`, busId:primaryBus, name:`${id}_Status`, canId:`0x${(0x180+i).toString(16).toUpperCase()}`, idFormat:"11-bit", dlc:8, cycleMs:50, producerNodeId:id, consumerNodeIds:["GW_01"], txSoftwareComponentId:`SWC_${id}_COM`, rxSoftwareComponentIds:["SWC_GW_ROUTER"], signals:[`${id}_Alive`, `${id}_State`], status:"template" });
-    messages.push({ id:`MSG_CMD_${id}`, busId:primaryBus, name:`${id}_Command`, canId:`0x${(0x280+i).toString(16).toUpperCase()}`, idFormat:"11-bit", dlc:8, cycleMs:100, producerNodeId:"GW_01", consumerNodeIds:[id], txSoftwareComponentId:"SWC_GW_ROUTER", rxSoftwareComponentIds:[`SWC_${id}_COM`], signals:[`${id}_ModeCmd`, `${id}_ResetReq`], status:"template" });
-  }
-  const specialNodes = [
-    { id:"GW_01", name:"Central Gateway", shortName:"GATEWAY", type:"gateway", row:"top", domain:"Network", diagnosticAddress:"0x700", role:"gateway", description:"Central network router and diagnostics gateway." },
-    { id:"DASH_01", name:"Dashboard Cluster A", shortName:"DASH A", type:"dashboard", row:"top", domain:"HMI", diagnosticAddress:"0x740", role:"display", description:"Main dashboard / operator display." },
-    { id:"DASH_02", name:"Dashboard Cluster B", shortName:"DASH B", type:"dashboard", row:"top", domain:"HMI", diagnosticAddress:"0x741", role:"display", description:"Secondary dashboard / operator display." },
-    { id:"EHS4_VALVE_01", name:"EHS4 Valve Component 1", shortName:"EHS4 V1", type:"actuator", row:"bottom", domain:"Hydraulics", diagnosticAddress:"0x760", role:"smart actuator", description:"EHS4 hydraulic valve communicating on network." },
-    { id:"EHS4_VALVE_02", name:"EHS4 Valve Component 2", shortName:"EHS4 V2", type:"actuator", row:"bottom", domain:"Hydraulics", diagnosticAddress:"0x761", role:"smart actuator", description:"Second EHS4 hydraulic valve communicating on network." },
-    { id:"TERM_01", name:"Service Terminal", shortName:"TERMINAL", type:"terminal", row:"bottom", domain:"Service", diagnosticAddress:"DoIP", role:"diagnostic terminal", description:"External terminal / service tool." }
-  ];
-  nodes.push(...specialNodes);
-  specialNodes.forEach(n=> connectors.push({ id:`CONN_${n.id}`, nodeId:n.id, name:n.type==="terminal" ? "SERVICE" : "J1", type:"Network connector", pins:"Template pins", sealed:n.type!=="terminal" }));
-  const specialConnections = [
-    ["GW_01","CAN_PT"],["GW_01","CAN_CH"],["GW_01","CAN_BODY"],["GW_01","CAN_HMI"],["GW_01","LIN_AUX"],["GW_01","ETH_DIAG"],
-    ["DASH_01","CAN_HMI"],["DASH_01","CAN_BODY"],["DASH_02","CAN_HMI"],["DASH_02","CAN_BODY"],
-    ["EHS4_VALVE_01","CAN_CH"],["EHS4_VALVE_01","LIN_AUX"],["EHS4_VALVE_02","CAN_CH"],["EHS4_VALVE_02","LIN_AUX"],
-    ["TERM_01","ETH_DIAG"],["TERM_01","CAN_BODY"]
-  ];
-  specialConnections.forEach(([nodeId,busId], idx)=> connections.push({ id:`C_${nodeId}_${busId}`, nodeId, busId, connectorId:`CONN_${nodeId}`, port:`${busId}_PORT`, pins: busId==="LIN_AUX" ? "LIN/GND" : (busId==="ETH_DIAG" ? "ETH+/ETH-" : "CAN_H/CAN_L"), role:nodeId==="GW_01"?"gateway":"node", stubLengthCm: nodeId==="GW_01"?12:24+(idx%3)*4, shielding: busId==="ETH_DIAG"?"shielded pair":"twisted pair" }));
-  softwareComponents.push(
-    { id:"SWC_GW_ROUTER", ecuId:"GW_01", name:"Gateway Router", shortName:"Router", category:"Communication", responsibleTeam:"Network Architecture", owner:"Gateway owner", supplier:"Internal", version:"v2.4.0", baseline:"GATEWAY_BASELINE", status:"Integrated", maturity:"Production", asilLevel:"QM", cpuLoadPercent:8.5, ramUsageKb:512, flashUsageKb:1200, inputs:["All CAN/LIN/ETH messages"], outputs:["Routed messages"] },
-    { id:"SWC_GW_DIAG", ecuId:"GW_01", name:"Diagnostic Gateway", shortName:"Diag", category:"Diagnostic", responsibleTeam:"Diagnostics", owner:"Diag owner", supplier:"Internal", version:"v1.7.1", baseline:"GATEWAY_BASELINE", status:"Integrated", maturity:"Production", asilLevel:"QM", cpuLoadPercent:2.4, ramUsageKb:128, flashUsageKb:420, inputs:["UDS / DoIP"], outputs:["Diagnostic responses"] },
-    { id:"SWC_DASH_A", ecuId:"DASH_01", name:"Display Application A", shortName:"Display", category:"Application", responsibleTeam:"HMI Team", owner:"HMI owner", supplier:"Internal", version:"v3.0.0", baseline:"HMI_BASELINE", status:"Proposed", maturity:"Template", asilLevel:"QM", cpuLoadPercent:5.2, ramUsageKb:256, flashUsageKb:900, inputs:["Vehicle status"], outputs:["HMI alerts"] },
-    { id:"SWC_DASH_B", ecuId:"DASH_02", name:"Display Application B", shortName:"Display", category:"Application", responsibleTeam:"HMI Team", owner:"HMI owner", supplier:"Internal", version:"v3.0.0", baseline:"HMI_BASELINE", status:"Proposed", maturity:"Template", asilLevel:"QM", cpuLoadPercent:4.8, ramUsageKb:240, flashUsageKb:850, inputs:["Vehicle status"], outputs:["HMI alerts"] },
-    { id:"SWC_EHS4_1", ecuId:"EHS4_VALVE_01", name:"EHS4 Valve Control 1", shortName:"EHS4Ctrl", category:"Actuator Control", responsibleTeam:"Hydraulic Controls", owner:"Valve owner", supplier:"EHS4 Supplier", version:"v1.2.0", baseline:"EHS4_BASELINE", status:"Proposed", maturity:"Template", asilLevel:"ASIL B", cpuLoadPercent:6.3, ramUsageKb:128, flashUsageKb:520, inputs:["Valve command"], outputs:["Valve feedback"] },
-    { id:"SWC_EHS4_2", ecuId:"EHS4_VALVE_02", name:"EHS4 Valve Control 2", shortName:"EHS4Ctrl", category:"Actuator Control", responsibleTeam:"Hydraulic Controls", owner:"Valve owner", supplier:"EHS4 Supplier", version:"v1.2.0", baseline:"EHS4_BASELINE", status:"Proposed", maturity:"Template", asilLevel:"ASIL B", cpuLoadPercent:6.1, ramUsageKb:128, flashUsageKb:520, inputs:["Valve command"], outputs:["Valve feedback"] },
-    { id:"SWC_TERM_DIAG", ecuId:"TERM_01", name:"Terminal Diagnostics", shortName:"DiagClient", category:"Service Tool", responsibleTeam:"Service Tools", owner:"Service owner", supplier:"External", version:"v1.0.0", baseline:"SERVICE_BASELINE", status:"Template", maturity:"Template", asilLevel:"QM", cpuLoadPercent:1.0, ramUsageKb:64, flashUsageKb:150, inputs:["Diagnostic responses"], outputs:["Diagnostic requests"] }
-  );
-  messages.push(
-    { id:"MSG_GW_HEARTBEAT", busId:"CAN_BODY", name:"GatewayHeartbeat", canId:"0x100", idFormat:"11-bit", dlc:8, cycleMs:100, producerNodeId:"GW_01", consumerNodeIds:nodes.filter(n=>n.id!=="GW_01").slice(0,12).map(n=>n.id), txSoftwareComponentId:"SWC_GW_ROUTER", rxSoftwareComponentIds:[], signals:["GWAlive","NetworkState"], status:"template" },
-    { id:"MSG_EHS4_1_FB", busId:"CAN_CH", name:"EHS4Valve1Feedback", canId:"0x340", idFormat:"11-bit", dlc:8, cycleMs:20, producerNodeId:"EHS4_VALVE_01", consumerNodeIds:["GW_01","ECU_12","ECU_15"], txSoftwareComponentId:"SWC_EHS4_1", rxSoftwareComponentIds:["SWC_GW_ROUTER"], signals:["Valve1Pos","Valve1Current"], status:"template" },
-    { id:"MSG_EHS4_2_FB", busId:"CAN_CH", name:"EHS4Valve2Feedback", canId:"0x341", idFormat:"11-bit", dlc:8, cycleMs:20, producerNodeId:"EHS4_VALVE_02", consumerNodeIds:["GW_01","ECU_13","ECU_16"], txSoftwareComponentId:"SWC_EHS4_2", rxSoftwareComponentIds:["SWC_GW_ROUTER"], signals:["Valve2Pos","Valve2Current"], status:"template" },
-    { id:"MSG_DASH_A_STATUS", busId:"CAN_HMI", name:"DashboardAStatus", canId:"0x440", idFormat:"11-bit", dlc:8, cycleMs:100, producerNodeId:"DASH_01", consumerNodeIds:["GW_01"], txSoftwareComponentId:"SWC_DASH_A", rxSoftwareComponentIds:["SWC_GW_ROUTER"], signals:["DisplayMode","WarningAck"], status:"template" },
-    { id:"MSG_DASH_B_STATUS", busId:"CAN_HMI", name:"DashboardBStatus", canId:"0x441", idFormat:"11-bit", dlc:8, cycleMs:100, producerNodeId:"DASH_02", consumerNodeIds:["GW_01"], txSoftwareComponentId:"SWC_DASH_B", rxSoftwareComponentIds:["SWC_GW_ROUTER"], signals:["DisplayMode","WarningAck"], status:"template" }
-  );
-  messages.forEach(m=>{
-    m.consumerNodeIds.forEach(c=> softwareFlows.push({ id:`FLOW_${m.id}_${c}`, producerComponentId:m.txSoftwareComponentId, consumerComponentId:m.rxSoftwareComponentIds?.[0] || null, producerNodeId:m.producerNodeId, consumerNodeId:c, busId:m.busId, messageId:m.id, data:m.name, interfaceType:"CAN message", timingMs:m.cycleMs }));
-  });
-  return { meta:{ project:"Generic network backbone — no-overlap clearance layout", revision:"v1.0", generatedFrom:"Template factory", nodeCount:nodes.length }, nodes, buses, connectors, connections, messages, softwareComponents, softwareFlows };
-}
-let DATA = {
+<!--
+  Network BUS Backbone Template (v1)
+  ===================================
+  Consumed by tools/scripts/generate_network_bus_backbone_html.py, which
+  replaces the `let DATA = {
   "meta": {
     "project": "Imported Architecture",
     "revision": "v1.0",
     "generatedFrom": "Architecture JSON export",
-    "nodeCount": 6
+    "nodeCount": 7
   },
   "nodes": [
     {
@@ -243,6 +79,18 @@ let DATA = {
       "domain": "Network",
       "diagnosticAddress": "0x715",
       "description": "SMALL",
+      "role": "network participant",
+      "status": "active"
+    },
+    {
+      "id": "VALIDATION_IO_ECU",
+      "name": "VALIDATION_IO_ECU",
+      "shortName": "VALIDATION_IO_E",
+      "type": "ecu",
+      "row": "top",
+      "domain": "Network",
+      "diagnosticAddress": "0x716",
+      "description": "VALIDATION",
       "role": "network participant",
       "status": "active"
     }
@@ -346,6 +194,13 @@ let DATA = {
       "name": "J1",
       "type": "Network connector",
       "pins": "CAN/LIN/ETH pins from architecture"
+    },
+    {
+      "id": "CONN_VALIDATION_IO_ECU",
+      "nodeId": "VALIDATION_IO_ECU",
+      "name": "J1",
+      "type": "Network connector",
+      "pins": "CAN/LIN/ETH pins from architecture"
     }
   ],
   "connections": [
@@ -394,17 +249,6 @@ let DATA = {
       "shielding": "twisted pair"
     },
     {
-      "id": "C_AEC_DISPLAY_01_ETH_DIAG",
-      "nodeId": "AEC_DISPLAY_01",
-      "busId": "ETH_DIAG",
-      "connectorId": "CONN_AEC_DISPLAY_01",
-      "port": "ETH_DIAG_PORT",
-      "pins": "ETH+/ETH-",
-      "role": "node",
-      "stubLengthCm": 24,
-      "shielding": "shielded pair"
-    },
-    {
       "id": "C_AEC_DISPLAY_01_CAN_CH",
       "nodeId": "AEC_DISPLAY_01",
       "busId": "CAN_CH",
@@ -414,6 +258,17 @@ let DATA = {
       "role": "node",
       "stubLengthCm": 24,
       "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_DISPLAY_01_ETH_DIAG",
+      "nodeId": "AEC_DISPLAY_01",
+      "busId": "ETH_DIAG",
+      "connectorId": "CONN_AEC_DISPLAY_01",
+      "port": "ETH_DIAG_PORT",
+      "pins": "ETH+/ETH-",
+      "role": "node",
+      "stubLengthCm": 24,
+      "shielding": "shielded pair"
     },
     {
       "id": "C_AEC_ENGINE_01_LIN_AUX",
@@ -493,17 +348,6 @@ let DATA = {
       "shielding": "twisted pair"
     },
     {
-      "id": "C_AEC_REAR_HITCH_01_ETH_DIAG",
-      "nodeId": "AEC_REAR_HITCH_01",
-      "busId": "ETH_DIAG",
-      "connectorId": "CONN_AEC_REAR_HITCH_01",
-      "port": "ETH_DIAG_PORT",
-      "pins": "ETH+/ETH-",
-      "role": "node",
-      "stubLengthCm": 18,
-      "shielding": "shielded pair"
-    },
-    {
       "id": "C_AEC_REAR_HITCH_01_CAN_CH",
       "nodeId": "AEC_REAR_HITCH_01",
       "busId": "CAN_CH",
@@ -513,6 +357,17 @@ let DATA = {
       "role": "node",
       "stubLengthCm": 18,
       "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_REAR_HITCH_01_ETH_DIAG",
+      "nodeId": "AEC_REAR_HITCH_01",
+      "busId": "ETH_DIAG",
+      "connectorId": "CONN_AEC_REAR_HITCH_01",
+      "port": "ETH_DIAG_PORT",
+      "pins": "ETH+/ETH-",
+      "role": "node",
+      "stubLengthCm": 18,
+      "shielding": "shielded pair"
     },
     {
       "id": "C_AEC_TRAILER_01_LIN_AUX",
@@ -545,6 +400,17 @@ let DATA = {
       "pins": "CAN_H/CAN_L",
       "role": "node",
       "stubLengthCm": 24,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_VALIDATION_IO_ECU_CAN_PT",
+      "nodeId": "VALIDATION_IO_ECU",
+      "busId": "CAN_PT",
+      "connectorId": "CONN_VALIDATION_IO_ECU",
+      "port": "CAN_PT_PORT",
+      "pins": "CAN_H/CAN_L",
+      "role": "node",
+      "stubLengthCm": 30,
       "shielding": "twisted pair"
     }
   ],
@@ -639,7 +505,7 @@ let DATA = {
     },
     {
       "id": "MSG_AEC_DISPLAY_01_STATUS",
-      "busId": "ETH_DIAG",
+      "busId": "CAN_CH",
       "name": "AEC_DISPLAY_01_Status",
       "canId": "0x185",
       "idFormat": "11-bit",
@@ -661,7 +527,7 @@ let DATA = {
     },
     {
       "id": "MSG_AEC_DISPLAY_01_STATUS",
-      "busId": "CAN_CH",
+      "busId": "ETH_DIAG",
       "name": "AEC_DISPLAY_01_Status",
       "canId": "0x186",
       "idFormat": "11-bit",
@@ -837,7 +703,7 @@ let DATA = {
     },
     {
       "id": "MSG_AEC_REAR_HITCH_01_STATUS",
-      "busId": "ETH_DIAG",
+      "busId": "CAN_CH",
       "name": "AEC_REAR_HITCH_01_Status",
       "canId": "0x18E",
       "idFormat": "11-bit",
@@ -859,7 +725,7 @@ let DATA = {
     },
     {
       "id": "MSG_AEC_REAR_HITCH_01_STATUS",
-      "busId": "CAN_CH",
+      "busId": "ETH_DIAG",
       "name": "AEC_REAR_HITCH_01_Status",
       "canId": "0x18F",
       "idFormat": "11-bit",
@@ -944,6 +810,28 @@ let DATA = {
         "AEC_TRAILER_01_State"
       ],
       "status": "active"
+    },
+    {
+      "id": "MSG_VALIDATION_IO_ECU_STATUS",
+      "busId": "CAN_PT",
+      "name": "VALIDATION_IO_ECU_Status",
+      "canId": "0x193",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "VALIDATION_IO_ECU",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_VALIDATION_IO_ECU_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "VALIDATION_IO_ECU_Alive",
+        "VALIDATION_IO_ECU_State"
+      ],
+      "status": "active"
     }
   ],
   "softwareComponents": [
@@ -961,9 +849,9 @@ let DATA = {
       "status": "Active",
       "maturity": "Production",
       "asilLevel": "QM",
-      "cpuLoadPercent": 6.0,
-      "ramUsageKb": 162,
-      "flashUsageKb": 1314,
+      "cpuLoadPercent": 7.6,
+      "ramUsageKb": 382,
+      "flashUsageKb": 1278,
       "inputs": [
         "AEC_CABIN_01_Input"
       ],
@@ -1009,9 +897,9 @@ let DATA = {
       "status": "Active",
       "maturity": "Production",
       "asilLevel": "QM",
-      "cpuLoadPercent": 7.4,
-      "ramUsageKb": 272,
-      "flashUsageKb": 912,
+      "cpuLoadPercent": 7.9,
+      "ramUsageKb": 397,
+      "flashUsageKb": 1421,
       "inputs": [
         "AEC_DISPLAY_01_Input"
       ],
@@ -1057,9 +945,9 @@ let DATA = {
       "status": "Active",
       "maturity": "Production",
       "asilLevel": "QM",
-      "cpuLoadPercent": 7.1,
-      "ramUsageKb": 485,
-      "flashUsageKb": 1509,
+      "cpuLoadPercent": 5.2,
+      "ramUsageKb": 226,
+      "flashUsageKb": 994,
       "inputs": [
         "AEC_ENGINE_01_Input"
       ],
@@ -1105,9 +993,9 @@ let DATA = {
       "status": "Active",
       "maturity": "Production",
       "asilLevel": "QM",
-      "cpuLoadPercent": 5.8,
-      "ramUsageKb": 298,
-      "flashUsageKb": 1066,
+      "cpuLoadPercent": 5.2,
+      "ramUsageKb": 286,
+      "flashUsageKb": 1310,
       "inputs": [
         "AEC_TRANSMISSION_01_Input"
       ],
@@ -1153,9 +1041,9 @@ let DATA = {
       "status": "Active",
       "maturity": "Production",
       "asilLevel": "QM",
-      "cpuLoadPercent": 6.7,
-      "ramUsageKb": 505,
-      "flashUsageKb": 1017,
+      "cpuLoadPercent": 7.4,
+      "ramUsageKb": 134,
+      "flashUsageKb": 518,
       "inputs": [
         "AEC_REAR_HITCH_01_Input"
       ],
@@ -1201,9 +1089,9 @@ let DATA = {
       "status": "Active",
       "maturity": "Production",
       "asilLevel": "QM",
-      "cpuLoadPercent": 6.7,
-      "ramUsageKb": 307,
-      "flashUsageKb": 691,
+      "cpuLoadPercent": 5.8,
+      "ramUsageKb": 148,
+      "flashUsageKb": 1300,
       "inputs": [
         "AEC_TRAILER_01_Input"
       ],
@@ -1234,6 +1122,54 @@ let DATA = {
       "outputs": [
         "AEC_TRAILER_01_RxData"
       ]
+    },
+    {
+      "id": "SWC_VALIDATION_IO_ECU_APP",
+      "ecuId": "VALIDATION_IO_ECU",
+      "name": "VALIDATION_IO_ECU Application",
+      "shortName": "App",
+      "category": "Application",
+      "responsibleTeam": "Development Team",
+      "owner": "Feature owner",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 5.2,
+      "ramUsageKb": 388,
+      "flashUsageKb": 772,
+      "inputs": [
+        "VALIDATION_IO_ECU_Input"
+      ],
+      "outputs": [
+        "VALIDATION_IO_ECU_Output"
+      ]
+    },
+    {
+      "id": "SWC_VALIDATION_IO_ECU_COM",
+      "ecuId": "VALIDATION_IO_ECU",
+      "name": "VALIDATION_IO_ECU Communication",
+      "shortName": "Com",
+      "category": "Communication",
+      "responsibleTeam": "Network Software",
+      "owner": "Network architect",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 1.5,
+      "ramUsageKb": 64,
+      "flashUsageKb": 256,
+      "inputs": [
+        "VALIDATION_IO_ECU_TxData"
+      ],
+      "outputs": [
+        "VALIDATION_IO_ECU_RxData"
+      ]
     }
   ],
   "softwareFlows": [
@@ -1387,6 +1323,42 @@ let DATA = {
       "consumerComponentId": "SWC_AEC_CABIN_01_COM",
       "producerNodeId": "AEC_DISPLAY_01",
       "consumerNodeId": "AEC_CABIN_01",
+      "busId": "CAN_CH",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "CAN_CH",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "CAN_CH",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_CABIN_01",
       "busId": "ETH_DIAG",
       "messageId": "MSG_AEC_DISPLAY_01_STATUS",
       "data": "AEC_DISPLAY_01_Status",
@@ -1412,6 +1384,1927 @@ let DATA = {
       "producerNodeId": "AEC_DISPLAY_01",
       "consumerNodeId": "AEC_TRANSMISSION_01",
       "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "CAN_BODY",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "CAN_BODY",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "CAN_BODY",
+      "messageId": "MSG_AEC_ENGINE_01_STATUS",
+      "data": "AEC_ENGINE_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRANSMISSION_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "data": "AEC_TRANSMISSION_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "CAN_CH",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "CAN_CH",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "CAN_CH",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_REAR_HITCH_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "data": "AEC_REAR_HITCH_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "CAN_BODY",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "CAN_BODY",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_TRAILER_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_TRAILER_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "CAN_BODY",
+      "messageId": "MSG_AEC_TRAILER_01_STATUS",
+      "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_VALIDATION_IO_ECU_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_VALIDATION_IO_ECU_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "VALIDATION_IO_ECU",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_VALIDATION_IO_ECU_STATUS",
+      "data": "VALIDATION_IO_ECU_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_VALIDATION_IO_ECU_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_VALIDATION_IO_ECU_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "VALIDATION_IO_ECU",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_VALIDATION_IO_ECU_STATUS",
+      "data": "VALIDATION_IO_ECU_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_VALIDATION_IO_ECU_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_VALIDATION_IO_ECU_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "VALIDATION_IO_ECU",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_VALIDATION_IO_ECU_STATUS",
+      "data": "VALIDATION_IO_ECU_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    }
+  ]
+};` line below
+  with the real architecture data and writes the result to
+  generated_doc/architecture_html/network_bus_backbone.html.
+
+  This is a first, deliberately simple implementation (not a recreation of
+  any prior template) written to close the "[SKIP] vendored template not
+  found" gap in the documentation pipeline: a system-level view of every
+  communication bus and which ECUs sit on it, with the per-bus message list
+  available on click. Self-contained (no external CSS/JS/fonts) so it opens
+  from a plain file:// URL and works whether the generator has injected real
+  DATA or not (generateTemplateData() below produces placeholder data so the
+  template previews sensibly on its own).
+
+  DATA shape produced by the generator (see extract_*_from_architecture() in
+  the generator script):
+    {
+      meta: { project, revision, generatedFrom, nodeCount },
+      nodes: [ { id, name, shortName, type, row: "top"|"bottom", domain,
+                 diagnosticAddress, description, role, status } ],
+      buses: [ { id, name, protocol, bitrate, addressScheme, physicalLayer,
+                 termination, loadTarget, color } ],
+      connectors: [ { id, nodeId, name, type, pins } ],
+      connections: [ { id, nodeId, busId, connectorId, port, pins, role,
+                        stubLengthCm, shielding } ],
+      messages: [ { id, busId, name, canId, idFormat, dlc, cycleMs,
+                     producerNodeId, consumerNodeIds, txSoftwareComponentId,
+                     rxSoftwareComponentIds, signals, status } ],
+      softwareComponents: [ { id, ecuId, name, shortName, category, ... } ],
+      softwareFlows: [ { id, producerComponentId, consumerComponentId,
+                          producerNodeId, consumerNodeId, busId, messageId,
+                          data, interfaceType, timingMs } ]
+    }
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network BUS Backbone</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111a2e; --panel2:#0e1626; --border:#233152;
+    --text:#e6edf7; --muted:#8fa2c4; --accent:#3b82f6;
+    --mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;}
+  header h1{margin:0;font-size:1.4rem;font-weight:800;letter-spacing:-.01em;}
+  header .meta{color:var(--muted);font-size:.85rem;font-family:var(--mono);}
+  main{padding:20px 24px;display:flex;flex-direction:column;gap:20px;}
+  #filter{width:100%;max-width:360px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:.9rem;}
+  #filter::placeholder{color:var(--muted);}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:.8rem;color:var(--muted);}
+  .legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle;}
+  svg text{fill:var(--text);font-family:var(--sans);}
+  .node-box{fill:var(--panel2);stroke:var(--border);stroke-width:1;rx:8;}
+  .node-box.selected{stroke:var(--accent);stroke-width:2;}
+  .node-label{font-size:12px;font-weight:600;}
+  .node-sub{font-size:9px;fill:var(--muted);}
+  .bus-line{stroke-width:4;stroke-linecap:round;cursor:pointer;}
+  .bus-label{font-size:11px;font-weight:700;}
+  .stub{stroke:var(--border);stroke-width:1.5;}
+  .stub.active{stroke-opacity:.9;}
+  table{border-collapse:collapse;width:100%;font-size:.85rem;}
+  th,td{border-bottom:1px solid var(--border);padding:6px 10px;text-align:left;white-space:nowrap;}
+  th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel);}
+  tr.hidden{display:none;}
+  code{font-family:var(--mono);font-size:.85em;color:#9db4e0;}
+  .hint{color:var(--muted);font-size:.8rem;margin-top:4px;}
+  h2{font-size:1rem;margin:0 0 10px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Network BUS Backbone</h1>
+  <div class="meta" id="hdr-meta"></div>
+</header>
+<main>
+  <input id="filter" type="text" placeholder="Filter by ECU, bus, or message name…">
+
+  <div class="panel">
+    <h2>Topology</h2>
+    <div class="legend" id="legend"></div>
+    <svg id="diagram" width="100%" height="420"></svg>
+    <div class="hint">Click a bus line to highlight its connected ECUs and jump to its messages below.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Buses</h2>
+    <table id="bus-table">
+      <thead><tr><th>Bus</th><th>Protocol</th><th>Bitrate</th><th>Address scheme</th><th>Physical layer</th><th>Termination</th><th>Load target</th><th>Nodes</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Messages</h2>
+    <table id="msg-table">
+      <thead><tr><th>Message</th><th>Bus</th><th>CAN ID</th><th>Format</th><th>DLC</th><th>Cycle (ms)</th><th>Producer</th><th>Consumers</th><th>Signals</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+/* Placeholder data generator: only used when this template is opened
+   directly, before the doc-generator script has injected real DATA. */
+function generateTemplateData({ ecuCount = 6 } = {}) {
+  const nodes = [];
+  for (let i = 0; i < ecuCount; i++) {
+    nodes.push({ id: `ECU_${i+1}`, name: `ECU_${i+1}`, shortName: `ECU_${i+1}`, type: "ecu",
+                 row: i % 2 === 0 ? "top" : "bottom", domain: "Network",
+                 diagnosticAddress: `0x7${String(10+i).padStart(2,"0")}`,
+                 description: "Controller", role: "network participant", status: "active" });
+  }
+  const buses = [
+    { id: "CAN_PT", name: "CAN Powertrain", protocol: "CAN FD", bitrate: "500 kbit/s / 2 Mbit/s",
+      addressScheme: "29-bit CAN ID", physicalLayer: "ISO 11898-2", termination: "120 Ω at both ends",
+      loadTarget: "< 40%", color: "#2563eb" }
+  ];
+  const connections = nodes.map((n, i) => ({
+    id: `C_${n.id}`, nodeId: n.id, busId: "CAN_PT", connectorId: `CONN_${n.id}`,
+    port: "CAN_PT_PORT", pins: "CAN_H/CAN_L", role: "node", stubLengthCm: 18, shielding: "twisted pair"
+  }));
+  const messages = nodes.map((n, i) => ({
+    id: `MSG_${n.id}_STATUS`, busId: "CAN_PT", name: `${n.id}_Status`,
+    canId: `0x${(0x180+i).toString(16).toUpperCase()}`, idFormat: "11-bit", dlc: 8, cycleMs: 50,
+    producerNodeId: n.id, consumerNodeIds: nodes.filter(o=>o.id!==n.id).map(o=>o.id).slice(0,2),
+    txSoftwareComponentId: `SWC_${n.id}_COM`, rxSoftwareComponentIds: [], signals: [`${n.id}_Alive`], status: "active"
+  }));
+  return { meta: { project: "Preview", revision: "v0", generatedFrom: "placeholder", nodeCount: nodes.length },
+           nodes, buses, connectors: [], connections, messages, softwareComponents: [], softwareFlows: [] };
+}
+
+let DATA = {
+  "meta": {
+    "project": "Imported Architecture",
+    "revision": "v1.0",
+    "generatedFrom": "Architecture JSON export",
+    "nodeCount": 7
+  },
+  "nodes": [
+    {
+      "id": "AEC_CABIN_01",
+      "name": "AEC_CABIN_01",
+      "shortName": "AEC_CABIN_01",
+      "type": "ecu",
+      "row": "top",
+      "domain": "Network",
+      "diagnosticAddress": "0x710",
+      "description": "MEDIUM",
+      "role": "network participant",
+      "status": "active"
+    },
+    {
+      "id": "AEC_DISPLAY_01",
+      "name": "AEC_DISPLAY_01",
+      "shortName": "AEC_DISPLAY_01",
+      "type": "ecu",
+      "row": "bottom",
+      "domain": "Network",
+      "diagnosticAddress": "0x711",
+      "description": "SMALL",
+      "role": "network participant",
+      "status": "active"
+    },
+    {
+      "id": "AEC_ENGINE_01",
+      "name": "AEC_ENGINE_01",
+      "shortName": "AEC_ENGINE_01",
+      "type": "ecu",
+      "row": "top",
+      "domain": "Network",
+      "diagnosticAddress": "0x712",
+      "description": "LARGE",
+      "role": "network participant",
+      "status": "active"
+    },
+    {
+      "id": "AEC_TRANSMISSION_01",
+      "name": "AEC_TRANSMISSION_01",
+      "shortName": "AEC_TRANSMISSIO",
+      "type": "ecu",
+      "row": "bottom",
+      "domain": "Network",
+      "diagnosticAddress": "0x713",
+      "description": "MEDIUM",
+      "role": "network participant",
+      "status": "active"
+    },
+    {
+      "id": "AEC_REAR_HITCH_01",
+      "name": "AEC_REAR_HITCH_01",
+      "shortName": "AEC_REAR_HITCH_",
+      "type": "ecu",
+      "row": "top",
+      "domain": "Network",
+      "diagnosticAddress": "0x714",
+      "description": "LARGE",
+      "role": "network participant",
+      "status": "active"
+    },
+    {
+      "id": "AEC_TRAILER_01",
+      "name": "AEC_TRAILER_01",
+      "shortName": "AEC_TRAILER_01",
+      "type": "ecu",
+      "row": "bottom",
+      "domain": "Network",
+      "diagnosticAddress": "0x715",
+      "description": "SMALL",
+      "role": "network participant",
+      "status": "active"
+    },
+    {
+      "id": "VALIDATION_IO_ECU",
+      "name": "VALIDATION_IO_ECU",
+      "shortName": "VALIDATION_IO_E",
+      "type": "ecu",
+      "row": "top",
+      "domain": "Network",
+      "diagnosticAddress": "0x716",
+      "description": "VALIDATION",
+      "role": "network participant",
+      "status": "active"
+    }
+  ],
+  "buses": [
+    {
+      "id": "LIN_AUX",
+      "name": "LIN Auxiliary",
+      "protocol": "LIN",
+      "bitrate": "19.2 kbit/s",
+      "addressScheme": "LIN frame ID",
+      "physicalLayer": "ISO 17987",
+      "termination": "Master pull-up",
+      "loadTarget": "< 40%",
+      "color": "#2563eb"
+    },
+    {
+      "id": "CAN_PT",
+      "name": "CAN Powertrain",
+      "protocol": "CAN",
+      "bitrate": "500 kbit/s",
+      "addressScheme": "11-bit CAN ID",
+      "physicalLayer": "ISO 11898-2",
+      "termination": "120 Ω at both ends",
+      "loadTarget": "< 40%",
+      "color": "#16a34a"
+    },
+    {
+      "id": "ETH_DIAG",
+      "name": "Ethernet Diagnostic",
+      "protocol": "Ethernet",
+      "bitrate": "100BASE-T1",
+      "addressScheme": "IP / DoIP",
+      "physicalLayer": "Automotive Ethernet",
+      "termination": "PHY integrated",
+      "loadTarget": "< 30%",
+      "color": "#f97316"
+    },
+    {
+      "id": "CAN_CH",
+      "name": "CAN Chassis",
+      "protocol": "CAN",
+      "bitrate": "500 kbit/s",
+      "addressScheme": "11-bit CAN ID",
+      "physicalLayer": "ISO 11898-2",
+      "termination": "120 Ω at both ends",
+      "loadTarget": "< 40%",
+      "color": "#7c3aed"
+    },
+    {
+      "id": "CAN_BODY",
+      "name": "CAN Body",
+      "protocol": "CAN",
+      "bitrate": "500 kbit/s",
+      "addressScheme": "11-bit CAN ID",
+      "physicalLayer": "ISO 11898-2",
+      "termination": "120 Ω at both ends",
+      "loadTarget": "< 40%",
+      "color": "#0f766e"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "CONN_AEC_CABIN_01",
+      "nodeId": "AEC_CABIN_01",
+      "name": "J1",
+      "type": "Network connector",
+      "pins": "CAN/LIN/ETH pins from architecture"
+    },
+    {
+      "id": "CONN_AEC_DISPLAY_01",
+      "nodeId": "AEC_DISPLAY_01",
+      "name": "J1",
+      "type": "Network connector",
+      "pins": "CAN/LIN/ETH pins from architecture"
+    },
+    {
+      "id": "CONN_AEC_ENGINE_01",
+      "nodeId": "AEC_ENGINE_01",
+      "name": "J1",
+      "type": "Network connector",
+      "pins": "CAN/LIN/ETH pins from architecture"
+    },
+    {
+      "id": "CONN_AEC_TRANSMISSION_01",
+      "nodeId": "AEC_TRANSMISSION_01",
+      "name": "J1",
+      "type": "Network connector",
+      "pins": "CAN/LIN/ETH pins from architecture"
+    },
+    {
+      "id": "CONN_AEC_REAR_HITCH_01",
+      "nodeId": "AEC_REAR_HITCH_01",
+      "name": "J1",
+      "type": "Network connector",
+      "pins": "CAN/LIN/ETH pins from architecture"
+    },
+    {
+      "id": "CONN_AEC_TRAILER_01",
+      "nodeId": "AEC_TRAILER_01",
+      "name": "J1",
+      "type": "Network connector",
+      "pins": "CAN/LIN/ETH pins from architecture"
+    },
+    {
+      "id": "CONN_VALIDATION_IO_ECU",
+      "nodeId": "VALIDATION_IO_ECU",
+      "name": "J1",
+      "type": "Network connector",
+      "pins": "CAN/LIN/ETH pins from architecture"
+    }
+  ],
+  "connections": [
+    {
+      "id": "C_AEC_CABIN_01_LIN_AUX",
+      "nodeId": "AEC_CABIN_01",
+      "busId": "LIN_AUX",
+      "connectorId": "CONN_AEC_CABIN_01",
+      "port": "LIN_AUX_PORT",
+      "pins": "LIN/GND",
+      "role": "node",
+      "stubLengthCm": 18,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_CABIN_01_ETH_DIAG",
+      "nodeId": "AEC_CABIN_01",
+      "busId": "ETH_DIAG",
+      "connectorId": "CONN_AEC_CABIN_01",
+      "port": "ETH_DIAG_PORT",
+      "pins": "ETH+/ETH-",
+      "role": "node",
+      "stubLengthCm": 18,
+      "shielding": "shielded pair"
+    },
+    {
+      "id": "C_AEC_CABIN_01_CAN_PT",
+      "nodeId": "AEC_CABIN_01",
+      "busId": "CAN_PT",
+      "connectorId": "CONN_AEC_CABIN_01",
+      "port": "CAN_PT_PORT",
+      "pins": "CAN_H/CAN_L",
+      "role": "node",
+      "stubLengthCm": 18,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_DISPLAY_01_LIN_AUX",
+      "nodeId": "AEC_DISPLAY_01",
+      "busId": "LIN_AUX",
+      "connectorId": "CONN_AEC_DISPLAY_01",
+      "port": "LIN_AUX_PORT",
+      "pins": "LIN/GND",
+      "role": "node",
+      "stubLengthCm": 24,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_DISPLAY_01_CAN_CH",
+      "nodeId": "AEC_DISPLAY_01",
+      "busId": "CAN_CH",
+      "connectorId": "CONN_AEC_DISPLAY_01",
+      "port": "CAN_CH_PORT",
+      "pins": "CAN_H/CAN_L",
+      "role": "node",
+      "stubLengthCm": 24,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_DISPLAY_01_ETH_DIAG",
+      "nodeId": "AEC_DISPLAY_01",
+      "busId": "ETH_DIAG",
+      "connectorId": "CONN_AEC_DISPLAY_01",
+      "port": "ETH_DIAG_PORT",
+      "pins": "ETH+/ETH-",
+      "role": "node",
+      "stubLengthCm": 24,
+      "shielding": "shielded pair"
+    },
+    {
+      "id": "C_AEC_ENGINE_01_LIN_AUX",
+      "nodeId": "AEC_ENGINE_01",
+      "busId": "LIN_AUX",
+      "connectorId": "CONN_AEC_ENGINE_01",
+      "port": "LIN_AUX_PORT",
+      "pins": "LIN/GND",
+      "role": "node",
+      "stubLengthCm": 30,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_ENGINE_01_ETH_DIAG",
+      "nodeId": "AEC_ENGINE_01",
+      "busId": "ETH_DIAG",
+      "connectorId": "CONN_AEC_ENGINE_01",
+      "port": "ETH_DIAG_PORT",
+      "pins": "ETH+/ETH-",
+      "role": "node",
+      "stubLengthCm": 30,
+      "shielding": "shielded pair"
+    },
+    {
+      "id": "C_AEC_ENGINE_01_CAN_BODY",
+      "nodeId": "AEC_ENGINE_01",
+      "busId": "CAN_BODY",
+      "connectorId": "CONN_AEC_ENGINE_01",
+      "port": "CAN_BODY_PORT",
+      "pins": "CAN_H/CAN_L",
+      "role": "node",
+      "stubLengthCm": 30,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_TRANSMISSION_01_LIN_AUX",
+      "nodeId": "AEC_TRANSMISSION_01",
+      "busId": "LIN_AUX",
+      "connectorId": "CONN_AEC_TRANSMISSION_01",
+      "port": "LIN_AUX_PORT",
+      "pins": "LIN/GND",
+      "role": "node",
+      "stubLengthCm": 36,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_TRANSMISSION_01_ETH_DIAG",
+      "nodeId": "AEC_TRANSMISSION_01",
+      "busId": "ETH_DIAG",
+      "connectorId": "CONN_AEC_TRANSMISSION_01",
+      "port": "ETH_DIAG_PORT",
+      "pins": "ETH+/ETH-",
+      "role": "node",
+      "stubLengthCm": 36,
+      "shielding": "shielded pair"
+    },
+    {
+      "id": "C_AEC_TRANSMISSION_01_CAN_PT",
+      "nodeId": "AEC_TRANSMISSION_01",
+      "busId": "CAN_PT",
+      "connectorId": "CONN_AEC_TRANSMISSION_01",
+      "port": "CAN_PT_PORT",
+      "pins": "CAN_H/CAN_L",
+      "role": "node",
+      "stubLengthCm": 36,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_REAR_HITCH_01_LIN_AUX",
+      "nodeId": "AEC_REAR_HITCH_01",
+      "busId": "LIN_AUX",
+      "connectorId": "CONN_AEC_REAR_HITCH_01",
+      "port": "LIN_AUX_PORT",
+      "pins": "LIN/GND",
+      "role": "node",
+      "stubLengthCm": 18,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_REAR_HITCH_01_CAN_CH",
+      "nodeId": "AEC_REAR_HITCH_01",
+      "busId": "CAN_CH",
+      "connectorId": "CONN_AEC_REAR_HITCH_01",
+      "port": "CAN_CH_PORT",
+      "pins": "CAN_H/CAN_L",
+      "role": "node",
+      "stubLengthCm": 18,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_REAR_HITCH_01_ETH_DIAG",
+      "nodeId": "AEC_REAR_HITCH_01",
+      "busId": "ETH_DIAG",
+      "connectorId": "CONN_AEC_REAR_HITCH_01",
+      "port": "ETH_DIAG_PORT",
+      "pins": "ETH+/ETH-",
+      "role": "node",
+      "stubLengthCm": 18,
+      "shielding": "shielded pair"
+    },
+    {
+      "id": "C_AEC_TRAILER_01_LIN_AUX",
+      "nodeId": "AEC_TRAILER_01",
+      "busId": "LIN_AUX",
+      "connectorId": "CONN_AEC_TRAILER_01",
+      "port": "LIN_AUX_PORT",
+      "pins": "LIN/GND",
+      "role": "node",
+      "stubLengthCm": 24,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_AEC_TRAILER_01_ETH_DIAG",
+      "nodeId": "AEC_TRAILER_01",
+      "busId": "ETH_DIAG",
+      "connectorId": "CONN_AEC_TRAILER_01",
+      "port": "ETH_DIAG_PORT",
+      "pins": "ETH+/ETH-",
+      "role": "node",
+      "stubLengthCm": 24,
+      "shielding": "shielded pair"
+    },
+    {
+      "id": "C_AEC_TRAILER_01_CAN_BODY",
+      "nodeId": "AEC_TRAILER_01",
+      "busId": "CAN_BODY",
+      "connectorId": "CONN_AEC_TRAILER_01",
+      "port": "CAN_BODY_PORT",
+      "pins": "CAN_H/CAN_L",
+      "role": "node",
+      "stubLengthCm": 24,
+      "shielding": "twisted pair"
+    },
+    {
+      "id": "C_VALIDATION_IO_ECU_CAN_PT",
+      "nodeId": "VALIDATION_IO_ECU",
+      "busId": "CAN_PT",
+      "connectorId": "CONN_VALIDATION_IO_ECU",
+      "port": "CAN_PT_PORT",
+      "pins": "CAN_H/CAN_L",
+      "role": "node",
+      "stubLengthCm": 30,
+      "shielding": "twisted pair"
+    }
+  ],
+  "messages": [
+    {
+      "id": "MSG_AEC_CABIN_01_STATUS",
+      "busId": "LIN_AUX",
+      "name": "AEC_CABIN_01_Status",
+      "canId": "0x181",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeIds": [
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_CABIN_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_CABIN_01_Alive",
+        "AEC_CABIN_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_CABIN_01_STATUS",
+      "busId": "ETH_DIAG",
+      "name": "AEC_CABIN_01_Status",
+      "canId": "0x182",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeIds": [
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_CABIN_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_CABIN_01_Alive",
+        "AEC_CABIN_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_CABIN_01_STATUS",
+      "busId": "CAN_PT",
+      "name": "AEC_CABIN_01_Status",
+      "canId": "0x183",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeIds": [
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_CABIN_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_CABIN_01_Alive",
+        "AEC_CABIN_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_DISPLAY_01_STATUS",
+      "busId": "LIN_AUX",
+      "name": "AEC_DISPLAY_01_Status",
+      "canId": "0x184",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_ENGINE_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_DISPLAY_01_Alive",
+        "AEC_DISPLAY_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_DISPLAY_01_STATUS",
+      "busId": "CAN_CH",
+      "name": "AEC_DISPLAY_01_Status",
+      "canId": "0x185",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_ENGINE_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_DISPLAY_01_Alive",
+        "AEC_DISPLAY_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_DISPLAY_01_STATUS",
+      "busId": "ETH_DIAG",
+      "name": "AEC_DISPLAY_01_Status",
+      "canId": "0x186",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_ENGINE_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_DISPLAY_01_Alive",
+        "AEC_DISPLAY_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_ENGINE_01_STATUS",
+      "busId": "LIN_AUX",
+      "name": "AEC_ENGINE_01_Status",
+      "canId": "0x187",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_ENGINE_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_ENGINE_01_Alive",
+        "AEC_ENGINE_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_ENGINE_01_STATUS",
+      "busId": "ETH_DIAG",
+      "name": "AEC_ENGINE_01_Status",
+      "canId": "0x188",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_ENGINE_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_ENGINE_01_Alive",
+        "AEC_ENGINE_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_ENGINE_01_STATUS",
+      "busId": "CAN_BODY",
+      "name": "AEC_ENGINE_01_Status",
+      "canId": "0x189",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_ENGINE_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_TRANSMISSION_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_ENGINE_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_ENGINE_01_Alive",
+        "AEC_ENGINE_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "busId": "LIN_AUX",
+      "name": "AEC_TRANSMISSION_01_Status",
+      "canId": "0x18A",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_TRANSMISSION_01_Alive",
+        "AEC_TRANSMISSION_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "busId": "ETH_DIAG",
+      "name": "AEC_TRANSMISSION_01_Status",
+      "canId": "0x18B",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_TRANSMISSION_01_Alive",
+        "AEC_TRANSMISSION_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_TRANSMISSION_01_STATUS",
+      "busId": "CAN_PT",
+      "name": "AEC_TRANSMISSION_01_Status",
+      "canId": "0x18C",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_TRANSMISSION_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_TRANSMISSION_01_Alive",
+        "AEC_TRANSMISSION_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "busId": "LIN_AUX",
+      "name": "AEC_REAR_HITCH_01_Status",
+      "canId": "0x18D",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_REAR_HITCH_01_Alive",
+        "AEC_REAR_HITCH_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "busId": "CAN_CH",
+      "name": "AEC_REAR_HITCH_01_Status",
+      "canId": "0x18E",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_REAR_HITCH_01_Alive",
+        "AEC_REAR_HITCH_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_REAR_HITCH_01_STATUS",
+      "busId": "ETH_DIAG",
+      "name": "AEC_REAR_HITCH_01_Status",
+      "canId": "0x18F",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_REAR_HITCH_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_REAR_HITCH_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_REAR_HITCH_01_Alive",
+        "AEC_REAR_HITCH_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_TRAILER_01_STATUS",
+      "busId": "LIN_AUX",
+      "name": "AEC_TRAILER_01_Status",
+      "canId": "0x190",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_TRAILER_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_TRAILER_01_Alive",
+        "AEC_TRAILER_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_TRAILER_01_STATUS",
+      "busId": "ETH_DIAG",
+      "name": "AEC_TRAILER_01_Status",
+      "canId": "0x191",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_TRAILER_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_TRAILER_01_Alive",
+        "AEC_TRAILER_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_AEC_TRAILER_01_STATUS",
+      "busId": "CAN_BODY",
+      "name": "AEC_TRAILER_01_Status",
+      "canId": "0x192",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "AEC_TRAILER_01",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_AEC_TRAILER_01_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "AEC_TRAILER_01_Alive",
+        "AEC_TRAILER_01_State"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "MSG_VALIDATION_IO_ECU_STATUS",
+      "busId": "CAN_PT",
+      "name": "VALIDATION_IO_ECU_Status",
+      "canId": "0x193",
+      "idFormat": "11-bit",
+      "dlc": 8,
+      "cycleMs": 50,
+      "producerNodeId": "VALIDATION_IO_ECU",
+      "consumerNodeIds": [
+        "AEC_CABIN_01",
+        "AEC_DISPLAY_01",
+        "AEC_ENGINE_01"
+      ],
+      "txSoftwareComponentId": "SWC_VALIDATION_IO_ECU_COM",
+      "rxSoftwareComponentIds": [],
+      "signals": [
+        "VALIDATION_IO_ECU_Alive",
+        "VALIDATION_IO_ECU_State"
+      ],
+      "status": "active"
+    }
+  ],
+  "softwareComponents": [
+    {
+      "id": "SWC_AEC_CABIN_01_APP",
+      "ecuId": "AEC_CABIN_01",
+      "name": "AEC_CABIN_01 Application",
+      "shortName": "App",
+      "category": "Application",
+      "responsibleTeam": "Development Team",
+      "owner": "Feature owner",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 7.6,
+      "ramUsageKb": 382,
+      "flashUsageKb": 1278,
+      "inputs": [
+        "AEC_CABIN_01_Input"
+      ],
+      "outputs": [
+        "AEC_CABIN_01_Output"
+      ]
+    },
+    {
+      "id": "SWC_AEC_CABIN_01_COM",
+      "ecuId": "AEC_CABIN_01",
+      "name": "AEC_CABIN_01 Communication",
+      "shortName": "Com",
+      "category": "Communication",
+      "responsibleTeam": "Network Software",
+      "owner": "Network architect",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 1.5,
+      "ramUsageKb": 64,
+      "flashUsageKb": 256,
+      "inputs": [
+        "AEC_CABIN_01_TxData"
+      ],
+      "outputs": [
+        "AEC_CABIN_01_RxData"
+      ]
+    },
+    {
+      "id": "SWC_AEC_DISPLAY_01_APP",
+      "ecuId": "AEC_DISPLAY_01",
+      "name": "AEC_DISPLAY_01 Application",
+      "shortName": "App",
+      "category": "Application",
+      "responsibleTeam": "Development Team",
+      "owner": "Feature owner",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 7.9,
+      "ramUsageKb": 397,
+      "flashUsageKb": 1421,
+      "inputs": [
+        "AEC_DISPLAY_01_Input"
+      ],
+      "outputs": [
+        "AEC_DISPLAY_01_Output"
+      ]
+    },
+    {
+      "id": "SWC_AEC_DISPLAY_01_COM",
+      "ecuId": "AEC_DISPLAY_01",
+      "name": "AEC_DISPLAY_01 Communication",
+      "shortName": "Com",
+      "category": "Communication",
+      "responsibleTeam": "Network Software",
+      "owner": "Network architect",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 1.5,
+      "ramUsageKb": 64,
+      "flashUsageKb": 256,
+      "inputs": [
+        "AEC_DISPLAY_01_TxData"
+      ],
+      "outputs": [
+        "AEC_DISPLAY_01_RxData"
+      ]
+    },
+    {
+      "id": "SWC_AEC_ENGINE_01_APP",
+      "ecuId": "AEC_ENGINE_01",
+      "name": "AEC_ENGINE_01 Application",
+      "shortName": "App",
+      "category": "Application",
+      "responsibleTeam": "Development Team",
+      "owner": "Feature owner",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 5.2,
+      "ramUsageKb": 226,
+      "flashUsageKb": 994,
+      "inputs": [
+        "AEC_ENGINE_01_Input"
+      ],
+      "outputs": [
+        "AEC_ENGINE_01_Output"
+      ]
+    },
+    {
+      "id": "SWC_AEC_ENGINE_01_COM",
+      "ecuId": "AEC_ENGINE_01",
+      "name": "AEC_ENGINE_01 Communication",
+      "shortName": "Com",
+      "category": "Communication",
+      "responsibleTeam": "Network Software",
+      "owner": "Network architect",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 1.5,
+      "ramUsageKb": 64,
+      "flashUsageKb": 256,
+      "inputs": [
+        "AEC_ENGINE_01_TxData"
+      ],
+      "outputs": [
+        "AEC_ENGINE_01_RxData"
+      ]
+    },
+    {
+      "id": "SWC_AEC_TRANSMISSION_01_APP",
+      "ecuId": "AEC_TRANSMISSION_01",
+      "name": "AEC_TRANSMISSION_01 Application",
+      "shortName": "App",
+      "category": "Application",
+      "responsibleTeam": "Development Team",
+      "owner": "Feature owner",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 5.2,
+      "ramUsageKb": 286,
+      "flashUsageKb": 1310,
+      "inputs": [
+        "AEC_TRANSMISSION_01_Input"
+      ],
+      "outputs": [
+        "AEC_TRANSMISSION_01_Output"
+      ]
+    },
+    {
+      "id": "SWC_AEC_TRANSMISSION_01_COM",
+      "ecuId": "AEC_TRANSMISSION_01",
+      "name": "AEC_TRANSMISSION_01 Communication",
+      "shortName": "Com",
+      "category": "Communication",
+      "responsibleTeam": "Network Software",
+      "owner": "Network architect",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 1.5,
+      "ramUsageKb": 64,
+      "flashUsageKb": 256,
+      "inputs": [
+        "AEC_TRANSMISSION_01_TxData"
+      ],
+      "outputs": [
+        "AEC_TRANSMISSION_01_RxData"
+      ]
+    },
+    {
+      "id": "SWC_AEC_REAR_HITCH_01_APP",
+      "ecuId": "AEC_REAR_HITCH_01",
+      "name": "AEC_REAR_HITCH_01 Application",
+      "shortName": "App",
+      "category": "Application",
+      "responsibleTeam": "Development Team",
+      "owner": "Feature owner",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 7.4,
+      "ramUsageKb": 134,
+      "flashUsageKb": 518,
+      "inputs": [
+        "AEC_REAR_HITCH_01_Input"
+      ],
+      "outputs": [
+        "AEC_REAR_HITCH_01_Output"
+      ]
+    },
+    {
+      "id": "SWC_AEC_REAR_HITCH_01_COM",
+      "ecuId": "AEC_REAR_HITCH_01",
+      "name": "AEC_REAR_HITCH_01 Communication",
+      "shortName": "Com",
+      "category": "Communication",
+      "responsibleTeam": "Network Software",
+      "owner": "Network architect",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 1.5,
+      "ramUsageKb": 64,
+      "flashUsageKb": 256,
+      "inputs": [
+        "AEC_REAR_HITCH_01_TxData"
+      ],
+      "outputs": [
+        "AEC_REAR_HITCH_01_RxData"
+      ]
+    },
+    {
+      "id": "SWC_AEC_TRAILER_01_APP",
+      "ecuId": "AEC_TRAILER_01",
+      "name": "AEC_TRAILER_01 Application",
+      "shortName": "App",
+      "category": "Application",
+      "responsibleTeam": "Development Team",
+      "owner": "Feature owner",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 5.8,
+      "ramUsageKb": 148,
+      "flashUsageKb": 1300,
+      "inputs": [
+        "AEC_TRAILER_01_Input"
+      ],
+      "outputs": [
+        "AEC_TRAILER_01_Output"
+      ]
+    },
+    {
+      "id": "SWC_AEC_TRAILER_01_COM",
+      "ecuId": "AEC_TRAILER_01",
+      "name": "AEC_TRAILER_01 Communication",
+      "shortName": "Com",
+      "category": "Communication",
+      "responsibleTeam": "Network Software",
+      "owner": "Network architect",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 1.5,
+      "ramUsageKb": 64,
+      "flashUsageKb": 256,
+      "inputs": [
+        "AEC_TRAILER_01_TxData"
+      ],
+      "outputs": [
+        "AEC_TRAILER_01_RxData"
+      ]
+    },
+    {
+      "id": "SWC_VALIDATION_IO_ECU_APP",
+      "ecuId": "VALIDATION_IO_ECU",
+      "name": "VALIDATION_IO_ECU Application",
+      "shortName": "App",
+      "category": "Application",
+      "responsibleTeam": "Development Team",
+      "owner": "Feature owner",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 5.2,
+      "ramUsageKb": 388,
+      "flashUsageKb": 772,
+      "inputs": [
+        "VALIDATION_IO_ECU_Input"
+      ],
+      "outputs": [
+        "VALIDATION_IO_ECU_Output"
+      ]
+    },
+    {
+      "id": "SWC_VALIDATION_IO_ECU_COM",
+      "ecuId": "VALIDATION_IO_ECU",
+      "name": "VALIDATION_IO_ECU Communication",
+      "shortName": "Com",
+      "category": "Communication",
+      "responsibleTeam": "Network Software",
+      "owner": "Network architect",
+      "supplier": "Internal",
+      "version": "v1.0.0",
+      "baseline": "BASELINE",
+      "status": "Active",
+      "maturity": "Production",
+      "asilLevel": "QM",
+      "cpuLoadPercent": 1.5,
+      "ramUsageKb": 64,
+      "flashUsageKb": 256,
+      "inputs": [
+        "VALIDATION_IO_ECU_TxData"
+      ],
+      "outputs": [
+        "VALIDATION_IO_ECU_RxData"
+      ]
+    }
+  ],
+  "softwareFlows": [
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_CABIN_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_CABIN_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_CABIN_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_AEC_CABIN_01_STATUS",
+      "data": "AEC_CABIN_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "LIN_AUX",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "LIN_AUX",
       "messageId": "MSG_AEC_DISPLAY_01_STATUS",
       "data": "AEC_DISPLAY_01_Status",
       "interfaceType": "CAN message",
@@ -1454,6 +3347,42 @@ let DATA = {
       "timingMs": 50
     },
     {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_AEC_DISPLAY_01_STATUS_AEC_TRANSMISSION_01",
+      "producerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "consumerComponentId": "SWC_AEC_TRANSMISSION_01_COM",
+      "producerNodeId": "AEC_DISPLAY_01",
+      "consumerNodeId": "AEC_TRANSMISSION_01",
+      "busId": "ETH_DIAG",
+      "messageId": "MSG_AEC_DISPLAY_01_STATUS",
+      "data": "AEC_DISPLAY_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
       "id": "FLOW_MSG_AEC_ENGINE_01_STATUS_AEC_CABIN_01",
       "producerComponentId": "SWC_AEC_ENGINE_01_COM",
       "consumerComponentId": "SWC_AEC_CABIN_01_COM",
@@ -1711,7 +3640,7 @@ let DATA = {
       "consumerComponentId": "SWC_AEC_CABIN_01_COM",
       "producerNodeId": "AEC_REAR_HITCH_01",
       "consumerNodeId": "AEC_CABIN_01",
-      "busId": "ETH_DIAG",
+      "busId": "CAN_CH",
       "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
       "data": "AEC_REAR_HITCH_01_Status",
       "interfaceType": "CAN message",
@@ -1723,7 +3652,7 @@ let DATA = {
       "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
       "producerNodeId": "AEC_REAR_HITCH_01",
       "consumerNodeId": "AEC_DISPLAY_01",
-      "busId": "ETH_DIAG",
+      "busId": "CAN_CH",
       "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
       "data": "AEC_REAR_HITCH_01_Status",
       "interfaceType": "CAN message",
@@ -1735,7 +3664,7 @@ let DATA = {
       "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
       "producerNodeId": "AEC_REAR_HITCH_01",
       "consumerNodeId": "AEC_ENGINE_01",
-      "busId": "ETH_DIAG",
+      "busId": "CAN_CH",
       "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
       "data": "AEC_REAR_HITCH_01_Status",
       "interfaceType": "CAN message",
@@ -1747,7 +3676,7 @@ let DATA = {
       "consumerComponentId": "SWC_AEC_CABIN_01_COM",
       "producerNodeId": "AEC_REAR_HITCH_01",
       "consumerNodeId": "AEC_CABIN_01",
-      "busId": "CAN_CH",
+      "busId": "ETH_DIAG",
       "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
       "data": "AEC_REAR_HITCH_01_Status",
       "interfaceType": "CAN message",
@@ -1759,7 +3688,7 @@ let DATA = {
       "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
       "producerNodeId": "AEC_REAR_HITCH_01",
       "consumerNodeId": "AEC_DISPLAY_01",
-      "busId": "CAN_CH",
+      "busId": "ETH_DIAG",
       "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
       "data": "AEC_REAR_HITCH_01_Status",
       "interfaceType": "CAN message",
@@ -1771,7 +3700,7 @@ let DATA = {
       "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
       "producerNodeId": "AEC_REAR_HITCH_01",
       "consumerNodeId": "AEC_ENGINE_01",
-      "busId": "CAN_CH",
+      "busId": "ETH_DIAG",
       "messageId": "MSG_AEC_REAR_HITCH_01_STATUS",
       "data": "AEC_REAR_HITCH_01_Status",
       "interfaceType": "CAN message",
@@ -1882,325 +3811,153 @@ let DATA = {
       "busId": "CAN_BODY",
       "messageId": "MSG_AEC_TRAILER_01_STATUS",
       "data": "AEC_TRAILER_01_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_VALIDATION_IO_ECU_STATUS_AEC_CABIN_01",
+      "producerComponentId": "SWC_VALIDATION_IO_ECU_COM",
+      "consumerComponentId": "SWC_AEC_CABIN_01_COM",
+      "producerNodeId": "VALIDATION_IO_ECU",
+      "consumerNodeId": "AEC_CABIN_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_VALIDATION_IO_ECU_STATUS",
+      "data": "VALIDATION_IO_ECU_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_VALIDATION_IO_ECU_STATUS_AEC_DISPLAY_01",
+      "producerComponentId": "SWC_VALIDATION_IO_ECU_COM",
+      "consumerComponentId": "SWC_AEC_DISPLAY_01_COM",
+      "producerNodeId": "VALIDATION_IO_ECU",
+      "consumerNodeId": "AEC_DISPLAY_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_VALIDATION_IO_ECU_STATUS",
+      "data": "VALIDATION_IO_ECU_Status",
+      "interfaceType": "CAN message",
+      "timingMs": 50
+    },
+    {
+      "id": "FLOW_MSG_VALIDATION_IO_ECU_STATUS_AEC_ENGINE_01",
+      "producerComponentId": "SWC_VALIDATION_IO_ECU_COM",
+      "consumerComponentId": "SWC_AEC_ENGINE_01_COM",
+      "producerNodeId": "VALIDATION_IO_ECU",
+      "consumerNodeId": "AEC_ENGINE_01",
+      "busId": "CAN_PT",
+      "messageId": "MSG_VALIDATION_IO_ECU_STATUS",
+      "data": "VALIDATION_IO_ECU_Status",
       "interfaceType": "CAN message",
       "timingMs": 50
     }
   ]
 };
-const state = { zoom:1, panX:0, panY:0, selected:null, hovered:null, filters:{ search:"", type:"all", bus:"all", protocol:"all" }, showSW:true, showMessages:true, positions:{}, busLayout:{}, validation:{ errors:[], warnings:[] } };
-const $ = sel => document.querySelector(sel);
-const $$ = sel => Array.from(document.querySelectorAll(sel));
-function byId(list){ return Object.fromEntries((list||[]).map(x=>[x.id,x])); }
-function escapeHtml(v){ return String(v ?? "").replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
-function uniq(arr){ return [...new Set(arr.filter(Boolean))]; }
-function nodeColor(type){ const map={ ecu:"#2563eb", gateway:"#4f46e5", dashboard:"#0f766e", actuator:"#f97316", terminal:"#7c3aed", sensor:"#16a34a", connector:"#475569"}; return map[type] || "#64748b"; }
-function computeDerived(){
-  const nodeMap=byId(DATA.nodes), busMap=byId(DATA.buses), conns=DATA.connections||[], messages=DATA.messages||[], sw=DATA.softwareComponents||[];
-  DATA.nodes.forEach(n=>{ n._connections=conns.filter(c=>c.nodeId===n.id); n._buses=n._connections.map(c=>busMap[c.busId]).filter(Boolean); n._tx=messages.filter(m=>m.producerNodeId===n.id); n._rx=messages.filter(m=>(m.consumerNodeIds||[]).includes(n.id)); n._sw=sw.filter(s=>s.ecuId===n.id); n._cpu= +(n._sw.reduce((a,s)=>a+(+s.cpuLoadPercent||0),0)).toFixed(1); });
-  DATA.buses.forEach((b,i)=>{ b.color=b.color || TEMPLATE_SETTINGS.colors[i%TEMPLATE_SETTINGS.colors.length]; b._connections=conns.filter(c=>c.busId===b.id); b._nodes=b._connections.map(c=>nodeMap[c.nodeId]).filter(Boolean); b._messages=messages.filter(m=>m.busId===b.id); });
-}
-function layout(){
-  computeDerived();
-  state.positions = {};
-  state.busLayout = {};
-  const top = DATA.nodes.filter(n=>(n.row||"top") === "top");
-  const bottom = DATA.nodes.filter(n=>(n.row||"bottom") === "bottom");
-  const maxCount = Math.max(top.length,bottom.length,1);
-  const cardW=TEMPLATE_SETTINGS.nodeCard.width;
-  const cardH=TEMPLATE_SETTINGS.nodeCard.height;
-  const gap=TEMPLATE_SETTINGS.nodeCard.gapX;
-  const margin=TEMPLATE_SETTINGS.layout.marginX;
-  const swH=TEMPLATE_SETTINGS.lanes.swHeight;
-  const msgH=TEMPLATE_SETTINGS.lanes.messageHeight;
-  const laneGap=TEMPLATE_SETTINGS.lanes.gap;
-  const topReservedLaneStack = swH + msgH + laneGap*2;
-  const bottomReservedLaneStack = swH + msgH + laneGap*2;
-  const rowW = maxCount*cardW + Math.max(0,maxCount-1)*gap;
-  const worldW = Math.max(TEMPLATE_SETTINGS.layout.minWidth, margin*2 + rowW);
-  const busStart = margin + TEMPLATE_SETTINGS.layout.busStartPad;
-  const busEnd = worldW - margin - TEMPLATE_SETTINGS.layout.busEndPad;
 
-  const topY = TEMPLATE_SETTINGS.layout.topMargin + topReservedLaneStack;
-  const buses = DATA.buses || [];
-  const busTopY = topY + cardH + TEMPLATE_SETTINGS.layout.nodeToBusGap;
-  const spacing = TEMPLATE_SETTINGS.buses.spacing;
-  buses.forEach((b,i)=> state.busLayout[b.id]={ x1:busStart, x2:busEnd, y:busTopY+i*spacing, index:i });
-  const busBottomY = busTopY + Math.max(0,buses.length-1)*spacing;
-  const bottomY = busBottomY + TEMPLATE_SETTINGS.layout.nodeToBusGap;
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-  function placeRow(list,y){
-    const thisRowW = list.length*cardW + Math.max(0,list.length-1)*gap;
-    const startX = (worldW - thisRowW)/2;
-    list.forEach((n,i)=> state.positions[n.id]={ x:startX + i*(cardW+gap), y, cx:startX + i*(cardW+gap)+cardW/2, row:n.row||"top" });
-  }
-  placeRow(top, topY);
-  placeRow(bottom, bottomY);
+function render() {
+  const d = DATA;
+  document.getElementById("hdr-meta").textContent =
+    `${d.meta.project} · rev ${d.meta.revision} · ${d.meta.nodeCount} node(s) · from ${d.meta.generatedFrom}`;
 
-  const worldH = bottomY + cardH + bottomReservedLaneStack + TEMPLATE_SETTINGS.layout.bottomMargin;
-  const world = $('#world');
-  world.style.width=worldW+'px'; world.style.height=worldH+'px';
-  const svg = $('#svgLayer'); svg.setAttribute('width', worldW); svg.setAttribute('height', worldH); svg.setAttribute('viewBox', `0 0 ${worldW} ${worldH}`);
-}
-function passesFiltersNode(n){
-  const q=state.filters.search.toLowerCase();
-  const hay=[n.id,n.name,n.shortName,n.type,n.domain,n.diagnosticAddress,n.description,...(n._buses||[]).map(b=>b.name),...(n._tx||[]).map(m=>m.name),...(n._rx||[]).map(m=>m.name),...(n._sw||[]).map(s=>s.name)].join(' ').toLowerCase();
-  if(q && !hay.includes(q)) return false;
-  if(state.filters.type!=="all" && n.type!==state.filters.type) return false;
-  if(state.filters.bus!=="all" && !(n._connections||[]).some(c=>c.busId===state.filters.bus)) return false;
-  if(state.filters.protocol!=="all" && !(n._buses||[]).some(b=>b.protocol===state.filters.protocol)) return false;
-  return true;
-}
-function activeBusFocusId(){ return state.selected?.type === 'bus' ? state.selected.id : null; }
-function nodeConnectedToBus(n,busId){ return !busId || (n._connections||[]).some(c=>c.busId===busId); }
-function passesBusFocusNode(n){ return nodeConnectedToBus(n, activeBusFocusId()); }
-function visibleNodeOnCanvas(n){ return passesFiltersNode(n) && passesBusFocusNode(n); }
-function visibleConnectionOnCanvas(c,n){ const focusId=activeBusFocusId(); if(!passesFiltersNode(n)) return false; if(focusId && c.busId!==focusId) return false; if(focusId && !nodeConnectedToBus(n,focusId)) return false; return true; }
-function updateFocusControls(){ const btn=$('#clearFocusBtn'); if(!btn) return; const focusId=activeBusFocusId(); btn.classList.toggle('hidden', !focusId); if(focusId){ const b=(DATA.buses||[]).find(x=>x.id===focusId); btn.textContent=`Clear BUS focus: ${b?.name || focusId}`; } }
-function render(){ layout(); renderToolbarOptions(); renderSvg(); renderNodes(); renderTables(); validate(); renderValidation(); renderSummary(); updateFocusControls(); applyTransform(); }
-function renderToolbarOptions(){
-  const typeSel=$('#typeFilter'), busSel=$('#busFilter'), protSel=$('#protocolFilter');
-  const prev={type:typeSel.value,bus:busSel.value,protocol:protSel.value};
-  typeSel.innerHTML='<option value="all">All node types</option>'+uniq(DATA.nodes.map(n=>n.type)).sort().map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-  busSel.innerHTML='<option value="all">All buses</option>'+DATA.buses.map(b=>`<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`).join('');
-  protSel.innerHTML='<option value="all">All protocols</option>'+uniq(DATA.buses.map(b=>b.protocol)).sort().map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
-  typeSel.value=prev.type||'all'; busSel.value=prev.bus||'all'; protSel.value=prev.protocol||'all';
-}
-function renderSvg(){
-  const nodeMap=byId(DATA.nodes), svg=$('#svgLayer'); svg.innerHTML='';
-  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
-  defs.innerHTML = `<filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#2563eb" flood-opacity="0.35"/></filter>`;
-  svg.appendChild(defs);
-  // BUS lines first
-  DATA.buses.forEach(bus=>{
-    const bl=state.busLayout[bus.id]; if(!bl) return;
-    const focusId=activeBusFocusId();
-    const busFocusClass = focusId ? (bus.id===focusId ? 'bus-selected' : 'bus-dim') : '';
-    const g=svgEl('g',{ class:`bus-group ${busFocusClass}`, tabindex:'0', role:'button', 'data-select-type':'bus','data-select-id':bus.id });
-    const labelW = Math.min(430, Math.max(220, (bus.name.length + String(bus.protocol).length + String(bus.bitrate).length)*5.2));
-    g.appendChild(svgEl('rect',{x:bl.x1+12,y:bl.y-25,width:labelW,height:22,rx:11,class:'bus-pill'}));
-    g.appendChild(svgText(bl.x1+24,bl.y-10,`${bus.name} · ${bus.protocol} · ${bus.bitrate}`,'bus-label'));
-    g.appendChild(svgEl('line',{x1:bl.x1,y1:bl.y,x2:bl.x2,y2:bl.y,stroke:bus.color,'stroke-width':TEMPLATE_SETTINGS.buses.stroke,class:'bus-line'}));
-    g.appendChild(svgEl('line',{x1:bl.x1,y1:bl.y,x2:bl.x2,y2:bl.y,class:'bus-line-hit clickable','data-select-type':'bus','data-select-id':bus.id}));
-    g.appendChild(svgEl('circle',{cx:bl.x1,cy:bl.y,r:6,fill:'#fff',stroke:bus.color,'stroke-width':4,class:'clickable','data-select-type':'bus','data-select-id':bus.id}));
-    g.appendChild(svgEl('circle',{cx:bl.x2,cy:bl.y,r:6,fill:'#fff',stroke:bus.color,'stroke-width':4,class:'clickable','data-select-type':'bus','data-select-id':bus.id}));
-    svg.appendChild(g);
+  // Legend
+  const legend = document.getElementById("legend");
+  legend.innerHTML = d.buses.map(b =>
+    `<span><span class="sw" style="background:${esc(b.color)}"></span>${esc(b.name)} (${esc(b.protocol)})</span>`
+  ).join("");
+
+  // Diagram: ECUs across two rows, buses as horizontal lanes, stubs connecting them.
+  const svg = document.getElementById("diagram");
+  const W = Math.max(900, (d.nodes.length + 1) * 130);
+  svg.setAttribute("viewBox", `0 0 ${W} 420`);
+  const topNodes = d.nodes.filter(n => n.row !== "bottom");
+  const botNodes = d.nodes.filter(n => n.row === "bottom");
+  const nodeX = {};
+  const layoutRow = (list, y) => {
+    const step = W / (list.length + 1);
+    list.forEach((n, i) => { nodeX[n.id] = { x: (i + 1) * step, y }; });
+  };
+  layoutRow(topNodes, 70);
+  layoutRow(botNodes, 350);
+
+  const busY = {};
+  d.buses.forEach((b, i) => { busY[b.id] = 140 + i * 40; });
+
+  let svgParts = [];
+
+  // bus lines
+  d.buses.forEach(b => {
+    const y = busY[b.id];
+    svgParts.push(`<line class="bus-line" data-bus="${esc(b.id)}" x1="20" y1="${y}" x2="${W-20}" y2="${y}" stroke="${esc(b.color)}"/>`);
+    svgParts.push(`<text class="bus-label" x="24" y="${y-8}" fill="${esc(b.color)}">${esc(b.name)}</text>`);
   });
-  // Connection lines
-  const grouped = {};
-  (DATA.connections||[]).forEach(c=>{ grouped[c.nodeId] = grouped[c.nodeId] || []; grouped[c.nodeId].push(c); });
-  Object.entries(grouped).forEach(([nodeId, list])=>{
-    const n=nodeMap[nodeId], pos=state.positions[nodeId]; if(!n||!pos) return;
-    const startY = (n.row||'top') === 'top' ? pos.y + TEMPLATE_SETTINGS.nodeCard.height : pos.y;
-    const sorted=list.slice().sort((a,b)=>(state.busLayout[a.busId]?.y||0)-(state.busLayout[b.busId]?.y||0));
-    const step= Math.min(22, TEMPLATE_SETTINGS.nodeCard.width / (sorted.length+1));
-    sorted.forEach((c,idx)=>{
-      const bus=DATA.buses.find(b=>b.id===c.busId), bl=state.busLayout[c.busId]; if(!bus||!bl) return;
-      const x = pos.x + TEMPLATE_SETTINGS.nodeCard.width/2 + (idx-(sorted.length-1)/2)*step;
-      const y2=bl.y;
-      const p=`M ${x} ${startY} L ${x} ${y2}`;
-      const visible=visibleConnectionOnCanvas(c,n);
-      const isSelected = state.selected && ((state.selected.type==='node'&&state.selected.id===nodeId)||(state.selected.type==='bus'&&state.selected.id===c.busId)||(state.selected.type==='connection'&&state.selected.id===c.id));
-      const cls = `${visible?'':'hidden'} ${isSelected?'trace-highlight':''}`;
-      svg.appendChild(svgEl('path',{d:p,stroke:bus.color,class:`connection-line ${cls}`,'stroke-width': isSelected ? 6.5 : TEMPLATE_SETTINGS.buses.connectorStroke, opacity:isSelected?1:.95}));
-      svg.appendChild(svgEl('path',{d:p,class:`connection-hit clickable ${visible?'':'hidden'}`,'data-select-type':'connection','data-select-id':c.id}));
-      svg.appendChild(svgEl('circle',{cx:x,cy:startY,r:4.5,fill:'#fff',stroke:bus.color,'stroke-width':3,class:`joint clickable ${cls}`,'data-select-type':'connection','data-select-id':c.id}));
-      svg.appendChild(svgEl('circle',{cx:x,cy:y2,r:TEMPLATE_SETTINGS.buses.dotRadius,fill:bus.color,class:`joint clickable ${cls}`,'data-select-type':'connection','data-select-id':c.id}));
+
+  // stubs from nodes to their buses
+  (d.connections || []).forEach(c => {
+    const pos = nodeX[c.nodeId];
+    const y = busY[c.busId];
+    if (!pos || y === undefined) return;
+    const y2 = pos.y > y ? pos.y - 26 : pos.y + 26;
+    svgParts.push(`<line class="stub" data-bus="${esc(c.busId)}" x1="${pos.x}" y1="${y2}" x2="${pos.x}" y2="${y}"/>`);
+  });
+
+  // node boxes
+  d.nodes.forEach(n => {
+    const pos = nodeX[n.id];
+    if (!pos) return;
+    svgParts.push(`<g class="node" data-node="${esc(n.id)}">
+      <rect class="node-box" x="${pos.x-48}" y="${pos.y-22}" width="96" height="44"/>
+      <text class="node-label" x="${pos.x}" y="${pos.y-2}" text-anchor="middle">${esc(n.shortName || n.name)}</text>
+      <text class="node-sub" x="${pos.x}" y="${pos.y+14}" text-anchor="middle">${esc(n.diagnosticAddress || "")}</text>
+    </g>`);
+  });
+
+  svg.innerHTML = svgParts.join("");
+
+  // bus click -> highlight
+  svg.querySelectorAll(".bus-line").forEach(el => {
+    el.addEventListener("click", () => {
+      const busId = el.getAttribute("data-bus");
+      svg.querySelectorAll(".stub").forEach(s => s.classList.toggle("active", s.getAttribute("data-bus") === busId));
+      document.getElementById("filter").value = "";
+      filterAll("");
+      document.querySelectorAll("#msg-table tbody tr").forEach(tr => {
+        tr.classList.toggle("hidden", tr.getAttribute("data-bus") !== busId);
+      });
     });
   });
-  // Highlight selected message path
-  if(state.selected?.type==='message'){
-    const m=(DATA.messages||[]).find(x=>x.id===state.selected.id); if(m){
-      const bus=DATA.buses.find(b=>b.id===m.busId), bl=state.busLayout[m.busId];
-      const involved=[m.producerNodeId,...(m.consumerNodeIds||[])].filter(id=>state.positions[id]);
-      if(bus && bl && involved.length){
-        const xs=involved.map(id=>state.positions[id].cx); const x1=Math.min(...xs), x2=Math.max(...xs);
-        svg.appendChild(svgEl('line',{x1:x1,y1:bl.y,x2:x2,y2:bl.y,stroke:bus.color,'stroke-width':10,opacity:.18,filter:'url(#softGlow)'}));
-        involved.forEach(id=>{ const p=state.positions[id]; svg.appendChild(svgEl('circle',{cx:p.cx,cy:bl.y,r:10,fill:bus.color,opacity:.22})); });
-      }
-    }
-  }
+
+  // Bus table
+  const busBody = document.querySelector("#bus-table tbody");
+  busBody.innerHTML = d.buses.map(b => {
+    const nodeCount = (d.connections || []).filter(c => c.busId === b.id).length;
+    return `<tr data-name="${esc((b.name+' '+b.protocol).toLowerCase())}">
+      <td><span class="sw" style="background:${esc(b.color)};display:inline-block;width:10px;height:10px;border-radius:2px;"></span> ${esc(b.name)}</td>
+      <td>${esc(b.protocol)}</td><td>${esc(b.bitrate)}</td><td>${esc(b.addressScheme)}</td>
+      <td>${esc(b.physicalLayer)}</td><td>${esc(b.termination)}</td><td>${esc(b.loadTarget)}</td>
+      <td>${nodeCount}</td></tr>`;
+  }).join("");
+
+  // Message table
+  const msgBody = document.querySelector("#msg-table tbody");
+  msgBody.innerHTML = (d.messages || []).map(m => `<tr data-bus="${esc(m.busId)}" data-name="${esc((m.name+' '+m.producerNodeId).toLowerCase())}">
+      <td>${esc(m.name)}</td><td>${esc(m.busId)}</td><td><code>${esc(m.canId)}</code></td>
+      <td>${esc(m.idFormat)}</td><td>${esc(m.dlc)}</td><td>${esc(m.cycleMs)}</td>
+      <td>${esc(m.producerNodeId)}</td><td>${esc((m.consumerNodeIds||[]).join(", "))}</td>
+      <td>${esc((m.signals||[]).join(", "))}</td></tr>`).join("");
 }
-function renderNodes(){
-  const nodeLayer=$('#nodeLayer'), laneLayer=$('#laneLayer'); nodeLayer.innerHTML=''; laneLayer.innerHTML='';
-  DATA.nodes.forEach(node=>{
-    const pos=state.positions[node.id]; if(!pos) return;
-    const visible=visibleNodeOnCanvas(node);
-    const selected=state.selected?.type==='node' && state.selected.id===node.id;
-    const card=document.createElement('div'); card.className=`node-card ${selected?'selected':''} ${visible?'':'hidden'}`; card.style.left=pos.x+'px'; card.style.top=pos.y+'px'; card.tabIndex=0; card.dataset.selectType='node'; card.dataset.selectId=node.id;
-    const cpu=Math.min(100,+node._cpu||0);
-    card.innerHTML=`<div class="node-topline"><div class="node-title"><div class="node-icon" style="background:${nodeColor(node.type)}">${TEMPLATE_SETTINGS.icons[node.type]||TEMPLATE_SETTINGS.icons.generic}</div><div style="min-width:0"><div class="node-name">${escapeHtml(node.shortName||node.name)}</div><div class="node-kind">${escapeHtml(node.type||'node')}</div></div></div><div class="node-kind">${escapeHtml(node.domain||'')}</div></div><div class="node-subtitle">${escapeHtml(node.name)} · Diag ${escapeHtml(node.diagnosticAddress||'n/a')}</div><div class="badge-row"><span class="badge">${node._buses.length} BUS</span><span class="badge tx">↑ ${node._tx.length} TX</span><span class="badge rx">↓ ${node._rx.length} RX</span><span class="badge sw">${node._sw.length} SWC</span></div><div class="cpu-wrap"><div class="cpu-line"><span>CPU load</span><span>${cpu.toFixed(1)}%</span></div><div class="cpu-bar"><div class="cpu-fill" style="width:${cpu}%"></div></div></div>`;
-    nodeLayer.appendChild(card);
-    if(state.showSW) laneLayer.appendChild(makeLane(node,pos,'sw'));
-    if(state.showMessages) laneLayer.appendChild(makeLane(node,pos,'msg'));
+
+function filterAll(q) {
+  q = q.trim().toLowerCase();
+  document.querySelectorAll("#bus-table tbody tr, #msg-table tbody tr").forEach(tr => {
+    const hay = tr.getAttribute("data-name") || "";
+    tr.classList.toggle("hidden", q !== "" && !hay.includes(q));
   });
 }
-function makeLane(node,pos,type){
-  const cardH=TEMPLATE_SETTINGS.nodeCard.height;
-  const swH=TEMPLATE_SETTINGS.lanes.swHeight;
-  const msgH=TEMPLATE_SETTINGS.lanes.messageHeight;
-  const gap=TEMPLATE_SETTINGS.lanes.gap;
-  const lane=document.createElement('div');
-  lane.className=`lane-card ${type==='sw'?'sw-lane':'msg-lane'}`;
-  lane.style.left=pos.x+'px';
-  lane.style.height=(type==='sw' ? swH : msgH)+'px';
-  const isTop=(node.row||'top')==='top';
-  // Important: lanes are kept outside the ECU-to-BUS routing corridor.
-  // Top row lanes sit above the ECU. Bottom row lanes sit below the ECU.
-  if(type==='sw') lane.style.top=(isTop ? pos.y - swH - msgH - gap*2 : pos.y + cardH + msgH + gap*2)+'px';
-  else lane.style.top=(isTop ? pos.y - msgH - gap : pos.y + cardH + gap)+'px';
-  const qVisible=visibleNodeOnCanvas(node); if(!qVisible) lane.classList.add('hidden');
-  if(type==='sw'){
-    const chips=(node._sw||[]).slice(0,3).map(s=>`<span class="chip sw" data-select-type="sw" data-select-id="${escapeHtml(s.id)}">${escapeHtml(s.shortName||s.name)} · ${escapeHtml(s.version||'')}</span>`).join('') + ((node._sw||[]).length>3?`<span class="chip more">+${node._sw.length-3} more</span>`:'');
-    lane.innerHTML=`<div class="lane-title">Software allocation</div><div class="lane-chips">${chips || '<span class="mini-note">No SWC</span>'}</div>`;
-  } else {
-    const tx=(node._tx||[]).slice(0,2).map(m=>`<span class="chip tx" data-select-type="message" data-select-id="${escapeHtml(m.id)}">↑ ${escapeHtml(m.name)}</span>`).join('');
-    const rx=(node._rx||[]).slice(0,2).map(m=>`<span class="chip rx" data-select-type="message" data-select-id="${escapeHtml(m.id)}">↓ ${escapeHtml(m.name)}</span>`).join('');
-    const count=(node._tx.length+node._rx.length)-4;
-    lane.innerHTML=`<div class="lane-title">CAN messages</div><div class="lane-chips">${tx}${rx}${count>0?`<span class="chip more">+${count} more</span>`:''}</div>`;
-  }
-  return lane;
-}
-function svgEl(name, attrs){ const e=document.createElementNS('http://www.w3.org/2000/svg', name); Object.entries(attrs||{}).forEach(([k,v])=>{ if(v!==undefined&&v!==null) e.setAttribute(k,v);}); return e; }
-function svgText(x,y,text,cls){ const t=svgEl('text',{x,y,class:cls}); t.textContent=text; return t; }
-function select(type,id){ const same=state.selected && state.selected.type===type && state.selected.id===id; state.selected=(type==='bus' && same) ? null : {type,id}; renderSvg(); renderNodes(); renderInspector(); renderSummary(); updateFocusControls(); }
-function renderInspector(){
-  const p=$('#inspectorPanel'); const sel=state.selected;
-  if(!sel){ p.innerHTML='<div class="inspector-empty">Select an element on the topology to inspect all details.</div>'; return; }
-  const nodeMap=byId(DATA.nodes), busMap=byId(DATA.buses), conMap=byId(DATA.connections||[]), msgMap=byId(DATA.messages||[]), swMap=byId(DATA.softwareComponents||[]);
-  let html='';
-  if(sel.type==='node'){
-    const n=nodeMap[sel.id]; if(!n)return;
-    html+=card('NODE / ECU', n.name, `${n.type} · ${n.domain||''}`, kv({ID:n.id, Short:n.shortName, Role:n.role, Diagnostic:n.diagnosticAddress, Description:n.description, Buses:n._buses.map(b=>b.name).join(', '), 'TX messages':n._tx.length, 'RX messages':n._rx.length, 'Software components':n._sw.length, 'CPU load':`${n._cpu}%`}));
-    html+=section('Connections', n._connections.map(c=>listItem(`${busMap[c.busId]?.name||c.busId}`, `${c.connectorId} · ${c.port} · pins ${c.pins} · stub ${c.stubLengthCm} cm`)).join(''));
-    html+=section('TX messages', n._tx.map(m=>listItem(m.name, `${m.canId} on ${busMap[m.busId]?.name||m.busId} · ${m.cycleMs} ms · consumers: ${(m.consumerNodeIds||[]).join(', ')}`)).join(''));
-    html+=section('RX messages', n._rx.map(m=>listItem(m.name, `${m.canId} from ${nodeMap[m.producerNodeId]?.shortName||m.producerNodeId} · ${busMap[m.busId]?.name||m.busId}`)).join(''));
-    html+=section('Software components', n._sw.map(s=>listItem(`${s.shortName||s.name} · ${s.version||''}`, `${s.category} · ${s.responsibleTeam} · ${s.asilLevel} · CPU ${s.cpuLoadPercent}%`)).join(''));
-  } else if(sel.type==='bus'){
-    const b=busMap[sel.id]; if(!b)return;
-    html+=card('BUS', b.name, `${b.protocol} · ${b.bitrate}`, kv({ID:b.id, Protocol:b.protocol, Bitrate:b.bitrate, Addressing:b.addressScheme, 'Physical layer':b.physicalLayer, Termination:b.termination, 'Load target':b.loadTarget, Nodes:b._nodes.length, Messages:b._messages.length}));
-    html+=section('Connected nodes', b._nodes.map(n=>listItem(n.shortName||n.name, `${n.type} · ${n.diagnosticAddress||''}`)).join(''));
-    html+=section('Messages on this BUS', b._messages.map(m=>listItem(`${m.name} · ${m.canId}`, `${nodeMap[m.producerNodeId]?.shortName||m.producerNodeId} → ${(m.consumerNodeIds||[]).map(id=>nodeMap[id]?.shortName||id).join(', ')}`)).join(''));
-  } else if(sel.type==='connection'){
-    const c=conMap[sel.id], n=nodeMap[c?.nodeId], b=busMap[c?.busId]; if(!c)return;
-    html+=card('CONNECTION', c.id, `${n?.shortName||c.nodeId} → ${b?.name||c.busId}`, kv({Node:n?.name||c.nodeId, BUS:b?.name||c.busId, Connector:c.connectorId, Port:c.port, Pins:c.pins, Role:c.role, 'Stub length':`${c.stubLengthCm ?? 'n/a'} cm`, Shielding:c.shielding}));
-  } else if(sel.type==='message'){
-    const m=msgMap[sel.id]; if(!m)return;
-    html+=card('CAN MESSAGE', m.name, `${m.canId} · ${busMap[m.busId]?.name||m.busId}`, kv({ID:m.id, BUS:busMap[m.busId]?.name||m.busId, 'CAN ID':m.canId, Format:m.idFormat, DLC:m.dlc, Cycle:`${m.cycleMs} ms`, Producer:nodeMap[m.producerNodeId]?.name||m.producerNodeId, Consumers:(m.consumerNodeIds||[]).map(id=>nodeMap[id]?.name||id).join(', '), Signals:(m.signals||[]).join(', '), Status:m.status}));
-  } else if(sel.type==='sw'){
-    const s=swMap[sel.id], n=nodeMap[s?.ecuId]; if(!s)return;
-    html+=card('SOFTWARE COMPONENT', s.name, `${s.category} · ${n?.shortName||s.ecuId}`, kv({ID:s.id, ECU:n?.name||s.ecuId, Team:s.responsibleTeam, Owner:s.owner, Supplier:s.supplier, Version:s.version, Baseline:s.baseline, Status:s.status, Maturity:s.maturity, ASIL:s.asilLevel, CPU:`${s.cpuLoadPercent}%`, RAM:`${s.ramUsageKb} KB`, Flash:`${s.flashUsageKb} KB`, Inputs:(s.inputs||[]).join(', '), Outputs:(s.outputs||[]).join(', ')}));
-  }
-  p.innerHTML=html || '<div class="inspector-empty">No details.</div>';
-}
-function card(kicker,title,sub,body){ return `<div class="inspect-card"><div class="inspect-kicker">${escapeHtml(kicker)}</div><div class="inspect-title">${escapeHtml(title)}</div><div class="mini-note">${escapeHtml(sub||'')}</div>${body||''}</div>`; }
-function kv(obj){ return `<div class="kv">${Object.entries(obj).map(([k,v])=>`<b>${escapeHtml(k)}</b><span>${escapeHtml(v)}</span>`).join('')}</div>`; }
-function section(title,content){ return `<div class="section-title">${escapeHtml(title)}</div><div class="list">${content || '<div class="mini-note">None</div>'}</div>`; }
-function listItem(title,sub){ return `<div class="list-item"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(sub)}</span></div>`; }
-function validate(){
-  const errors=[], warnings=[];
-  const nodeIds=new Set(), busIds=new Set(), connIds=new Set(), msgIds=new Set(), swIds=new Set();
-  (DATA.nodes||[]).forEach(n=>{ if(!n.id) errors.push('Node without id'); if(nodeIds.has(n.id)) errors.push(`Duplicate node id: ${n.id}`); nodeIds.add(n.id); if(!n.name) warnings.push(`Node ${n.id} has no name`); });
-  (DATA.buses||[]).forEach(b=>{ if(!b.id) errors.push('Bus without id'); if(busIds.has(b.id)) errors.push(`Duplicate bus id: ${b.id}`); busIds.add(b.id); if(!b.protocol) warnings.push(`Bus ${b.id} has no protocol`); });
-  (DATA.connectors||[]).forEach(c=>{ if(c.nodeId && !nodeIds.has(c.nodeId)) errors.push(`Connector ${c.id} references unknown node ${c.nodeId}`); });
-  (DATA.connections||[]).forEach(c=>{ if(!c.id) errors.push('Connection without id'); if(connIds.has(c.id)) errors.push(`Duplicate connection id: ${c.id}`); connIds.add(c.id); if(!nodeIds.has(c.nodeId)) errors.push(`Connection ${c.id} references unknown node ${c.nodeId}`); if(!busIds.has(c.busId)) errors.push(`Connection ${c.id} references unknown bus ${c.busId}`); if(c.stubLengthCm>50) warnings.push(`Connection ${c.id} stub length ${c.stubLengthCm} cm is high`); });
-  const conKey=new Set((DATA.connections||[]).map(c=>`${c.nodeId}@@${c.busId}`));
-  const busCanIds={};
-  (DATA.messages||[]).forEach(m=>{ if(!m.id) errors.push('Message without id'); if(msgIds.has(m.id)) errors.push(`Duplicate message id: ${m.id}`); msgIds.add(m.id); if(!busIds.has(m.busId)) errors.push(`Message ${m.id} references unknown bus ${m.busId}`); if(!nodeIds.has(m.producerNodeId)) errors.push(`Message ${m.id} references unknown producer ${m.producerNodeId}`); if(!conKey.has(`${m.producerNodeId}@@${m.busId}`)) warnings.push(`Producer ${m.producerNodeId} of message ${m.id} is not connected to ${m.busId}`); (m.consumerNodeIds||[]).forEach(id=>{ if(!nodeIds.has(id)) errors.push(`Message ${m.id} has unknown consumer ${id}`); if(!conKey.has(`${id}@@${m.busId}`)) warnings.push(`Consumer ${id} of message ${m.id} is not connected to ${m.busId}`); }); const key=`${m.busId}@@${m.canId}`; if(busCanIds[key]) errors.push(`Duplicate CAN ID ${m.canId} on ${m.busId}`); busCanIds[key]=true; if(+m.dlc>64) errors.push(`Message ${m.id} has invalid DLC ${m.dlc}`); });
-  (DATA.softwareComponents||[]).forEach(s=>{ if(!s.id) errors.push('Software component without id'); if(swIds.has(s.id)) errors.push(`Duplicate SWC id: ${s.id}`); swIds.add(s.id); if(!nodeIds.has(s.ecuId)) errors.push(`SWC ${s.id} references unknown ECU/node ${s.ecuId}`); if(!s.version) warnings.push(`SWC ${s.id} has no version`); if(!s.responsibleTeam) warnings.push(`SWC ${s.id} has no responsibleTeam`); });
-  state.validation={errors,warnings};
-}
-function renderValidation(){
-  const p=$('#validationPanel');
-  const {errors,warnings}=state.validation;
-  let html=`<div class="inspect-card"><div class="inspect-kicker">Configuration validation</div><div class="inspect-title">${errors.length} errors · ${warnings.length} warnings</div><div class="mini-note">Checks references, IDs, CAN IDs, message routing and software allocation.</div></div>`;
-  if(!errors.length && !warnings.length) html+=`<div class="validation-item ok"><strong>Valid configuration</strong><br>No errors or warnings detected.</div>`;
-  errors.forEach(e=>html+=`<div class="validation-item err"><strong>Error</strong><br>${escapeHtml(e)}</div>`);
-  warnings.forEach(w=>html+=`<div class="validation-item warn"><strong>Warning</strong><br>${escapeHtml(w)}</div>`);
-  p.innerHTML=html;
-}
-function renderSummary(){
-  const p=$('#summaryPills'); const errors=state.validation.errors.length,warnings=state.validation.warnings.length;
-  const focusId=activeBusFocusId();
-  const focusBus=(DATA.buses||[]).find(b=>b.id===focusId);
-  const focusPill=focusId ? `<span class="pill warn">BUS focus: ${escapeHtml(focusBus?.name || focusId)} · ${focusBus?._nodes?.length || 0} nodes shown</span>` : '';
-  p.innerHTML=`<span class="pill">${DATA.nodes.length} nodes</span><span class="pill">${DATA.buses.length} buses</span><span class="pill">${DATA.connections.length} connections</span><span class="pill">${DATA.messages.length} messages</span><span class="pill">${DATA.softwareComponents.length} SWC</span>${focusPill}<span class="pill ${errors?'err':warnings?'warn':'ok'}">${errors} errors · ${warnings} warnings</span>`;
-}
-function renderTables(){ renderNodesTable(); renderBusesTable(); renderMessagesTable(); renderSoftwareTable(); $('#jsonText').value=JSON.stringify(DATA,null,2); $('#contractPre').textContent = dataContractText(); }
-function table(el, heads, rows){ $(el).innerHTML=`<thead><tr>${heads.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`; }
-function renderNodesTable(){ table('#nodesTable',['Node','Type','Domain','Diag','Buses','TX','RX','SWC','CPU'], DATA.nodes.map(n=>[`<strong>${escapeHtml(n.name)}</strong><br><span class="mini-note">${escapeHtml(n.id)}</span>`,escapeHtml(n.type),escapeHtml(n.domain||''),escapeHtml(n.diagnosticAddress||''),escapeHtml(n._buses.map(b=>b.name).join(', ')),n._tx.length,n._rx.length,n._sw.length,`${n._cpu}%`])); }
-function renderBusesTable(){ table('#busesTable',['BUS','Protocol','Bitrate','Address','Nodes','Messages','Termination'], DATA.buses.map(b=>[`<strong>${escapeHtml(b.name)}</strong><br><span class="mini-note">${escapeHtml(b.id)}</span>`,escapeHtml(b.protocol),escapeHtml(b.bitrate),escapeHtml(b.addressScheme),b._nodes.length,b._messages.length,escapeHtml(b.termination)])); }
-function renderMessagesTable(){ table('#messagesTable',['Message','BUS','CAN ID','Producer','Consumers','DLC','Cycle','Signals'], DATA.messages.map(m=>[`<strong>${escapeHtml(m.name)}</strong><br><span class="mini-note">${escapeHtml(m.id)}</span>`,escapeHtml(DATA.buses.find(b=>b.id===m.busId)?.name||m.busId),escapeHtml(m.canId),escapeHtml(DATA.nodes.find(n=>n.id===m.producerNodeId)?.shortName||m.producerNodeId),escapeHtml((m.consumerNodeIds||[]).map(id=>DATA.nodes.find(n=>n.id===id)?.shortName||id).join(', ')),m.dlc,`${m.cycleMs} ms`,escapeHtml((m.signals||[]).join(', '))])); }
-function renderSoftwareTable(){ table('#softwareTable',['SWC','ECU','Team','Version','Status','ASIL','CPU','Memory'], DATA.softwareComponents.map(s=>[`<strong>${escapeHtml(s.name)}</strong><br><span class="mini-note">${escapeHtml(s.id)}</span>`,escapeHtml(DATA.nodes.find(n=>n.id===s.ecuId)?.shortName||s.ecuId),escapeHtml(s.responsibleTeam),escapeHtml(s.version),escapeHtml(s.status),escapeHtml(s.asilLevel),`${s.cpuLoadPercent}%`,`${s.ramUsageKb||0} KB RAM · ${s.flashUsageKb||0} KB Flash`])); }
-function dataContractText(){ return `{
-  "meta": { "project": "...", "revision": "..." },
-  "nodes": [
-    { "id": "ECU_01", "name": "...", "shortName": "...", "type": "ecu|gateway|dashboard|actuator|terminal|sensor|generic", "row": "top|bottom", "domain": "...", "diagnosticAddress": "..." }
-  ],
-  "buses": [
-    { "id": "CAN_PT", "name": "...", "protocol": "CAN|CAN FD|LIN|Ethernet", "bitrate": "...", "addressScheme": "...", "physicalLayer": "...", "termination": "...", "loadTarget": "...", "color": "#2563eb" }
-  ],
-  "connectors": [
-    { "id": "CONN_ECU_01", "nodeId": "ECU_01", "name": "J1", "type": "Main harness", "pins": "CAN_H/CAN_L" }
-  ],
-  "connections": [
-    { "id": "C_ECU_01_CAN_PT", "nodeId": "ECU_01", "busId": "CAN_PT", "connectorId": "CONN_ECU_01", "port": "CAN1", "pins": "CAN_H/CAN_L", "role": "node", "stubLengthCm": 24 }
-  ],
-  "messages": [
-    { "id": "MSG_STATUS", "busId": "CAN_PT", "name": "Status", "canId": "0x180", "idFormat": "11-bit", "dlc": 8, "cycleMs": 50, "producerNodeId": "ECU_01", "consumerNodeIds": ["GW_01"], "signals": ["Alive", "State"] }
-  ],
-  "softwareComponents": [
-    { "id": "SWC_APP", "ecuId": "ECU_01", "name": "Application", "shortName": "App", "category": "Application", "responsibleTeam": "...", "version": "v1.0.0", "cpuLoadPercent": 3.5 }
-  ],
-  "softwareFlows": [
-    { "id": "FLOW_01", "producerComponentId": "SWC_APP", "consumerComponentId": "SWC_ROUTER", "busId": "CAN_PT", "messageId": "MSG_STATUS", "data": "Status" }
-  ]
-}`; }
-function applyTransform(){ const world=$('#world'); world.style.transform=`translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`; $('#zoomValue').textContent=Math.round(state.zoom*100)+'%'; }
-function fit(){
-  layout(); const vp=$('#viewport'), world=$('#world'); const w=world.offsetWidth, h=world.offsetHeight; const scale=Math.min((vp.clientWidth-60)/w,(vp.clientHeight-60)/h,1); state.zoom=Math.max(.25,scale); state.panX=(vp.clientWidth-w*state.zoom)/2; state.panY=(vp.clientHeight-h*state.zoom)/2; applyTransform();
-}
-function zoomAt(clientX,clientY,factor){ const vp=$('#viewport'); const rect=vp.getBoundingClientRect(); const mx=clientX-rect.left; const my=clientY-rect.top; const old=state.zoom; const next=Math.max(.18,Math.min(2.5,old*factor)); const wx=(mx-state.panX)/old; const wy=(my-state.panY)/old; state.zoom=next; state.panX=mx-wx*next; state.panY=my-wy*next; applyTransform(); }
-function bind(){
-  document.addEventListener('click', e=>{ const el=e.target.closest('[data-select-type]'); if(el){ e.preventDefault(); e.stopPropagation(); select(el.dataset.selectType, el.dataset.selectId); }});
-  document.addEventListener('keydown', e=>{ const el=e.target.closest('[data-select-type]'); if(el && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); select(el.dataset.selectType, el.dataset.selectId); }});
-  $$('.tab').forEach(t=>t.addEventListener('click',()=>{ $$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); $$('.panel').forEach(p=>p.classList.remove('active')); $('#'+t.dataset.tab+'Panel').classList.add('active'); }));
-  $$('.side-tab').forEach(t=>t.addEventListener('click',()=>{ $$('.side-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); $$('.side-panel').forEach(p=>p.classList.remove('active')); $('#'+t.dataset.side+'Panel').classList.add('active'); }));
-  $('#searchInput').addEventListener('input',e=>{state.filters.search=e.target.value; renderSvg(); renderNodes();});
-  $('#typeFilter').addEventListener('change',e=>{state.filters.type=e.target.value; renderSvg(); renderNodes();});
-  $('#busFilter').addEventListener('change',e=>{state.filters.bus=e.target.value; renderSvg(); renderNodes();});
-  $('#protocolFilter').addEventListener('change',e=>{state.filters.protocol=e.target.value; renderSvg(); renderNodes();});
-  $('#swToggle').addEventListener('change',e=>{state.showSW=e.target.checked; renderNodes();});
-  $('#msgToggle').addEventListener('change',e=>{state.showMessages=e.target.checked; renderNodes();});
-  $('#fitBtn').addEventListener('click',fit); $('#resetBtn').addEventListener('click',()=>{state.zoom=1;state.panX=0;state.panY=0;applyTransform();}); $('#clearFocusBtn').addEventListener('click',()=>{state.selected=null; renderSvg(); renderNodes(); renderInspector(); renderSummary(); updateFocusControls();}); $('#zoomInBtn').addEventListener('click',()=>zoomAt($('#viewport').getBoundingClientRect().left+$('#viewport').clientWidth/2,$('#viewport').getBoundingClientRect().top+$('#viewport').clientHeight/2,1.18)); $('#zoomOutBtn').addEventListener('click',()=>zoomAt($('#viewport').getBoundingClientRect().left+$('#viewport').clientWidth/2,$('#viewport').getBoundingClientRect().top+$('#viewport').clientHeight/2,.85));
-  $('#printBtn').addEventListener('click',()=>window.print());
-  $('#applyJsonBtn').addEventListener('click',()=>{ try{ const next=JSON.parse($('#jsonText').value); setData(next); alert('JSON applied successfully.'); }catch(err){ alert('Invalid JSON: '+err.message); }});
-  $('#exportJsonBtn').addEventListener('click',()=>{ const blob=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='network_backbone_data.json'; a.click(); URL.revokeObjectURL(a.href); });
-  $('#jsonFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ setData(JSON.parse(r.result)); $('#jsonText').value=JSON.stringify(DATA,null,2); }catch(err){ alert('Invalid JSON file: '+err.message); }}; r.readAsText(f); });
-  const vp=$('#viewport'); vp.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(e.clientX,e.clientY,e.deltaY<0?1.1:.9); },{passive:false});
-  let dragging=false,lastX=0,lastY=0,ignore=false,suppressEmptyClick=false;
-  vp.addEventListener('mousedown',e=>{
-    if(e.target.closest('[data-select-type]')){ ignore=true; return; }
-    ignore=false; dragging=true; suppressEmptyClick=false; lastX=e.clientX; lastY=e.clientY; vp.classList.add('dragging');
-  });
-  window.addEventListener('mousemove',e=>{
-    if(!dragging || ignore)return;
-    const dx=e.clientX-lastX, dy=e.clientY-lastY;
-    if(Math.abs(dx)+Math.abs(dy)>2) suppressEmptyClick=true;
-    state.panX+=dx; state.panY+=dy; lastX=e.clientX; lastY=e.clientY; applyTransform();
-  });
-  window.addEventListener('mouseup',()=>{ dragging=false; ignore=false; vp.classList.remove('dragging'); });
-  vp.addEventListener('click',e=>{
-    if(e.target.closest('[data-select-type]')) return;
-    if(suppressEmptyClick){ suppressEmptyClick=false; return; }
-    // Click on empty canvas = reset BUS focus / selection and show the complete network again.
-    if(state.selected){ state.selected=null; renderSvg(); renderNodes(); renderInspector(); renderSummary(); updateFocusControls(); }
-  });
-  window.addEventListener('resize',()=>{ render(); setTimeout(fit,30); });
-}
-function setData(next){ DATA = normalizeData(next); state.selected=null; render(); fit(); }
-function normalizeData(d){ return { meta:d.meta||{}, nodes:d.nodes||[], buses:d.buses||[], connectors:d.connectors||[], connections:d.connections||[], messages:d.messages||[], softwareComponents:d.softwareComponents||[], softwareFlows:d.softwareFlows||[] }; }
-window.NetworkBusTemplate={ setData, getData:()=>DATA, generateTemplateData };
-bind(); render(); setTimeout(fit,50);
+
+document.getElementById("filter").addEventListener("input", e => filterAll(e.target.value));
+
+render();
 </script>
 </body>
 </html>

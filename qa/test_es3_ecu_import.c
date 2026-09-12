@@ -29,7 +29,32 @@
 #include "EEC_library.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+/* Portable temp directory for the export round-trip below: no hardcoded
+ * author-machine path, so this test runs unmodified in any environment. */
+#ifdef _WIN32
+#include <windows.h>
+static void make_temp_dir(char *out, size_t out_size)
+{
+    char base[MAX_PATH];
+    GetTempPathA((DWORD)sizeof(base), base);
+    snprintf(out, out_size, "%sEEC_qa_XXXXXX", base);
+    _mktemp_s(out, out_size);
+    CreateDirectoryA(out, NULL);
+}
+#else
+#include <unistd.h>
+static void make_temp_dir(char *out, size_t out_size)
+{
+    const char *tmp = getenv("TMPDIR");
+    snprintf(out, out_size, "%s/EEC_qa_XXXXXX", (tmp && tmp[0]) ? tmp : "/tmp");
+    if (!mkdtemp(out)) {
+        snprintf(out, out_size, "/tmp");
+    }
+}
+#endif
 
 static int g_pass = 0;
 static int g_fail = 0;
@@ -194,7 +219,10 @@ int main(void)
     }
 
     printf("\n--- Export (EEC_Library_ExportEcu) ---\n");
-    const char *outpath = "/tmp/claude-0/-home-user-EE-Architect-Design/4eec0fa6-8932-5ba4-b67c-b54998c39f36/scratchpad/export_es3_ecu.json";
+    char tmpdir[512];
+    make_temp_dir(tmpdir, sizeof(tmpdir));
+    char outpath[512];
+    snprintf(outpath, sizeof(outpath), "%s/export_es3_ecu.json", tmpdir);
     int rc = EEC_Library_ExportEcu(ecu, outpath);
     CHECK(rc == 0, "Export ES3_ECU -> %s", outpath);
 

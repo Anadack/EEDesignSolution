@@ -130,8 +130,13 @@ appliquer une policy par défaut (ou chargée depuis JSON en phase 2).
   `ecus`/`systems`), activable dans l'app via `EEC_ZONES=<fichier>` (ex. `library/zones.json`).
   Remplace l'ancien matching par `strstr` sur les noms.
 - **Routage :** stratégie `ZONE` de #6 rendue zone-aware ; auto-sélectionnée en mode ZONAL.
-- **Export & vérif :** `EEC_Export_zones_json` (→ `exports/zones.json`) et `EEC_Verify_zones`
-  (« tout système auto-mappable assigné à exactement une zone ; toute zone a ≥ 1 ECU »).
+- **Export & vérif :** `EEC_Export_zones_json` (→ `exports/zones.json`) et `EEC_Verify_zones`,
+  qui applique désormais 3 règles (Z1–Z3, ajoutées lors du hardening) : **Z1** un ECU
+  n'appartient qu'à une seule zone au plus ; **Z2** tout ECU de l'architecture est zoné ;
+  **Z3** connectivité inter-zone — avec >1 zone, chaque zone doit avoir un ECU sur un bus
+  partagé avec une autre zone, sinon elle est *îlotée* (ses signaux inter-zone ne sont pas
+  routables). La vérification tourne après la configuration des bus pour que Z3 voie la
+  topologie réelle.
 
 ## 5. Feature #3 — CAN DBC dans le core C (IMPLÉMENTÉ)
 
@@ -142,7 +147,16 @@ appliquer une policy par défaut (ou chargée depuis JSON en phase 2).
   signaux. Activable dans l'app via la variable d'environnement `EEC_IMPORT_DBC=<fichier>`.
 - **Tests :** `qa/test_dbc_roundtrip.c` couvre le round-trip export→import (frames std 11-bit
   et étendues 29-bit, DLC, layout des signaux).
-- **Restes optionnels :** commentaires `CM_`, attributs `BA_`, tables de valeurs `VAL_`.
+- **Fidélité Vector (ajouté lors du hardening) :** attributs `BA_DEF_`/`BA_` `GenMsgCycleTime`
+  (période du message, lue depuis `cycle_time_ms`) et `VFrameFormat` (`J1939PG` pour les
+  trames étendues) ; formatage numérique des lignes `SG_` sans notation scientifique
+  (certains parseurs/CANdb+ rejettent `4.29497e+09`). Tous les `.dbc` exportés sont
+  validés avec `cantools` (parse + round-trip encode/decode).
+- **Validateur DBC (ajouté lors du hardening) :** `EEC_Dbc_Validate_bus`/`_all` (règles
+  D1–D8 : dépassement de trame, chevauchement de signaux, frame-id dupliqué, nom de
+  signal dupliqué, DLC hors plage, longueur nulle, min>max, nœud absent de `BU_`),
+  appelé depuis `main.c` après l'export. Testé par `qa/test_dbc_validate.c`.
+- **Restes optionnels :** commentaires `CM_`, tables de valeurs `VAL_`.
 
 ---
 
