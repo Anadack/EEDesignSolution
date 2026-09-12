@@ -33,7 +33,13 @@ BS_:
 BU_: AEC_REAR_HITCH_01 AEC_TRAILER_01
 
 BO_ 2364603648 HitchStatus: 5 AEC_REAR_HITCH_01
- SG_ Hitch_Position : 0|16@1+ (0.01,0) [0|100] "%" Vector__XXX
+ SG_ Hitch_Position : 0|16@1+ (0.0099999998,0) [0|100] "%" Vector__XXX
  SG_ Draft_Force : 16|16@1+ (1,0) [0|65535] "" Vector__XXX
  SG_ Hitch_State : 32|8@1+ (1,0) [0|7] "" Vector__XXX
 
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 65535;
+BA_DEF_ BO_  "VFrameFormat" ENUM  "StandardCAN","ExtendedCAN","reserved","J1939PG";
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+BA_DEF_DEF_  "VFrameFormat" "StandardCAN";
+BA_ "GenMsgCycleTime" BO_ 2364603648 100;
+BA_ "VFrameFormat" BO_ 2364603648 3;

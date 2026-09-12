@@ -37,6 +37,14 @@ BO_ 2566834688 EngineDiagnostics: 2 AEC_ENGINE_01
  SG_ MIL_Status : 8|1@1+ (1,0) [0|1] "" Vector__XXX
 
 BO_ 2364539392 CabinBroadcast: 3 AEC_CABIN_01
- SG_ Display_Vehicle_Speed : 0|16@1+ (0.01,0) [0|6000] "Hz" Vector__XXX
+ SG_ Display_Vehicle_Speed : 0|16@1+ (0.0099999998,0) [0|6000] "Hz" Vector__XXX
  SG_ Cluster_Warning_Flags : 16|8@1+ (1,0) [0|255] "" Vector__XXX
 
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 65535;
+BA_DEF_ BO_  "VFrameFormat" ENUM  "StandardCAN","ExtendedCAN","reserved","J1939PG";
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+BA_DEF_DEF_  "VFrameFormat" "StandardCAN";
+BA_ "GenMsgCycleTime" BO_ 2566834688 1000;
+BA_ "VFrameFormat" BO_ 2566834688 3;
+BA_ "GenMsgCycleTime" BO_ 2364539392 100;
+BA_ "VFrameFormat" BO_ 2364539392 3;

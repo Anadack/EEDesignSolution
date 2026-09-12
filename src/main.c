@@ -455,6 +455,15 @@ int main(void)
         if (dbc_files > 0) {
             printf("[INFO] DBC export → %d file(s) in %s\n", dbc_files, dbc_dir);
         }
+        /* Report DBC-level errors (frame overflow, overlap, dup id, etc.). */
+        {
+            int dbc_errors = EEC_Dbc_Validate_all(arch, stdout);
+            if (dbc_errors > 0) {
+                printf("[WARN] DBC validation: %d error(s) — see [DBC:*] lines above\n", dbc_errors);
+            } else {
+                printf("[OK] DBC validation: no errors\n");
+            }
+        }
     }
 
     /* Optional CAN database (DBC) import — enabled via EEC_IMPORT_DBC=<file>. */
