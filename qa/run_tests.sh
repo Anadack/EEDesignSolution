@@ -25,6 +25,8 @@ TESTS=(
     test_es3_ecu_import
     test_busload_b9
     test_dbc_validate
+    test_j1939_pgn
+    test_power_budget_p1
 )
 
 declare -a RESULTS=()
