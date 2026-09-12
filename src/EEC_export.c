@@ -602,15 +602,229 @@ int EEC_Export_architecture_json(const EEC_Architecture_t *arch, const char *fil
     return 0;
 }
 
+/** @brief Pin-only physical projection: ECU -> connector -> pin -> wire.
+ *  Unlike EEC_Export_architecture_json(), this drops the logical device tree
+ *  (systems/components/sensors/actuators) entirely and adds a flat "wires"
+ *  netlist (one entry per occupied pin: which device pin lands on which ECU
+ *  connector/pin, via which signal) — the harness-relevant view a wiring
+ *  team or connector/pinout tool consumes, as opposed to the requirements-
+ *  relevant view (which system/component a signal belongs to) the logical
+ *  export serves.
+ */
 int EEC_Export_physical_architecture_json(const EEC_Architecture_t *arch, const char *filename)
 {
-    /* KNOWN LIMITATION: this currently emits the SAME content as the logical
-     * export (the logical model already carries pin-level physical placement),
-     * so exported_architecture.json and exported_physical_architecture.json are
-     * byte-identical. A dedicated pin-only projection (drop the logical device
-     * tree, keep ECU -> connector -> pin -> wire) is a pending feature. Until
-     * then this alias is intentional and documented rather than a silent copy. */
-    return EEC_Export_architecture_json(arch, filename);
+    uint32_t i, j, k;
+    uint32_t total_pins = 0U;
+    uint32_t allocated_pins = 0U;
+    FILE *f;
+    if (!arch || !filename) {
+        return -1;
+    }
+    f = fopen(filename, "w");
+    if (!f) {
+        return -1;
+    }
+
+    fprintf(f, "{\n  \"architecture\": {\n    \"name\": ");
+    json_escape(f, arch->name);
+    fprintf(f, ",\n    \"part_number\": ");
+    json_escape(f, arch->part_number);
+    fprintf(f, ",\n    \"priority\": ");
+    json_escape(f, EEC_Priority_String(arch->priority));
+    fprintf(f, ",\n    \"safety\": ");
+    json_escape(f, EEC_Safety_String(arch->safety));
+    fprintf(f, ",\n    \"view\": \"physical\",\n    \"ecus\": [\n");
+
+    for (i = 0U; i < arch->ecu_count; ++i) {
+        const EEC_Ecu_t *ecu = arch->ecus[i];
+        uint32_t ecu_allocated_pins = 0U;
+
+        for (j = 0U; j < ecu->pin_count; ++j) {
+            if (ecu->pins[j].is_occupied) {
+                ++ecu_allocated_pins;
+            }
+        }
+        total_pins += ecu->pin_count;
+        allocated_pins += ecu_allocated_pins;
+
+        fprintf(f, "      {\n        \"name\": ");
+        json_escape(f, ecu->name);
+        fprintf(f, ",\n        \"part_number\": ");
+        json_escape(f, ecu->part_number);
+        fprintf(f, ",\n        \"variant\": ");
+        json_escape(f, ecu->variant);
+        fprintf(f, ",\n        \"priority\": ");
+        json_escape(f, EEC_Priority_String(ecu->priority));
+        fprintf(f, ",\n        \"safety\": ");
+        json_escape(f, EEC_Safety_String(ecu->safety));
+        fprintf(f, ",\n        \"location\": ");
+        json_escape(f, ecu->location);
+        fprintf(f, ",\n        \"can_addresses\": [");
+        for (j = 0U; j < ecu->can_address_count; ++j) {
+            if (j) fprintf(f, ", ");
+            fprintf(f, "\"0x%02X\"", ecu->can_addresses[j]);
+        }
+        fprintf(f, "],\n        \"pins\": [\n");
+
+        /* Pin objects use the exact same schema as EEC_Export_architecture_json()
+         * (connector/physical_number/.../signal/device_pin): several Python doc
+         * generators (e.g. generate_network_bus_backbone_html.py,
+         * generate_ecu_v3_config_validation_html.py) read fields like pin["type"]
+         * or pin["device_pin"] straight off whichever export prefer_physical
+         * resolves to, with no fallback for a physical-only pin schema. Only the
+         * top-level shape (dropping "systems", adding "wires") differs here. */
+        for (j = 0U; j < ecu->pin_count; ++j) {
+            const EEC_EcuPin_t *pin = &ecu->pins[j];
+            fprintf(f, "          {\n            \"connector\": ");
+            json_escape(f, pin->connector_name);
+            fprintf(f, ",\n            \"physical_number\": %u,\n            \"name\": ", pin->physical_number);
+            json_escape(f, pin->name);
+            fprintf(f, ",\n            \"group\": ");
+            json_escape(f, pin->main_group);
+            fprintf(f, ",\n            \"functions\": [");
+            for (k = 0U; k < pin->function_count; ++k) {
+                if (k) fprintf(f, ", ");
+                json_escape(f, pin->functions[k]);
+            }
+            fprintf(f, "],\n            \"role\": ");
+            json_escape(f, EEC_Pin_RoleString(pin->role));
+            fprintf(f, ",\n            \"interface_type\": ");
+            json_escape(f, EEC_Signal_InterfaceString((EEC_SignalInterface_t)pin->interface_type));
+            fprintf(f, ",\n            \"type\": ");
+            json_escape(f, pin->connected_signal ? EEC_Signal_InterfaceString(pin->connected_signal->interface_type)
+                                               : EEC_Signal_InterfaceString(signal_interface_from_capability_mask(pin->supported_capability_mask)));
+            fprintf(f, ",\n            \"electrical\": ");
+            json_escape(f, pin->electrical);
+            fprintf(f, ",\n            \"diagnostic_flags\": %u,\n            \"diagnostics\": ", pin->diagnostic_flags);
+            write_diag_array(f, pin->diagnostic_flags);
+            fprintf(f, ",\n            \"electrical_capability\": %u,\n            \"electrical_flags\": ", pin->electrical_capability);
+            write_elec_array(f, pin->electrical_capability);
+            fprintf(f, ",\n            \"current_max\": %.3f", (double)pin->current_max);
+            fprintf(f, ",\n            \"sw_config\": ");
+            write_pipe_text_as_array(f, pin->sw_config);
+            fprintf(f, ",\n            \"status\": ");
+            json_escape(f, pin->connected_signal ? "valid" : "free");
+            fprintf(f, ",\n            \"is_occupied\": %s,\n            \"signal\": ", pin->is_occupied ? "true" : "false");
+            if (pin->connected_signal) {
+                fprintf(f, "{ \"name\": ");
+                json_escape(f, pin->connected_signal->name);
+                fprintf(f, ", \"interface_type\": ");
+                json_escape(f, EEC_Signal_InterfaceString(pin->connected_signal->interface_type));
+                fprintf(f, ", \"unit\": ");
+                json_escape(f, EEC_Signal_UnitString(pin->connected_signal->unit));
+                fprintf(f, ", \"min\": %.3f, \"max\": %.3f",
+                        pin->connected_signal->min_value, pin->connected_signal->max_value);
+                fprintf(f, " }");
+            } else {
+                fprintf(f, "null");
+            }
+            fprintf(f, ",\n            \"device_pin\": ");
+            if (pin->device_pin_name[0] != '\0') {
+                fprintf(f, "{ \"name\": ");
+                json_escape(f, pin->device_pin_name);
+                fprintf(f, ", \"description\": ");
+                json_escape(f, pin->device_pin_desc);
+                fprintf(f, " }");
+            } else {
+                fprintf(f, "null");
+            }
+            fprintf(f, "\n          }%s\n", (j + 1U < ecu->pin_count) ? "," : "");
+        }
+
+        fprintf(f, "        ],\n");
+        write_allocation_summary(f, ecu->pin_count, ecu_allocated_pins, 8);
+        fprintf(f, ",\n");
+        write_connector_summary(f, ecu);
+        fprintf(f, "\n      }%s\n", (i + 1U < arch->ecu_count) ? "," : "");
+    }
+
+    fprintf(f, "    ],\n");
+    write_allocation_summary(f, total_pins, allocated_pins, 4);
+
+    /* ── Wires: flat netlist, one entry per occupied pin ──
+     * (device pin) --[signal]--> (ECU connector/pin). This is the piece of
+     * information the logical export leaves implicit (spread across the
+     * systems tree); here it is the primary artefact. */
+    fprintf(f, ",\n    \"wires\": [");
+    {
+        bool first_wire = true;
+        for (i = 0U; i < arch->ecu_count; ++i) {
+            const EEC_Ecu_t *ecu = arch->ecus[i];
+            for (j = 0U; j < ecu->pin_count; ++j) {
+                const EEC_EcuPin_t *pin = &ecu->pins[j];
+                if (!pin->is_occupied || !pin->connected_signal) {
+                    continue;
+                }
+                fprintf(f, "%s\n      {\n        \"signal\": ", first_wire ? "" : ",");
+                json_escape(f, pin->connected_signal->name);
+                fprintf(f, ",\n        \"device_pin\": ");
+                if (pin->device_pin_name[0] != '\0') {
+                    fprintf(f, "{ \"name\": ");
+                    json_escape(f, pin->device_pin_name);
+                    fprintf(f, ", \"description\": ");
+                    json_escape(f, pin->device_pin_desc);
+                    fprintf(f, " }");
+                } else {
+                    fprintf(f, "null");
+                }
+                fprintf(f, ",\n        \"ecu\": ");
+                json_escape(f, ecu->name);
+                fprintf(f, ",\n        \"connector\": ");
+                json_escape(f, pin->connector_name);
+                fprintf(f, ",\n        \"pin\": %u\n      }", pin->physical_number);
+                first_wire = false;
+            }
+        }
+        if (!first_wire) {
+            fprintf(f, "\n    ");
+        }
+    }
+    fprintf(f, "],\n");
+
+    /* ── Buses: physical topology (unchanged from the logical export — bus
+     * membership and bitrate are physical-layer facts, not logical-tree
+     * data). ── */
+    fprintf(f, "    \"buses\": [\n");
+    for (i = 0U; i < arch->bus_count; ++i) {
+        const EEC_Bus_t *bus = arch->buses[i];
+        uint32_t n;
+        fprintf(f, "      {\n        \"name\": ");
+        json_escape(f, bus->name);
+        fprintf(f, ",\n        \"part_number\": ");
+        json_escape(f, bus->part_number);
+        fprintf(f, ",\n        \"type\": ");
+        json_escape(f, EEC_Bus_TypeString(bus->type));
+        fprintf(f, ",\n        \"Ref-2X\": ");
+        json_escape(f, bus->ref_2x);
+        fprintf(f, ",\n        \"bitrate\": %u", bus->bitrate);
+        fprintf(f, ",\n        \"priority\": ");
+        json_escape(f, EEC_Priority_String(bus->priority));
+        fprintf(f, ",\n        \"safety\": ");
+        json_escape(f, EEC_Safety_String(bus->safety));
+        fprintf(f, ",\n        \"nodes\": [");
+        for (n = 0U; n < bus->node_count; ++n) {
+            fprintf(f, "\n          { \"ecu\": ");
+            json_escape(f, bus->nodes[n].ecu ? bus->nodes[n].ecu->name : "");
+            fprintf(f, ", \"port_index\": %u }", bus->nodes[n].port_index);
+            if (n + 1U < bus->node_count) fprintf(f, ",");
+        }
+        if (bus->node_count > 0U) fprintf(f, "\n        ");
+        fprintf(f, "],\n        \"signals\": [");
+        for (n = 0U; n < bus->signal_count; ++n) {
+            fprintf(f, "\n          ");
+            json_escape(f, bus->signals[n] ? bus->signals[n]->name : "");
+            if (n + 1U < bus->signal_count) fprintf(f, ",");
+        }
+        if (bus->signal_count > 0U) fprintf(f, "\n        ");
+        fprintf(f, "]\n      }%s\n", (i + 1U < arch->bus_count) ? "," : "");
+    }
+    fprintf(f, "    ]\n");
+
+    fprintf(f, "  }\n}\n");
+    fclose(f);
+
+    EEC_Log_Printf(EEC_LOG_INFO, "Exported physical architecture JSON to '%s'", filename);
+    return 0;
 }
 
 int EEC_Export_full_pinout_template_html(const char *filename, const char *ecu_name, const char *variant)

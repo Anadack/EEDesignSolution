@@ -106,6 +106,19 @@ void EEC_System_DestroySwcs(EEC_System_t *system);
 EEC_Message_t *EEC_Swc_CreateMessage(EEC_Swc_t *swc, const char *name,
                                      uint32_t frame_id, bool is_extended, uint8_t dlc);
 
+/** @brief Derive the J1939 PGN (Parameter Group Number) from a 29-bit CAN frame_id.
+ *  Implements SAE J1939-21: extracts Data Page (bit 24), PDU Format (bits 16-23),
+ *  and PDU Specific (bits 8-15). For PDU1 format (PF < 240, peer-to-peer/destination
+ *  addressed), PS is a destination address and is NOT part of the PGN, so it reads
+ *  as 0 in the returned value. For PDU2 format (PF >= 240, broadcast), PS is a group
+ *  extension and IS part of the PGN.
+ *  @param frame_id 29-bit extended CAN identifier (only bits 0-28 are used).
+ *  @return The PGN (0..0x3FFFF), or 0 if frame_id does not look like J1939
+ *          (callers needing to distinguish "PGN 0" from "not applicable" should
+ *          also check EEC_Message_t.is_extended).
+ */
+uint32_t EEC_J1939_PgnFromFrameId(uint32_t frame_id);
+
 /** @brief Add a signal placement to a message.
  *  @param msg           Target message.
  *  @param signal        Existing logical signal to reference (not owned).
