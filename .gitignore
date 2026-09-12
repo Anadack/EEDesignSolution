@@ -23,3 +23,6 @@ releases/
 qa/test_library_import_export
 qa/test_es3_ecu_import
 qa/test_naming_convention
+qa/test_dbc_roundtrip
+qa/test_busload_b9
+qa/test_dbc_validate
