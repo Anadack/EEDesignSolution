@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import Optional
 from xml.sax.saxutils import escape, quoteattr
 
@@ -105,18 +104,19 @@ class DrawioDiagram:
         return f"{token}_1"
 
     def to_xml(self) -> str:
+        # Mirrors, attribute-for-attribute, the header a real draw.io/
+        # diagrams.net desktop or web export writes (no XML prolog, no
+        # "type"/"modified" attributes) rather than a hand-guessed one, to
+        # rule out any header-shape mismatch as an import blocker.
         body = "".join(self._cells)
-        modified = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
         return (
-            '<?xml version="1.0" encoding="UTF-8"?>\n'
-            f'<mxfile host="65bd71144e" modified="{modified}" agent="Mozilla/5.0" '
-            'version="24.0.0" type="device">\n'
-            f'  <diagram id="{esc_attr(self._diagram_id())}" name="{esc_attr(self.name)}">\n'
+            '<mxfile host="app.diagrams.net" agent="Mozilla/5.0" version="24.0.0">\n'
+            f'  <diagram name="{esc_attr(self.name)}" id="{esc_attr(self._diagram_id())}">\n'
             '    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" '
-            'connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">\n'
+            'connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" background="none" math="0" shadow="0">\n'
             '      <root>\n'
-            '        <mxCell id="0"/>\n'
-            '        <mxCell id="1" parent="0"/>\n'
+            '        <mxCell id="0" />\n'
+            '        <mxCell id="1" parent="0" />\n'
             f'        {body}\n'
             '      </root>\n'
             '    </mxGraphModel>\n'
