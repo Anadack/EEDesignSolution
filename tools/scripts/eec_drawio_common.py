@@ -20,7 +20,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date as _date
 from typing import Optional
-from xml.sax.saxutils import escape, quoteattr
+from xml.sax.saxutils import escape
 
 # draw.io's built-in "A4" page preset, in its native drawing units
 # (100 units/inch => 8.27in x 11.69in = 210mm x 297mm). Confirmed against
@@ -32,8 +32,18 @@ FONT_FAMILY = "Helvetica"
 
 
 def esc_attr(value: object) -> str:
-    """Escape a value for use inside a double-quoted XML attribute."""
-    return quoteattr(str("" if value is None else value))[1:-1]
+    """Escape a value for use inside a double-quoted XML attribute.
+
+    Deliberately NOT xml.sax.saxutils.quoteattr: it picks single- or
+    double-quote delimiters based on the text's own content and only
+    escapes what its chosen delimiter needs — so a value containing `"`
+    but no `'` comes back with the `"` left raw (safe only inside a
+    `'...'`-delimited attribute). Every call site here always wraps the
+    result in a literal `"..."`, so `"` must always be escaped regardless
+    of what else is in the string. escape()'s default table covers & < >;
+    add the quote explicitly.
+    """
+    return escape(str("" if value is None else value), {'"': "&quot;"})
 
 
 def esc_text(value: object) -> str:
@@ -237,6 +247,52 @@ class DrawioDiagram:
             self.add_text(f"{cell_id_prefix}_subtitle", subtitle, x, y + 30, w, 20,
                           align="left", font_size=11, bold=False, color="#666666", track_bbox=False)
         return y + (58 if subtitle else 40)
+
+    def add_line(self, cell_id: str, x1: float, y1: float, x2: float, y2: float,
+                 color: str = "#233152", width: float = 1.5, dashed: bool = False,
+                 track_bbox: bool = True) -> str:
+        """A floating straight line (no attached source/target cell) between
+        two absolute points — for bus rails and drop-stubs that don't
+        correspond to a vertex-to-vertex connection."""
+        cid = self._register(cell_id)
+        style = f"endArrow=none;html=1;strokeColor={color};strokeWidth={width};" + ("dashed=1;" if dashed else "")
+        self._cells.append(
+            f'<mxCell id="{esc_attr(cid)}" value="" style="{esc_attr(style)}" edge="1" parent="1">'
+            f'<mxGeometry relative="1" as="geometry">'
+            f'<mxPoint x="{x1:g}" y="{y1:g}" as="sourcePoint"/>'
+            f'<mxPoint x="{x2:g}" y="{y2:g}" as="targetPoint"/>'
+            f'</mxGeometry></mxCell>'
+        )
+        if track_bbox:
+            self._track_bbox(min(x1, x2), min(y1, y2), max(abs(x2 - x1), 1), max(abs(y2 - y1), 1))
+        return cid
+
+    def add_table(self, cell_id_prefix: str, headers: list[str], rows: list[list[object]],
+                  x: float, y: float, col_widths: list[float], row_h: float = 22, header_h: float = 24,
+                  font_size: int = 9) -> float:
+        """A bordered data grid (header row + striped body rows). Returns the
+        y coordinate just below the table."""
+        header_style = (
+            f"rounded=0;whiteSpace=wrap;html=1;strokeColor=#233152;fillColor=#eef1f6;align=left;"
+            f"verticalAlign=middle;spacingLeft=6;fontFamily={FONT_FAMILY};fontStyle=1;fontSize={font_size};"
+        )
+        xx = x
+        for j, (htext, w) in enumerate(zip(headers, col_widths)):
+            self.add_node(f"{cell_id_prefix}_h_{j}", htext, xx, y, w, header_h, style=header_style)
+            xx += w
+        yy = y + header_h
+        for i, row in enumerate(rows):
+            xx = x
+            fill = "#ffffff" if i % 2 == 0 else "#f7f9fc"
+            row_style = (
+                f"rounded=0;whiteSpace=wrap;html=1;strokeColor=#d7dde8;fillColor={fill};align=left;"
+                f"verticalAlign=middle;spacingLeft=6;fontFamily={FONT_FAMILY};fontSize={font_size};"
+            )
+            for j, (val, w) in enumerate(zip(row, col_widths)):
+                self.add_node(f"{cell_id_prefix}_r{i}_c{j}", str(val), xx, yy, w, row_h, style=row_style)
+                xx += w
+            yy += row_h
+        return yy
 
     def add_legend_row(self, cell_id_prefix: str, entries: list[tuple[str, str, str]],
                         x: float, y: float, swatch: float = 12, gap_after_swatch: float = 6,

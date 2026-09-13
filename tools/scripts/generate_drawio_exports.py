@@ -34,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eec_archdoc_common import (
     iter_ecus, iter_systems, flatten_components, normalize_iface, cli_context, make_argparser,
 )
-from eec_drawio_common import DrawioDiagram, fill_stroke_for
+from eec_drawio_common import DrawioDiagram, fill_stroke_for, esc_text
 from eec_report_common import load_json, slug
 from generate_network_bus_backbone_html import (
     extract_nodes_from_architecture, extract_buses_from_architecture, extract_connections_from_architecture,
@@ -49,65 +49,108 @@ CONTENT_X0 = 60
 # ---------------------------------------------------------------------------
 
 def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
+    """Reproduces, cell for cell, the layout algorithm of the reference
+    Network_BUS_Backbone_Template.html: ECUs split into a top row and a
+    bottom row (by their "row" field), several bus rails stacked in the
+    band between the two rows, and straight vertical stubs dropping from
+    each ECU to whichever rail(s) it connects to — plus the same Buses
+    and Messages tables the HTML page renders below its diagram."""
     nodes = extract_nodes_from_architecture(arch)
     buses = extract_buses_from_architecture(arch)
-    _connectors, connections, _messages = extract_connections_from_architecture(arch)
+    _connectors, connections, messages = extract_connections_from_architecture(arch)
 
     d = DrawioDiagram(name="Network BUS Backbone")
     arch_name = str(arch.get("name", "Architecture Export"))
     top = d.add_header_banner(
-        "hdr", "Network Bus Backbone Topology",
-        f"Architecture: {arch_name}  ·  {len(nodes)} ECUs, {len(buses)} bus segments  ·  Generated {_date.today().isoformat()}",
+        "hdr", "Network Bus Backbone",
+        f"{arch_name}  ·  rev v1.0  ·  {len(nodes)} node(s)  ·  from Architecture JSON export  ·  Generated {_date.today().isoformat()}",
         x=CONTENT_X0, w=1000,
     )
 
-    node_w, node_h = 130, 55
-    gap_x = 14
-    ecu_y = top + 20
-    x = CONTENT_X0
-    node_x: dict[str, float] = {}
-    for n in nodes:
-        nid = f"ecu_{slug(n['id'])}"
-        label = f"{n['name']}\n({n.get('description', '')})" if n.get("description") else n["name"]
-        d.add_node(nid, label, x, ecu_y, node_w, node_h,
-                   style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;fontFamily=Helvetica;")
-        node_x[n["id"]] = x + node_w / 2.0
-        x += node_w + gap_x
+    d.add_legend_row(
+        "legend",
+        [(f"{b['name']} ({b.get('protocol', '')})", b["color"], b["color"]) for b in buses],
+        x=CONTENT_X0, y=top,
+    )
 
-    total_width = max(x, 400)
-    rail_x0 = CONTENT_X0
-    rail_w = total_width - rail_x0 - gap_x
+    # --- Topology diagram: identical layout math to the HTML template's
+    # render(): two ECU rows at fixed y (70/350 in its 0..420 diagram
+    # space), bus rails stacked 40 apart starting at y=140, node width
+    # driven by node count, stubs dropping 26 units off the node edge.
+    diag_y0 = top + 30
+    top_nodes = [n for n in nodes if n.get("row") != "bottom"]
+    bot_nodes = [n for n in nodes if n.get("row") == "bottom"]
+    diagram_w = max(900, (len(nodes) + 1) * 130)
 
-    bus_y: dict[str, float] = {}
-    y = ecu_y + node_h + 90
+    node_pos: dict[str, tuple[float, float]] = {}
+
+    def layout_row(row_nodes: list[dict], local_y: float) -> None:
+        step = diagram_w / (len(row_nodes) + 1)
+        for i, n in enumerate(row_nodes):
+            node_pos[n["id"]] = (CONTENT_X0 + (i + 1) * step, diag_y0 + local_y)
+
+    layout_row(top_nodes, 70)
+    layout_row(bot_nodes, 350)
+
+    bus_y: dict[str, float] = {b["id"]: diag_y0 + 140 + i * 40 for i, b in enumerate(buses)}
+
     for b in buses:
-        rail_id = f"bus_{slug(b['id'])}"
-        d.add_text(f"{rail_id}_label", f"{b['name']}  —  {b.get('protocol', '')}, {b.get('bitrate', '')}, {b.get('termination', '')}",
-                   rail_x0, y - 24, rail_w, 18, align="left", font_size=10, bold=True)
-        d.add_node(rail_id, "", rail_x0, y, rail_w, 6,
-                   style=f"line;strokeWidth=4;html=1;strokeColor={b['color']};")
-        bus_y[b["id"]] = y
-        y += 105
+        y = bus_y[b["id"]]
+        d.add_line(f"bus_{slug(b['id'])}", CONTENT_X0 + 20, y, CONTENT_X0 + diagram_w - 20, y,
+                   color=b["color"], width=4)
+        d.add_text(f"bus_{slug(b['id'])}_lbl", b["name"], CONTENT_X0 + 24, y - 20, 220, 16,
+                   align="left", font_size=10, bold=True, color=b["color"], track_bbox=False)
 
-    edge_i = 0
-    for c in connections:
-        nid = f"ecu_{slug(c['nodeId'])}"
-        rail_id = f"bus_{slug(c['busId'])}"
-        if c["nodeId"] not in node_x or c["busId"] not in bus_y:
+    for i, c in enumerate(connections):
+        pos = node_pos.get(c["nodeId"])
+        y = bus_y.get(c["busId"])
+        if pos is None or y is None:
             continue
-        rail_center_x = node_x[c["nodeId"]]
-        entry_x = max(0.02, min(0.98, (rail_center_x - rail_x0) / rail_w))
-        bus_color = next((b["color"] for b in buses if b["id"] == c["busId"]), "#666666")
-        edge_i += 1
-        d.add_edge(f"conn_{edge_i}", nid, rail_id, label=c.get("pins", ""),
-                   style=f"edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor={bus_color};strokeWidth=2;fontSize=9;fontFamily=Helvetica;",
-                   entry_x=entry_x, entry_y=0.0, exit_x=0.5, exit_y=1.0)
+        nx, ny = pos
+        y2 = ny - 26 if ny > y else ny + 26
+        bus_color = next((b["color"] for b in buses if b["id"] == c["busId"]), "#233152")
+        d.add_line(f"stub_{i}", nx, y2, nx, y, color=bus_color, width=1.5)
+
+    for n in nodes:
+        pos = node_pos.get(n["id"])
+        if pos is None:
+            continue
+        nx, ny = pos
+        label = f"<b>{esc_text(n.get('shortName') or n.get('name', ''))}</b><br/><font style=\"font-size:9px;color:#8fa2c4;\">{esc_text(n.get('diagnosticAddress', ''))}</font>"
+        d.add_node(f"ecu_{slug(n['id'])}", label, nx - 48, ny - 22, 96, 44,
+                   style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0e1626;strokeColor=#233152;fontColor=#e6edf7;"
+                         "fontSize=11;fontFamily=Helvetica;align=center;verticalAlign=middle;")
+
+    y = diag_y0 + 420 + 30
+
+    # --- Buses table (same columns as the HTML "Buses" panel) ---
+    d.add_text("buses_title", "Buses", CONTENT_X0, y, 300, 20, align="left", font_size=13, bold=True)
+    y += 26
+    bus_rows = []
+    for b in buses:
+        node_count = sum(1 for c in connections if c["busId"] == b["id"])
+        bus_rows.append([b["name"], b.get("protocol", ""), b.get("bitrate", ""), b.get("addressScheme", ""),
+                          b.get("physicalLayer", ""), b.get("termination", ""), b.get("loadTarget", ""), node_count])
+    y = d.add_table("bt", ["Bus", "Protocol", "Bitrate", "Address scheme", "Physical layer", "Termination", "Load target", "Nodes"],
+                     bus_rows, CONTENT_X0, y, [130, 70, 130, 110, 130, 120, 80, 50])
+
+    # --- Messages table (same columns as the HTML "Messages" panel) ---
+    y += 30
+    d.add_text("msgs_title", "Messages", CONTENT_X0, y, 300, 20, align="left", font_size=13, bold=True)
+    y += 26
+    msg_rows = []
+    for m in messages:
+        msg_rows.append([m.get("name", ""), m.get("busId", ""), m.get("canId", ""), m.get("idFormat", ""),
+                          m.get("dlc", ""), m.get("cycleMs", ""), m.get("producerNodeId", ""),
+                          ", ".join(m.get("consumerNodeIds", []) or []), ", ".join(m.get("signals", []) or [])])
+    d.add_table("mt", ["Message", "Bus", "CAN ID", "Format", "DLC", "Cycle (ms)", "Producer", "Consumers", "Signals"],
+                msg_rows, CONTENT_X0, y, [170, 90, 70, 60, 40, 70, 130, 180, 170], row_h=30, font_size=8)
 
     d.reserve_space(extra_h=130)
     d.set_page_to_content(orientation="landscape", margin=MARGIN)
     d.add_border()
     d.add_title_block(
-        "tb", doc_title="Network Bus Backbone Topology", subtitle=arch_name,
+        "tb", doc_title="Network Bus Backbone", subtitle=arch_name,
         source="generated_doc/exports/exported_architecture.json",
     )
     return d.to_xml()
