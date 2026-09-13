@@ -140,45 +140,11 @@ def build_network_backbone_sheets(arch: dict[str, Any]) -> list[DrawioDiagram]:
     bot_y = top_y + card_h + bus_band_h + 60
     layout_row(bot_nodes, bot_y)
 
-    # Bus rails, each labeled inline with its real properties (not just a
-    # name) so they're readable without cross-checking the table below.
-    for b in buses:
-        y = bus_y[b["id"]]
-        d1.add_line(f"bus_{slug(b['id'])}", CONTENT_X0, y, CONTENT_X0 + diagram_w, y, color=b["color"], width=4)
-        props = f"{b['name']}  —  {b.get('protocol', '')} · {b.get('bitrate', '')} · {b.get('termination', '')} · load target {b.get('loadTarget', '')}"
-        d1.add_text(f"bus_{slug(b['id'])}_lbl", props, CONTENT_X0, y - 20, diagram_w, 16,
-                    align="left", font_size=10, bold=True, color=b["color"], track_bbox=False)
-
-    # Stubs: every ECU's connections to its buses are drawn as PARALLEL
-    # vertical lines (offset side by side, ordered by the bus's rail
-    # position) instead of stacking on the node's exact center — so an
-    # ECU on several buses shows one distinctly colored line per bus
-    # instead of lines silently overdrawing each other.
-    conns_by_node: dict[str, list[dict]] = {}
-    for c in connections:
-        conns_by_node.setdefault(c["nodeId"], []).append(c)
-
-    stub_i = 0
-    for node_id, node_conns in conns_by_node.items():
-        pos = node_center.get(node_id)
-        if pos is None:
-            continue
-        nx, ny = pos
-        node_conns = sorted(node_conns, key=lambda c: bus_y.get(c["busId"], 0))
-        k = len(node_conns)
-        spread = (k - 1) * 12
-        for i, c in enumerate(node_conns):
-            y = bus_y.get(c["busId"])
-            if y is None:
-                continue
-            offset = -spread / 2 + i * 12
-            x = nx + offset
-            y2 = ny - card_h / 2 if ny > y else ny + card_h / 2
-            bus_color = next((b["color"] for b in buses if b["id"] == c["busId"]), "#233152")
-            stub_i += 1
-            d1.add_line(f"stub_{stub_i}", x, y2, x, y, color=bus_color, width=2)
-
-    # ECU cards: name, domain, diagnostic + bus-node addresses, then one
+    # ECU cards are added BEFORE the stub edges below, so those edges can
+    # attach to real cell IDs (source=ecu, target=bus) instead of floating
+    # lines with hardcoded points — genuine draw.io connections that stay
+    # attached if a shape is moved, and render flush against the shape's
+    # own border. Name, domain, diagnostic + bus-node addresses, then one
     # color-coded line per network interface listing its actual pins.
     for n in nodes:
         pos = node_center.get(n["id"])
@@ -203,6 +169,56 @@ def build_network_backbone_sheets(arch: dict[str, Any]) -> list[DrawioDiagram]:
         d1.add_node(f"ecu_{slug(n['id'])}", label, nx - card_w / 2, ny - card_h / 2, card_w, card_h,
                    style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0e1626;strokeColor=#233152;fontColor=#e6edf7;"
                          "fontSize=11;fontFamily=Helvetica;align=left;verticalAlign=top;spacing=8;")
+
+    # Bus rails are real vertex cells too (a thin "line"-shaped box, not a
+    # floating line) so stub edges can attach to a specific point along
+    # them via entryX — labeled inline with their real properties (not
+    # just a name) so they're readable without the table below.
+    for b in buses:
+        y = bus_y[b["id"]]
+        d1.add_node(f"bus_{slug(b['id'])}", "", CONTENT_X0, y - 3, diagram_w, 6,
+                   style=f"line;strokeWidth=4;html=1;strokeColor={b['color']};")
+        props = f"{b['name']}  —  {b.get('protocol', '')} · {b.get('bitrate', '')} · {b.get('termination', '')} · load target {b.get('loadTarget', '')}"
+        d1.add_text(f"bus_{slug(b['id'])}_lbl", props, CONTENT_X0, y - 22, diagram_w, 16,
+                    align="left", font_size=10, bold=True, color=b["color"], track_bbox=False)
+
+    # Stubs: real edges (source=ECU cell, target=bus-rail cell) so they are
+    # genuinely attached, each labeled with the actual port/pins it uses
+    # (e.g. "CAN_H/CAN_L", "ETH+/ETH-") so it's clear which port joins
+    # which bus. Every ECU's connections to several buses are offset into
+    # PARALLEL exit points (ordered by the bus's rail position) instead of
+    # exiting the card at the same point — so a multi-bus ECU shows one
+    # distinctly colored, distinctly labeled line per bus instead of lines
+    # silently overdrawing each other.
+    conns_by_node: dict[str, list[dict]] = {}
+    for c in connections:
+        conns_by_node.setdefault(c["nodeId"], []).append(c)
+
+    stub_i = 0
+    for node_id, node_conns in conns_by_node.items():
+        pos = node_center.get(node_id)
+        if pos is None:
+            continue
+        nx, ny = pos
+        ecu_cell = f"ecu_{slug(node_id)}"
+        node_conns = sorted(node_conns, key=lambda c: bus_y.get(c["busId"], 0))
+        k = len(node_conns)
+        spread = min((k - 1) * 12, card_w * 0.7)
+        for i, c in enumerate(node_conns):
+            y = bus_y.get(c["busId"])
+            if y is None:
+                continue
+            bus_cell = f"bus_{slug(c['busId'])}"
+            offset = (-spread / 2 + i * (spread / (k - 1) if k > 1 else 0))
+            exit_x = max(0.05, min(0.95, 0.5 + offset / card_w))
+            exit_y = 1.0 if ny < y else 0.0  # top-row ECU exits its bottom edge; bottom-row exits its top edge
+            entry_x = max(0.02, min(0.98, ((nx + offset) - CONTENT_X0) / diagram_w))
+            bus_color = next((b["color"] for b in buses if b["id"] == c["busId"]), "#233152")
+            stub_i += 1
+            d1.add_edge(f"stub_{stub_i}", ecu_cell, bus_cell, label=c.get("pins", ""),
+                       style=f"endArrow=none;html=1;strokeColor={bus_color};strokeWidth=2;fontSize=8;"
+                             f"fontFamily=Helvetica;fontColor={bus_color};labelBackgroundColor=#0b1220;",
+                       exit_x=exit_x, exit_y=exit_y, entry_x=entry_x, entry_y=0.5)
 
     y = bot_y + card_h / 2 + 50
     d1.add_text("buses_title", "Buses", CONTENT_X0, y, 300, 20, align="left", font_size=13, bold=True)
