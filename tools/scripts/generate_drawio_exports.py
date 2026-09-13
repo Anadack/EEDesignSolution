@@ -216,7 +216,7 @@ def build_network_backbone_sheets(arch: dict[str, Any]) -> list[DrawioDiagram]:
             bus_color = next((b["color"] for b in buses if b["id"] == c["busId"]), "#233152")
             stub_i += 1
             d1.add_edge(f"stub_{stub_i}", ecu_cell, bus_cell, label=c.get("pins", ""),
-                       style=f"endArrow=none;html=1;strokeColor={bus_color};strokeWidth=2;fontSize=8;"
+                       style=f"edgeStyle=none;curved=0;rounded=0;endArrow=none;html=1;strokeColor={bus_color};strokeWidth=2;fontSize=8;"
                              f"fontFamily=Helvetica;fontColor={bus_color};labelBackgroundColor=#0b1220;",
                        exit_x=exit_x, exit_y=exit_y, entry_x=entry_x, entry_y=0.5)
 
