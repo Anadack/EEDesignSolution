@@ -176,8 +176,15 @@ def build_network_backbone_sheets(arch: dict[str, Any]) -> list[DrawioDiagram]:
     # just a name) so they're readable without the table below.
     for b in buses:
         y = bus_y[b["id"]]
+        # A plain filled rectangle, not draw.io's special "line" stencil:
+        # that stencil's own perimeter/connection-point logic ignores an
+        # edge's requested entryX fraction (it snaps to a handful of its
+        # own points), which is exactly what turned every stub into a
+        # long diagonal converging on the same couple of spots instead of
+        # landing at its own distinct, vertically-aligned point. A plain
+        # rectangle has the standard perimeter every entryX/entryY relies on.
         d1.add_node(f"bus_{slug(b['id'])}", "", CONTENT_X0, y - 3, diagram_w, 6,
-                   style=f"line;strokeWidth=4;html=1;strokeColor={b['color']};")
+                   style=f"rounded=0;whiteSpace=wrap;html=1;fillColor={b['color']};strokeColor={b['color']};")
         props = f"{b['name']}  —  {b.get('protocol', '')} · {b.get('bitrate', '')} · {b.get('termination', '')} · load target {b.get('loadTarget', '')}"
         d1.add_text(f"bus_{slug(b['id'])}_lbl", props, CONTENT_X0, y - 22, diagram_w, 16,
                     align="left", font_size=10, bold=True, color=b["color"], track_bbox=False)
