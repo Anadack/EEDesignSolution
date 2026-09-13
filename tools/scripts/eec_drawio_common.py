@@ -1,18 +1,34 @@
 #!/usr/bin/env python3
-"""Minimal mxGraph/draw.io XML (.drawio) builder shared by the experimental
-drawio exporters (generate_drawio_exports.py).
+"""mxGraph/draw.io XML (.drawio) builder shared by the drawio exporters
+(generate_drawio_exports.py).
 
 This is intentionally independent from the HTML generators: it only needs
 to produce valid <mxfile> XML that draw.io / diagrams.net (and therefore the
 Polarion "Diagrams.net" widget) can open and re-edit. It does not reuse any
 HTML/CSS rendering helpers.
+
+Beyond raw node/edge primitives, this module also carries the print-layout
+conventions shared by every generated sheet: A4 page sizing (portrait or
+landscape, auto-tiled to the content's bounding box), an ISO 7200-style
+title block, an outer drawing border, and a small color-swatch legend —
+so every exported document reads as one consistent, print-ready family
+rather than a loose collection of diagrams.
 """
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import date as _date
 from typing import Optional
 from xml.sax.saxutils import escape, quoteattr
+
+# draw.io's built-in "A4" page preset, in its native drawing units
+# (100 units/inch => 8.27in x 11.69in = 210mm x 297mm). Confirmed against
+# a real draw.io export (pageWidth="826" pageHeight="1169").
+A4_PORTRAIT = (827, 1169)
+A4_LANDSCAPE = (1169, 827)
+
+FONT_FAMILY = "Helvetica"
 
 
 def esc_attr(value: object) -> str:
@@ -31,8 +47,11 @@ class DrawioDiagram:
     root layer, per the format's own convention."""
 
     name: str = "Page-1"
+    page_w: float = A4_LANDSCAPE[0]
+    page_h: float = A4_LANDSCAPE[1]
     _cells: list[str] = field(default_factory=list)
     _ids: set[str] = field(default_factory=set)
+    _bbox: list[Optional[float]] = field(default_factory=lambda: [None, None, None, None])
 
     def _register(self, cell_id: str) -> str:
         cell_id = str(cell_id)
@@ -40,6 +59,30 @@ class DrawioDiagram:
             raise ValueError(f"duplicate mxCell id: {cell_id}")
         self._ids.add(cell_id)
         return cell_id
+
+    def _track_bbox(self, x: float, y: float, w: float, h: float) -> None:
+        x0, y0, x1, y1 = self._bbox
+        self._bbox = [
+            x if x0 is None else min(x0, x),
+            y if y0 is None else min(y0, y),
+            x + w if x1 is None else max(x1, x + w),
+            y + h if y1 is None else max(y1, y + h),
+        ]
+
+    def content_bbox(self) -> tuple[float, float, float, float]:
+        x0, y0, x1, y1 = self._bbox
+        return (x0 or 0.0, y0 or 0.0, x1 or 0.0, y1 or 0.0)
+
+    def reserve_space(self, extra_w: float = 0, extra_h: float = 0) -> None:
+        """Grow the tracked content bbox without drawing anything, so a
+        later set_page_to_content() leaves a clean band free of any real
+        content — e.g. for a bottom-band title block that must never
+        overlap the last row of a grid or tree."""
+        x0, y0, x1, y1 = self.content_bbox()
+        if extra_w:
+            self._track_bbox(x1, y0, extra_w, 1)
+        if extra_h:
+            self._track_bbox(x0, y1, 1, extra_h)
 
     def add_node(
         self,
@@ -51,6 +94,7 @@ class DrawioDiagram:
         h: float,
         style: str = "rounded=0;whiteSpace=wrap;html=1;",
         parent: str = "1",
+        track_bbox: bool = True,
     ) -> str:
         cid = self._register(cell_id)
         self._cells.append(
@@ -59,6 +103,8 @@ class DrawioDiagram:
             f'<mxGeometry x="{x:g}" y="{y:g}" width="{w:g}" height="{h:g}" as="geometry"/>'
             f'</mxCell>'
         )
+        if track_bbox:
+            self._track_bbox(x, y, w, h)
         return cid
 
     def add_edge(
@@ -91,9 +137,123 @@ class DrawioDiagram:
         return cid
 
     def add_text(self, cell_id: str, label: str, x: float, y: float, w: float, h: float,
-                 align: str = "center", font_size: int = 14, bold: bool = True, parent: str = "1") -> str:
-        style = f"text;html=1;align={align};verticalAlign=middle;fontSize={font_size};" + ("fontStyle=1;" if bold else "")
-        return self.add_node(cell_id, label, x, y, w, h, style=style, parent=parent)
+                 align: str = "center", font_size: int = 14, bold: bool = True, parent: str = "1",
+                 color: str = "#1a1a1a", track_bbox: bool = True) -> str:
+        style = (
+            f"text;html=1;align={align};verticalAlign=middle;fontSize={font_size};"
+            f"fontFamily={FONT_FAMILY};fontColor={color};"
+        ) + ("fontStyle=1;" if bold else "")
+        return self.add_node(cell_id, label, x, y, w, h, style=style, parent=parent, track_bbox=track_bbox)
+
+    # -- Print layout: page sizing, drawing border, title block, legend ---
+
+    def set_page_to_content(self, orientation: str = "auto", margin: float = 40, min_pages: int = 1) -> tuple[int, int]:
+        """Size the page to the smallest whole number of A4 sheets (in the
+        given or auto-picked orientation) that covers everything drawn so
+        far plus a margin. Returns (columns, rows) of tiled A4 sheets so
+        callers can size a title block/border to match. Call this AFTER all
+        diagram content has been added, then add the border/title block."""
+        x0, y0, x1, y1 = self.content_bbox()
+        content_w = max(1.0, (x1 - min(x0, 0)) + margin * 2)
+        content_h = max(1.0, (y1 - min(y0, 0)) + margin * 2)
+
+        if orientation == "auto":
+            orientation = "landscape" if content_w >= content_h else "portrait"
+        unit_w, unit_h = A4_LANDSCAPE if orientation == "landscape" else A4_PORTRAIT
+
+        cols = max(min_pages, -(-int(content_w) // int(unit_w)))
+        rows = max(1, -(-int(content_h) // int(unit_h)))
+        self.page_w = cols * unit_w
+        self.page_h = rows * unit_h
+        return cols, rows
+
+    def add_border(self, cell_id: str = "frame_border", margin: float = 10, color: str = "#000000") -> str:
+        return self.add_node(
+            cell_id, "", margin, margin, self.page_w - 2 * margin, self.page_h - 2 * margin,
+            style=f"rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor={color};strokeWidth=1.5;",
+            parent="1", track_bbox=False,
+        )
+
+    def add_title_block(
+        self,
+        cell_id_prefix: str,
+        doc_title: str,
+        subtitle: str = "",
+        source: str = "",
+        rev: str = "A",
+        sheet_label: str = "1/1",
+        company: str = "EE Architect Design",
+        margin: float = 10,
+    ) -> None:
+        """A compact ISO-7200-style title block, anchored to the bottom-right
+        corner of the page (last tiled sheet if content spans several)."""
+        w, h = 340.0, 96.0
+        col1_w, col2_w = 240.0, 100.0
+        row_h = h / 3.0
+        x = self.page_w - margin - w
+        y = self.page_h - margin - h
+        today = _date.today().isoformat()
+
+        cell = f"rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=6;fontFamily={FONT_FAMILY};"
+
+        self.add_node(f"{cell_id_prefix}_c00", f"{company}", x, y, col1_w, row_h,
+                       style=cell + "fontSize=11;fontStyle=1;", track_bbox=False)
+        self.add_node(f"{cell_id_prefix}_c01", f"REV {rev}", x + col1_w, y, col2_w, row_h,
+                       style=cell + "fontSize=11;fontStyle=1;align=center;", track_bbox=False)
+
+        self.add_node(f"{cell_id_prefix}_c10", doc_title, x, y + row_h, col1_w, row_h,
+                       style=cell + "fontSize=9;fontStyle=1;", track_bbox=False)
+        self.add_node(f"{cell_id_prefix}_c11", today, x + col1_w, y + row_h, col2_w, row_h,
+                       style=cell + "fontSize=8;align=center;", track_bbox=False)
+
+        self.add_node(f"{cell_id_prefix}_c20", subtitle or source, x, y + 2 * row_h, col1_w, row_h,
+                       style=cell + "fontSize=8;fontColor=#555555;", track_bbox=False)
+        self.add_node(f"{cell_id_prefix}_c21", f"SHEET {sheet_label}", x + col1_w, y + 2 * row_h, col2_w, row_h,
+                       style=cell + "fontSize=9;fontStyle=1;align=center;", track_bbox=False)
+
+    def add_legend(self, cell_id_prefix: str, title: str, entries: list[tuple[str, str, str]],
+                    x: float, y: float, swatch: float = 14, row_h: float = 20, w: float = 190) -> float:
+        """entries: list of (label, fill, stroke). Returns the y coordinate
+        just below the rendered legend, for stacking further content."""
+        self.add_text(f"{cell_id_prefix}_title", title, x, y, w, 18, align="left", font_size=10, bold=True)
+        yy = y + 20
+        for i, (label, fill, stroke) in enumerate(entries):
+            sid = f"{cell_id_prefix}_sw_{i}"
+            self.add_node(sid, "", x, yy + (row_h - swatch) / 2, swatch, swatch,
+                          style=f"rounded=1;whiteSpace=wrap;html=1;fillColor={fill};strokeColor={stroke};",
+                          track_bbox=False)
+            self.add_text(f"{cell_id_prefix}_lbl_{i}", label, x + swatch + 8, yy, w - swatch - 8, row_h,
+                          align="left", font_size=9, bold=False)
+            yy += row_h
+        return yy
+
+    def add_header_banner(self, cell_id_prefix: str, title: str, subtitle: str = "",
+                           x: float = 50, y: float = 40, w: float = 1000) -> float:
+        """Top-of-sheet banner (document title + one-line subtitle). Returns
+        the y coordinate where diagram content should start."""
+        self.add_text(f"{cell_id_prefix}_title", title, x, y, w, 30,
+                       align="left", font_size=20, bold=True, track_bbox=False)
+        if subtitle:
+            self.add_text(f"{cell_id_prefix}_subtitle", subtitle, x, y + 30, w, 20,
+                          align="left", font_size=11, bold=False, color="#666666", track_bbox=False)
+        return y + (58 if subtitle else 40)
+
+    def add_legend_row(self, cell_id_prefix: str, entries: list[tuple[str, str, str]],
+                        x: float, y: float, swatch: float = 12, gap_after_swatch: float = 6,
+                        entry_gap: float = 22, char_w: float = 5.6, font_size: int = 9) -> float:
+        """A single horizontal strip of swatch+label pairs (a caption line),
+        for legends that must not add page width/height of their own.
+        Returns the x coordinate just past the last entry."""
+        xx = x
+        for i, (label, fill, stroke) in enumerate(entries):
+            self.add_node(f"{cell_id_prefix}_sw_{i}", "", xx, y + 1, swatch, swatch,
+                          style=f"rounded=1;whiteSpace=wrap;html=1;fillColor={fill};strokeColor={stroke};",
+                          track_bbox=False)
+            label_w = max(20.0, len(label) * char_w)
+            self.add_text(f"{cell_id_prefix}_lbl_{i}", label, xx + swatch + gap_after_swatch, y,
+                          label_w, swatch + 4, align="left", font_size=font_size, bold=False, track_bbox=False)
+            xx += swatch + gap_after_swatch + label_w + entry_gap
+        return xx
 
     def _diagram_id(self) -> str:
         # draw.io's own exports use a short opaque token for the diagram id
@@ -106,14 +266,15 @@ class DrawioDiagram:
     def to_xml(self) -> str:
         # Mirrors, attribute-for-attribute, the header a real draw.io/
         # diagrams.net desktop or web export writes (no XML prolog, no
-        # "type"/"modified" attributes) rather than a hand-guessed one, to
-        # rule out any header-shape mismatch as an import blocker.
+        # "type"/"modified" attributes) — verified against a user-supplied
+        # native draw.io export rather than a hand-guessed header shape.
         body = "".join(self._cells)
         return (
             '<mxfile host="app.diagrams.net" agent="Mozilla/5.0" version="24.0.0">\n'
             f'  <diagram name="{esc_attr(self.name)}" id="{esc_attr(self._diagram_id())}">\n'
-            '    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" '
-            'connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" background="none" math="0" shadow="0">\n'
+            f'    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" '
+            f'connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{self.page_w:g}" '
+            f'pageHeight="{self.page_h:g}" background="#ffffff" math="0" shadow="0">\n'
             '      <root>\n'
             '        <mxCell id="0" />\n'
             '        <mxCell id="1" parent="0" />\n'
@@ -144,6 +305,9 @@ IFACE_FILL = {
     "GROUND": ("#eceff3", "#46566e"),
     "SENSOR_SUPPLY": ("#e6fbff", "#2ee6ff"),
     "RESERVED": ("#f2f2f2", "#b3b3b3"),
+    "SENSOR": ("#e6fff5", "#0d9488"),
+    "ACTUATOR": ("#fff3e6", "#d97706"),
+    "ECU": ("#eaf0ff", "#4f5bd5"),
 }
 DEFAULT_FILL = ("#f5f5f5", "#666666")
 
