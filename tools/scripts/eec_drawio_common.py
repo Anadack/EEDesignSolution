@@ -319,14 +319,11 @@ class DrawioDiagram:
         token = re.sub(r"[^A-Za-z0-9]+", "_", self.name).strip("_") or "Page"
         return f"{token}_1"
 
-    def to_xml(self) -> str:
-        # Mirrors, attribute-for-attribute, the header a real draw.io/
-        # diagrams.net desktop or web export writes (no XML prolog, no
-        # "type"/"modified" attributes) — verified against a user-supplied
-        # native draw.io export rather than a hand-guessed header shape.
+    def diagram_xml(self) -> str:
+        """Just this sheet's <diagram>...</diagram> block, for embedding
+        alongside other sheets in one multi-tab file via render_mxfile()."""
         body = "".join(self._cells)
         return (
-            '<mxfile host="app.diagrams.net" agent="Mozilla/5.0" version="24.0.0">\n'
             f'  <diagram name="{esc_attr(self.name)}" id="{esc_attr(self._diagram_id())}">\n'
             f'    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" '
             f'connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{self.page_w:g}" '
@@ -338,8 +335,32 @@ class DrawioDiagram:
             '      </root>\n'
             '    </mxGraphModel>\n'
             '  </diagram>\n'
-            '</mxfile>\n'
         )
+
+    def to_xml(self) -> str:
+        """A standalone single-sheet .drawio file. For a multi-sheet
+        document use render_mxfile([sheet1, sheet2, ...]) instead."""
+        return render_mxfile([self])
+
+
+def render_mxfile(sheets: list["DrawioDiagram"]) -> str:
+    """Wrap one or more sheets into a single .drawio file. Each sheet
+    becomes its own tab in draw.io / the Polarion Diagrams.net widget —
+    the standard way such tools split a document (e.g. Topology / Software
+    Components / CAN Messages) into separately printable, separately
+    navigable pages within one file.
+
+    Mirrors, attribute-for-attribute, the header a real draw.io/
+    diagrams.net desktop or web export writes (no XML prolog, no
+    "type"/"modified" attributes) — verified against a user-supplied
+    native draw.io export rather than a hand-guessed header shape.
+    """
+    body = "".join(s.diagram_xml() for s in sheets)
+    return (
+        '<mxfile host="app.diagrams.net" agent="Mozilla/5.0" version="24.0.0">\n'
+        f'{body}'
+        '</mxfile>\n'
+    )
 
 
 # Fill/stroke pairs keyed by a normalized pin/bus interface type, reused
