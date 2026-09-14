@@ -150,7 +150,7 @@ class DrawioDiagram:
                  align: str = "center", font_size: int = 14, bold: bool = True, parent: str = "1",
                  color: str = "#1a1a1a", track_bbox: bool = True) -> str:
         style = (
-            f"text;html=1;align={align};verticalAlign=middle;fontSize={font_size};"
+            f"text;html=1;whiteSpace=wrap;align={align};verticalAlign=middle;fontSize={font_size};"
             f"fontFamily={FONT_FAMILY};fontColor={color};"
         ) + ("fontStyle=1;" if bold else "")
         return self.add_node(cell_id, label, x, y, w, h, style=style, parent=parent, track_bbox=track_bbox)

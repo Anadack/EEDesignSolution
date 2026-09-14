@@ -25,6 +25,7 @@ Produces, from the same data sources the HTML generators already use:
 """
 from __future__ import annotations
 
+import colorsys
 import sys
 from datetime import date as _date
 from pathlib import Path
@@ -60,15 +61,25 @@ _VARIANT_STYLE = {
 def _assign_bus_colors(buses: list[dict[str, Any]]) -> dict[str, str]:
     """One color per real bus, biased so LIN/Ethernet/ISOBUS keep the same
     hues the reference template uses for those protocols, CAN/other buses
-    cycling through the remaining palette in export order."""
+    cycling through the remaining palette in export order. Any bus beyond
+    the curated palette's size gets a procedurally generated hue (evenly
+    spaced around the color wheel) instead of silently reusing an
+    already-assigned color — with enough real buses two colors visually
+    colliding would make the topology unreadable."""
     used: set[str] = set()
+    overflow_i = [0]
 
     def pick(preferred: list[str]) -> str:
         for c in preferred + _BUS_PALETTE:
             if c not in used:
                 used.add(c)
                 return c
-        return _BUS_PALETTE[len(used) % len(_BUS_PALETTE)]
+        hue = (overflow_i[0] * 0.61803398875) % 1.0  # golden-ratio spacing: no two overflow hues land close together
+        overflow_i[0] += 1
+        r, g, b_ = colorsys.hls_to_rgb(hue, 0.55, 0.65)
+        c = "#%02X%02X%02X" % (round(r * 255), round(g * 255), round(b_ * 255))
+        used.add(c)
+        return c
 
     colors: dict[str, str] = {}
     for b in buses:
@@ -84,6 +95,29 @@ def _assign_bus_colors(buses: list[dict[str, Any]]) -> dict[str, str]:
     return colors
 
 
+def _fit_ecu_title(name: str, box_w: float, abbrevs: list[tuple[str, str]]) -> tuple[str, int]:
+    """Shrink the font first (15 -> 13 -> 11pt) to keep long-but-not-huge
+    ECU names on one line; only abbreviate (recorded in `abbrevs` for a
+    legend) when even the smallest size wouldn't fit the box."""
+    avail = box_w - 20
+    for font_size in (15, 13, 11):
+        if len(name) <= max(4, int(avail / (font_size * 0.62))):
+            return name, font_size
+    font_size = 11
+    max_chars = max(4, int(avail / (font_size * 0.62)))
+    short = name[: max_chars - 1] + "…"
+    abbrevs.append((short, name))
+    return short, font_size
+
+
+def _fit_bus_name(name: str, max_chars: int, abbrevs: list[tuple[str, str]]) -> str:
+    if len(name) <= max_chars:
+        return name
+    short = name[: max_chars - 1] + "…"
+    abbrevs.append((short, name))
+    return short
+
+
 def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
     """Matches a real OEM network-architecture drawio template supplied as
     a reference: a legend block (component category, then one colored bar
@@ -96,7 +130,6 @@ def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
     """
     ecus = list(iter_ecus(arch))
     buses = arch.get("buses") if isinstance(arch.get("buses"), list) else []
-    bus_by_name = {b["name"]: b for b in buses}
     bus_color = _assign_bus_colors(buses)
 
     ecu_ports: dict[str, list[tuple[int, dict[str, Any]]]] = {}
@@ -126,6 +159,7 @@ def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
         return max(box_w_min, tabs_w + 2 * tab_side_margin)
 
     box_w = {e["name"]: box_width_for(str(e["name"])) for e in ecus}
+    abbrevs: list[tuple[str, str]] = []
 
     def layout_row(row_ecus: list[dict[str, Any]]) -> dict[str, float]:
         """Left-to-right flow using each box's own width plus a fixed gap,
@@ -176,7 +210,8 @@ def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
         font_color = "fontColor=#FFFFFF;" if color in _DARK_BUS_COLORS else ""
         rate = b.get("bitrate", 0) or 0
         rate_s = f"{rate // 1000} kbit/s" if rate < 1_000_000 else f"{rate / 1_000_000:g} Mbit/s"
-        label = f"{b['name']} — {b.get('type', '')}, {rate_s}"
+        bus_name_disp = _fit_bus_name(str(b["name"]), 22, abbrevs)
+        label = f"{bus_name_disp} — {b.get('type', '')}, {rate_s}"
         d.add_node(f"buslegend_{slug(b['name'])}", label, 30, y, 190, 20,
                    style=f"whiteSpace=wrap;strokeColor=none;align=left;fillColor={color};fontStyle=1;fontSize=10;{font_color}")
         d.add_line(f"busrail_{slug(b['name'])}", x0, y + 10, x0 + diagram_w, y + 10, color=color, width=4)
@@ -206,8 +241,9 @@ def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
             # remaining band on the other side so the two never overlap.
             tabs_band_h = tab_h + 16
             text_y = y + tabs_band_h if not tabs_on_bottom_edge else y + 8
-            d.add_text(f"{box_id}_title", esc_text(name), cx - w / 2 + 10, text_y, w - 20, 30,
-                       align="left", font_size=15, bold=True, track_bbox=False)
+            title_disp, title_font = _fit_ecu_title(name, w, abbrevs)
+            d.add_text(f"{box_id}_title", esc_text(title_disp), cx - w / 2 + 10, text_y, w - 20, 30,
+                       align="left", font_size=title_font, bold=True, track_bbox=False)
             addr = ", ".join(e.get("can_addresses") or []) or "—"
             d.add_text(f"{box_id}_sub", f"{esc_text(variant)}<br/>Addr: {esc_text(addr)}",
                        cx - w / 2 + 10, text_y + 34, w - 20, 50,
@@ -228,6 +264,22 @@ def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
                 stub_i += 1
                 d.add_line(f"stub_{stub_i}", tx + tab_w / 2, stub_from_y, tx + tab_w / 2, bus_y[b["name"]] + 10,
                            color=color, width=4, start_arrow="oval", end_arrow="oval")
+
+    # Abbreviation legend — only rendered when a name was actually too long
+    # for its box even at the smallest font tried, so the common case (short
+    # ECU/bus names) gets no extra clutter.
+    if abbrevs:
+        _x0, _y0, _x1, content_bottom = d.content_bbox()
+        seen_pairs: set[tuple[str, str]] = set()
+        rows = []
+        for short, full in abbrevs:
+            if (short, full) in seen_pairs:
+                continue
+            seen_pairs.add((short, full))
+            rows.append([short, full])
+        d.add_text("abbrev_title", "Abbreviations", 30, content_bottom + 30, 300, 20,
+                   align="left", font_size=13, bold=True)
+        d.add_table("abbrevtbl", ["Shown as", "Full name"], rows, 30, content_bottom + 56, [120, 320])
 
     d.set_page_to_content(orientation="landscape", margin=MARGIN)
     return d.to_xml()
