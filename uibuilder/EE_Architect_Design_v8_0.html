@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EE Library Builder v8.0 — C-Framework Aligned (ECU / System / SWC)</title>
+<style>
+:root{
+  --bg:#0a0e16; --surface0:#0d1420; --surface1:#111a29; --surface2:#182335; --surface3:#22304a;
+  --border0:#1c2740; --border1:#2a3a5c;
+  --text:#cfdaea; --dim:#7c90b0; --fade:#4e5f7c;
+  --cyan:#2ee6ff; --green:#2ee6a0; --amber:#ffb43d; --red:#ff5a78;
+  --mono:'Cascadia Code','Fira Code',Consolas,monospace; --ui:'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--ui);font-size:13px}
+h1,h2,h3{margin:0}
+header{padding:14px 20px;border-bottom:1px solid var(--border0);background:linear-gradient(180deg,var(--surface1),var(--surface0))}
+header h1{font-size:16px;color:#fff;letter-spacing:.01em}
+header p{margin:4px 0 0;color:var(--dim);font-size:12px}
+.tabs{display:flex;gap:6px;padding:10px 20px 0;border-bottom:1px solid var(--border0)}
+.tab{padding:8px 16px;cursor:pointer;color:var(--dim);font-weight:600;font-size:12px;letter-spacing:.03em;
+     text-transform:uppercase;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0}
+.tab.active{color:var(--cyan);background:var(--surface1);border-color:var(--border1)}
+.kind{display:none;padding:16px 20px}
+.kind.active{display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.card{background:var(--surface0);border:1px solid var(--border0);border-radius:10px;padding:14px;margin-bottom:14px}
+.card h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:10px}
+label{display:block;font-size:11px;color:var(--dim);margin:8px 0 3px;font-weight:600}
+input,select,textarea{width:100%;background:var(--surface0);color:var(--text);border:1px solid var(--border1);
+  border-radius:6px;padding:6px 8px;font-size:12px;font-family:inherit}
+textarea{font-family:var(--mono);font-size:11.5px;min-height:160px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--cyan)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.checks{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.checks label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text);margin:0;font-weight:400}
+.checks input{width:auto}
+button{background:var(--surface2);color:var(--text);border:1px solid var(--border1);border-radius:7px;
+  padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer}
+button:hover{background:var(--surface3);border-color:var(--cyan)}
+button.primary{background:#00343f;border-color:#0a4456;color:var(--cyan)}
+button.primary:hover{background:#0a4456}
+button.ghost{background:transparent;border-color:var(--border0);color:var(--dim)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.msg-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.msg-list li{padding:6px 10px;border-radius:6px;font-size:11.5px;font-family:var(--mono)}
+.msg-err{background:#240010;color:var(--red);border:1px solid #4a0a1c}
+.msg-warn{background:#221700;color:var(--amber);border:1px solid #4a3300}
+.msg-ok{background:#03211a;color:var(--green);border:1px solid #0a4a36}
+.hint{color:var(--fade);font-size:10.5px;margin-top:6px;line-height:1.5}
+.badge{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:2px 6px;
+  border-radius:4px;background:var(--surface2);color:var(--dim);border:1px solid var(--border1);margin-left:6px}
+pre#preview{background:#050810;border:1px solid var(--border0);border-radius:8px;padding:12px;
+  font-family:var(--mono);font-size:11px;max-height:320px;overflow:auto;white-space:pre-wrap}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+footer{padding:14px 20px;color:var(--fade);font-size:10.5px;border-top:1px solid var(--border0)}
+footer code{color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <h1>EE Library Builder v8.0 <span class="badge">C-framework aligned</span></h1>
+  <p>Produces ECU / System / SWC library JSON in exactly the shape <code>src/EEC_library.c</code> and
+     <code>src/EEC_swc_loader.c</code> parse today — including the new per-SWC <code>dbc_file</code> field.
+     Replaces the pre-SWC, pre-flat-schema <code>EE_Architect_Design_v7_6.html</code>.</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-kind="ecu">ECU</div>
+  <div class="tab" data-kind="system">System</div>
+  <div class="tab" data-kind="swc">SWC</div>
+</div>
+
+<!-- ═══════════════════════ ECU ═══════════════════════ -->
+<section class="kind active" id="kind-ecu">
+  <div class="toolbar">
+    <button class="primary" onclick="UI.newObj('ecu')">+ New ECU</button>
+    <button class="filebtn">Import JSON<input type="file" accept=".json" onchange="UI.importFile('ecu',this)"></button>
+    <button onclick="UI.loadExample('ecu')">Load example</button>
+    <button onclick="UI.validate('ecu')">Validate</button>
+    <button onclick="UI.download('ecu')">Download .json</button>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h3>ECU header</h3>
+        <div class="row"><div style="flex:2"><label>name *</label><input id="ecu_name" oninput="UI.sync('ecu')"></div>
+        <div style="flex:1"><label>variant</label>
+          <select id="ecu_variant" onchange="UI.sync('ecu')">
+            <option value="SMALL">SMALL</option><option value="MEDIUM">MEDIUM</option>
+            <option value="LARGE">LARGE</option><option value="VALIDATION">VALIDATION</option>
+          </select></div></div>
+        <div class="row"><div style="flex:1"><label>part_number</label><input id="ecu_pn" oninput="UI.sync('ecu')"></div>
+        <div style="flex:1"><label>location</label><input id="ecu_loc" oninput="UI.sync('ecu')"></div></div>
+        <div class="row"><div style="flex:1"><label>priority</label>
+          <select id="ecu_prio" onchange="UI.sync('ecu')"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option></select></div>
+        <div style="flex:1"><label>safety</label>
+          <select id="ecu_safety" onchange="UI.sync('ecu')">
+            <option selected>QM</option><option>SAFETY_RELATED</option><option>AgPL_A</option><option>AgPL_B</option><option>AgPL_C</option><option>AgPL_D</option><option>AgPL_E</option>
+          </select></div></div>
+        <label>can_addresses (comma-separated, e.g. 0x56, 0x57)</label>
+        <input id="ecu_addrs" oninput="UI.sync('ecu')">
+      </div>
+
+      <div class="card">
+        <h3>Pin template &amp; capability bits <span class="badge">used by "+ pin row" below</span></h3>
+        <div class="row">
+          <div style="flex:1"><label>type</label>
+            <select id="ecu_pin_type">
+              <option>POWER</option><option>GROUND</option><option>DIGITAL</option><option>ANALOG</option>
+              <option>PWM</option><option>RESISTANCE</option><option>FREQUENCY</option><option>CURRENT</option>
+              <option>CAN</option><option>LIN</option><option>ETHERNET</option><option>ISOBUS</option>
+              <option>FLEXRAY</option><option>SENT</option><option>RESERVED</option>
+            </select></div>
+          <div style="flex:1"><label>role</label>
+            <select id="ecu_pin_role"><option>SUPPLY</option><option>GROUND</option><option>INPUT</option>
+              <option>OUTPUT</option><option>INOUT</option><option>UNASSIGNED</option></select></div>
+        </div>
+        <label>electrical_capability bits (sum = value written to JSON)</label>
+        <div class="checks" id="ecu_cap_bits">
+          <label><input type="checkbox" value="1">PULLUP (1)</label>
+          <label><input type="checkbox" value="2">PULLDOWN (2)</label>
+          <label><input type="checkbox" value="4">HIGH_SIDE (4)</label>
+          <label><input type="checkbox" value="8">LOW_SIDE (8)</label>
+          <label><input type="checkbox" value="16">PUSH_PULL (16)</label>
+          <label><input type="checkbox" value="32">CURRENT_SENSE (32)</label>
+          <label><input type="checkbox" value="64">VOLTAGE_IN (64)</label>
+          <label><input type="checkbox" value="128">DIFFERENTIAL (128)</label>
+        </div>
+        <label>diagnostic_flags bits</label>
+        <div class="checks" id="ecu_diag_bits">
+          <label><input type="checkbox" value="1">OPEN_LOAD (1)</label>
+          <label><input type="checkbox" value="2">SHORT_GND (2)</label>
+          <label><input type="checkbox" value="4">SHORT_BAT (4)</label>
+          <label><input type="checkbox" value="8">RANGE_CHECK (8)</label>
+          <label><input type="checkbox" value="16">OVERCURRENT (16)</label>
+          <label><input type="checkbox" value="32">THERMAL_WARN (32)</label>
+          <label><input type="checkbox" value="64">LINE_BREAK (64)</label>
+          <label><input type="checkbox" value="128">PLAUSIBILITY (128)</label>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div style="flex:1"><label>connector</label><input id="ecu_pin_conn" value="X1"></div>
+          <div style="flex:1"><label>physical_number</label><input id="ecu_pin_num" type="number" value="1"></div>
+          <div style="flex:2"><label>name</label><input id="ecu_pin_name" value="PIN_NAME"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label>group</label><input id="ecu_pin_group" value="GROUP"></div>
+          <div style="flex:2"><label>electrical (free text)</label><input id="ecu_pin_elec"></div>
+        </div>
+        <button class="primary" style="margin-top:8px" onclick="UI.appendPinTemplate()">+ insert pin row into pins[] below</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>pins[] &amp; connectors[] (edit directly — this is exactly the JSON EEC_library.c reads)</h3>
+        <label>pins[]</label>
+        <textarea id="ecu_pins_json" oninput="UI.sync('ecu')">[]</textarea>
+        <label>connectors[] (optional)</label>
+        <textarea id="ecu_conn_json" oninput="UI.sync('ecu')" style="min-height:80px">[]</textarea>
+      </div>
+      <div class="card">
+        <h3>Validation</h3>
+        <ul class="msg-list" id="ecu_msgs"></ul>
+      </div>
+    </div>
+  </div>
+  <div class="card"><h3>Live preview — library/ecus/&lt;name&gt;.json</h3><pre id="ecu_preview"></pre></div>
+</section>
+
+<!-- ═══════════════════════ SYSTEM ═══════════════════════ -->
+<section class="kind" id="kind-system">
+  <div class="toolbar">
+    <button class="primary" onclick="UI.newObj('system')">+ New System</button>
+    <button class="filebtn">Import JSON<input type="file" accept=".json" onchange="UI.importFile('system',this)"></button>
+    <button onclick="UI.loadExample('system')">Load example</button>
+    <button onclick="UI.validate('system')">Validate</button>
+    <button onclick="UI.download('system')">Download .json</button>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h3>System header</h3>
+        <div class="row"><div style="flex:2"><label>name *</label><input id="sys_name" oninput="UI.sync('system')"></div>
+        <div style="flex:1"><label>Ref-2X</label><input id="sys_ref" oninput="UI.sync('system')"></div></div>
+        <div class="row"><div style="flex:1"><label>version</label><input id="sys_ver" value="1.0" oninput="UI.sync('system')"></div>
+        <div style="flex:1"><label>system_level</label><input id="sys_lvl" value="SL1" oninput="UI.sync('system')"></div>
+        <div style="flex:1"><label>location</label><input id="sys_loc" oninput="UI.sync('system')"></div></div>
+        <div class="row"><div style="flex:1"><label>priority</label>
+          <select id="sys_prio" onchange="UI.sync('system')"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option></select></div>
+        <div style="flex:1"><label>safety</label>
+          <select id="sys_safety" onchange="UI.sync('system')"><option selected>QM</option><option>SAFETY_RELATED</option><option>AgPL_A</option><option>AgPL_B</option><option>AgPL_C</option><option>AgPL_D</option><option>AgPL_E</option></select></div>
+        <div style="flex:1"><label>take_rate (%)</label><input id="sys_rate" type="number" value="100" oninput="UI.sync('system')"></div></div>
+        <div class="checks">
+          <label><input type="checkbox" id="sys_mandatory" checked>is_mandatory</label>
+          <label><input type="checkbox" id="sys_automap" checked>auto_mapping_enabled</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Device template <span class="badge">used by "+ device row" below</span></h3>
+        <div class="row">
+          <div style="flex:1"><label>device kind</label><select id="dev_kind"><option value="sensor">sensor</option><option value="actuator">actuator</option></select></div>
+          <div style="flex:2"><label>name</label><input id="dev_name" value="DEVICE_NAME"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label>manufacturer</label><input id="dev_mfr"></div>
+          <div style="flex:1"><label>part_number</label><input id="dev_pn"></div>
+        </div>
+        <label>1 connector: name / total_cavities</label>
+        <div class="row"><div style="flex:1"><input id="dev_conn_name" value="X1"></div>
+        <div style="flex:1"><input id="dev_conn_cav" type="number" value="1"></div></div>
+        <label>1 signal: name / interface / unit / role / min / max</label>
+        <div class="row">
+          <div style="flex:2"><input id="dev_sig_name" value="SIGNAL_NAME"></div>
+          <div style="flex:1"><select id="dev_sig_iface"><option>POWER</option><option>GROUND</option><option>ANALOG</option><option>DIGITAL</option>
+            <option>PWM</option><option>CURRENT</option><option>CAN</option><option>LIN</option><option>ETHERNET</option><option>RESISTANCE</option><option>FREQUENCY</option></select></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><select id="dev_sig_unit"><option>NONE</option><option>VOLT</option><option>CELSIUS</option><option>BAR</option>
+            <option>DEGREE</option><option>BOOLEAN</option><option>RPM</option><option>AMPERE</option><option>HERTZ</option><option>PERCENT</option></select></div>
+          <div style="flex:1"><select id="dev_sig_role"><option>SUPPLY</option><option>GROUND</option><option>INPUT</option><option>OUTPUT</option><option>INOUT</option></select></div>
+          <div style="flex:1"><input id="dev_sig_min" type="number" value="0" placeholder="min"></div>
+          <div style="flex:1"><input id="dev_sig_max" type="number" value="0" placeholder="max"></div>
+        </div>
+        <div class="hint">The remaining ~20 boilerplate signal fields (prefix, digital_structure, ground_class,
+          required_reset_state, required_sensor_supply/ground, nominal/inrush current, …) are auto-filled with the
+          same defaults seen across the committed library/systems/*.json files. Edit them directly in the JSON
+          on the right if a device needs different values.</div>
+        <button class="primary" style="margin-top:8px" onclick="UI.appendDeviceTemplate()">+ insert device row into devices[] below</button>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>devices[] (edit directly — this is exactly the JSON EEC_library.c reads)</h3>
+        <textarea id="sys_devices_json" oninput="UI.sync('system')" style="min-height:280px">[]</textarea>
+      </div>
+      <div class="card"><h3>Validation</h3><ul class="msg-list" id="system_msgs"></ul></div>
+    </div>
+  </div>
+  <div class="card"><h3>Live preview — library/systems/&lt;name&gt;.eec-system-1.4.json</h3><pre id="system_preview"></pre></div>
+</section>
+
+<!-- ═══════════════════════ SWC ═══════════════════════ -->
+<section class="kind" id="kind-swc">
+  <div class="toolbar">
+    <button class="primary" onclick="UI.newObj('swc')">+ New SWC library file</button>
+    <button class="filebtn">Import JSON<input type="file" accept=".json" onchange="UI.importFile('swc',this)"></button>
+    <button onclick="UI.loadExample('swc')">Load example</button>
+    <button onclick="UI.validate('swc')">Validate</button>
+    <button onclick="UI.download('swc')">Download .swc.json</button>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h3>New SWC entry template <span class="badge">a system owns 1..n SWCs; a SWC owns 0 or 1 dbc_file</span></h3>
+        <div class="row"><div style="flex:2"><label>name</label><input id="swc_name" value="MySWC"></div>
+        <div style="flex:1"><label>ref_2x</label><input id="swc_ref"></div></div>
+        <div class="row"><div style="flex:1"><label>system (name)</label><input id="swc_sys" value="MySystem"></div>
+        <div style="flex:1"><label>system_ref_2x</label><input id="swc_sysref"></div>
+        <div style="flex:1"><label>allocated_ecu</label><input id="swc_ecu"></div></div>
+        <label>dbc_file (optional — path to an existing .dbc to import as this SWC's messages)</label>
+        <input id="swc_dbcfile" placeholder="e.g. library/dbc/my_swc.dbc">
+        <div class="hint">If set, EEC_swc_loader.c calls EEC_Import_dbc() for this SWC at load time — the messages
+          below are ADDITIVE to whatever the DBC contains, not a replacement.</div>
+        <button class="primary" style="margin-top:8px" onclick="UI.appendSwcTemplate()">+ insert SWC entry into swcs[] below</button>
+      </div>
+      <div class="card">
+        <h3>Message / variable template <span class="badge">appended to the last swcs[] entry's own arrays</span></h3>
+        <div class="row"><div style="flex:2"><label>variable name</label><input id="var_name" value="MyVariable"></div>
+        <div style="flex:1"><label>type</label><select id="var_type"><option>U1</option><option>U8</option><option>U16</option><option>U32</option><option>S8</option><option>S16</option><option>S32</option><option>F32</option></select></div></div>
+        <div class="row"><div style="flex:1"><label>interface</label><input id="var_iface" value="CAN"></div>
+        <div style="flex:1"><label>unit</label><input id="var_unit" value="NONE"></div>
+        <div style="flex:1"><label>min</label><input id="var_min" type="number" value="0"></div>
+        <div style="flex:1"><label>max</label><input id="var_max" type="number" value="100"></div></div>
+        <button onclick="UI.appendVariableTemplate()">+ insert variable</button>
+        <hr style="border-color:var(--border0);margin:12px 0">
+        <div class="row"><div style="flex:2"><label>message name</label><input id="msg_name" value="MyMessage"></div>
+        <div style="flex:1"><label>frame_id (hex, e.g. 0x120)</label><input id="msg_id" value="0x120"></div></div>
+        <div class="row"><div style="flex:1"><label>bus</label><input id="msg_bus" value="CAN1"></div>
+        <div style="flex:1"><label>cycle_ms</label><input id="msg_cycle" type="number" value="100"></div>
+        <div style="flex:1"><label>signal (variable name, comma list)</label><input id="msg_sig" value="MyVariable"></div></div>
+        <button onclick="UI.appendMessageTemplate()">+ insert message</button>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>swcs[] (edit directly — this is exactly the JSON EEC_swc_loader.c reads)</h3>
+        <textarea id="swc_json" oninput="UI.sync('swc')" style="min-height:320px">{"schema":"eec-swc-1.0","swcs":[]}</textarea>
+      </div>
+      <div class="card"><h3>Validation</h3><ul class="msg-list" id="swc_msgs"></ul></div>
+    </div>
+  </div>
+  <div class="card"><h3>Live preview — library/swc/&lt;name&gt;.swc.json</h3><pre id="swc_preview"></pre></div>
+</section>
+
+<footer>
+  Field reference: ECU pin = <code>connector,physical_number,name,group,role,type,electrical_capability,diagnostic_flags,electrical,sw_config,device_pin_desc</code>
+  (inc/EEC_types.h bit values). System device = <code>type,schema_version,id,name,device_type,part_number,manufacturer,connectors[],signals[]</code>
+  (see any library/systems/*.eec-system-1.4.json). SWC entry = <code>name,ref_2x,system,system_ref_2x,allocated_ecu,dbc_file,variables[],messages[]</code>
+  (src/EEC_swc_loader.c). New library/swc/*.json files must still be added to <code>k_swc_files[]</code> in src/main.c —
+  there is no glob-based auto-discovery for this directory yet.
+</footer>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+ * PURE LOGIC — no DOM access below this point, so this whole block can be
+ * required() from Node for automated verification against the real C
+ * loaders (see qa/ or a throwaway harness), guaranteeing the browser tool
+ * and the verification test exercise the exact same code.
+ * ════════════════════════════════════════════════════════════════════════ */
+(function (root) {
+  "use strict";
+
+  const ECU_TYPES = ["POWER","GROUND","DIGITAL","ANALOG","PWM","RESISTANCE","FREQUENCY","CURRENT",
+                      "CAN","LIN","ETHERNET","ISOBUS","FLEXRAY","SENT","RESERVED"];
+  const PIN_ROLES = ["SUPPLY","GROUND","INPUT","OUTPUT","INOUT","UNASSIGNED"];
+  const SAFETY_VALUES = ["QM","SAFETY_RELATED","AgPL_A","AgPL_B","AgPL_C","AgPL_D","AgPL_E"];
+
+  function isNonEmptyString(v) { return typeof v === "string" && v.trim().length > 0; }
+  function isInt(v) { return typeof v === "number" && Number.isInteger(v); }
+
+  /* ---- ECU ---- */
+  function buildEcu(h) {
+    return {
+      type: "ecu", name: h.name || "", part_number: h.part_number || "",
+      variant: h.variant || "MEDIUM", priority: h.priority || "MEDIUM", safety: h.safety || "QM",
+      location: h.location || "", can_addresses: h.can_addresses || [],
+      pins: h.pins || [], connectors: h.connectors || []
+    };
+  }
+  function makePin(f) {
+    return {
+      connector: f.connector, physical_number: f.physical_number, name: f.name, group: f.group,
+      role: f.role, type: f.type, electrical_capability: f.electrical_capability,
+      diagnostic_flags: f.diagnostic_flags, electrical: f.electrical || "", sw_config: f.sw_config || "",
+      device_pin_desc: f.device_pin_desc || ""
+    };
+  }
+  function validateEcu(obj) {
+    const errors = [], warnings = [];
+    if (!isNonEmptyString(obj.name)) errors.push("ECU: 'name' is required");
+    if (!SAFETY_VALUES.includes(obj.safety)) warnings.push(`ECU: safety '${obj.safety}' not in the standard set`);
+    const pins = Array.isArray(obj.pins) ? obj.pins : [];
+    if (pins.length === 0) warnings.push("ECU: pins[] is empty");
+    const seen = new Set();
+    pins.forEach((p, i) => {
+      const tag = `pin[${i}]`;
+      if (!isNonEmptyString(p.connector)) errors.push(`${tag}: 'connector' is required`);
+      if (!isInt(p.physical_number) || p.physical_number < 1) errors.push(`${tag}: 'physical_number' must be a positive integer`);
+      if (!isNonEmptyString(p.name)) errors.push(`${tag}: 'name' is required`);
+      if (!PIN_ROLES.includes(p.role)) errors.push(`${tag}: role '${p.role}' not one of ${PIN_ROLES.join("|")}`);
+      if (!ECU_TYPES.includes(p.type)) warnings.push(`${tag}: type '${p.type}' not in the known set (still exported as-is)`);
+      if (!isInt(p.electrical_capability) || p.electrical_capability < 0 || p.electrical_capability > 255)
+        errors.push(`${tag}: electrical_capability must be an integer 0..255`);
+      if (!isInt(p.diagnostic_flags) || p.diagnostic_flags < 0 || p.diagnostic_flags > 255)
+        errors.push(`${tag}: diagnostic_flags must be an integer 0..255`);
+      const key = `${p.connector}#${p.physical_number}`;
+      if (seen.has(key)) errors.push(`${tag}: duplicate (connector, physical_number) = ${key}`);
+      seen.add(key);
+    });
+    (obj.connectors || []).forEach((c, i) => {
+      if (!isNonEmptyString(c.name)) errors.push(`connector[${i}]: 'name' is required`);
+      if (!isInt(c.total_cavities) || c.total_cavities < 1) errors.push(`connector[${i}]: 'total_cavities' must be a positive integer`);
+    });
+    return { errors, warnings };
+  }
+
+  /* ---- System / device ---- */
+  function buildSystem(h) {
+    return {
+      type: "system", schema_version: "eec-system-1.4", name: h.name || "", part_number: "",
+      version: h.version || "1.0", system_level: h.system_level || "SL1", "Ref-2X": h.ref2x || "",
+      priority: h.priority || "MEDIUM", safety: h.safety || "QM", location: h.location || "",
+      take_rate: h.take_rate != null ? h.take_rate : 100,
+      is_mandatory: h.is_mandatory !== false, auto_mapping_enabled: h.auto_mapping_enabled !== false,
+      devices: h.devices || []
+    };
+  }
+  function slug(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""); }
+  function makeSignal(f) {
+    const unit = f.unit || "NONE";
+    return {
+      id: `sig_${slug(f.name)}`, prefix: f.name, name: f.name, count: 1, type: f.type || "U1",
+      interface: f.interface || "DIGITAL", unit, min: f.min || 0, max: f.max || 0,
+      resolution: f.resolution != null ? f.resolution : 1, scaling: f.scaling != null ? f.scaling : 1,
+      priority: "MEDIUM", safety: "QM", part_number: "", digital_structure: "UNSPECIFIED",
+      electrical_requirement: 0, role: f.role || "OUTPUT", description: f.description || "", notes: "",
+      is_mapped: false, nominal_current: 0.02, inrush_current: 0.02,
+      max_voltage: unit === "VOLT" ? (f.max || 0) : 0, diagnostics_required: 0, safety_relevant: false,
+      ground_class: "LOGIC", required_reset_state: "OFF", required_sensor_supply: "UNKNOWN",
+      required_sensor_ground: "UNKNOWN", required_supply_voltage: 0
+    };
+  }
+  function makeDevice(f) {
+    const nm = f.name || "DEVICE";
+    return {
+      type: f.kind === "actuator" ? "actuator" : "sensor", schema_version: "eec-sensor-1.5",
+      id: `dev_${slug(nm)}`, name: nm, device_type: (f.kind || "sensor").toUpperCase(),
+      part_number: f.part_number || "", supplier_pn: "", sensor_template: "CUSTOM",
+      is_mandatory: true, mapping_enabled: true, priority: "MEDIUM", safety: "QM",
+      manufacturer: f.manufacturer || "", description: "", notes: "",
+      owner_system: "", owner_architecture: "EE_Architecture",
+      connectors: [{
+        id: `con_${slug(f.conn_name || "x1")}`, name: f.conn_name || "X1", part_number: "",
+        family: "CUSTOM", gender: "MALE", total_cavities: f.conn_cav || 1, used_cavities: f.conn_cav || 1,
+        max_pin_number: f.conn_cav || 1, sealed: true, color: "black", mounting: "", ip_rating: "IP67",
+        rated_voltage: 36.0, rated_current: 1.0, temperature_min: -40, temperature_max: 125
+      }],
+      signals: f.signal ? [makeSignal(f.signal)] : []
+    };
+  }
+  function validateSystem(obj) {
+    const errors = [], warnings = [];
+    if (!isNonEmptyString(obj.name)) errors.push("System: 'name' is required");
+    const devices = Array.isArray(obj.devices) ? obj.devices : [];
+    if (devices.length === 0) warnings.push("System: devices[] is empty");
+    const seen = new Set();
+    devices.forEach((d, i) => {
+      const tag = `device[${i}] (${d.name || "?"})`;
+      if (!isNonEmptyString(d.name)) errors.push(`${tag}: 'name' is required`);
+      if (!["sensor", "actuator"].includes(d.type)) errors.push(`${tag}: type must be 'sensor' or 'actuator'`);
+      if (seen.has(d.name)) errors.push(`${tag}: duplicate device name`);
+      seen.add(d.name);
+      (d.connectors || []).forEach((c, j) => {
+        if (!isNonEmptyString(c.name)) errors.push(`${tag}.connector[${j}]: 'name' is required`);
+        if (!isInt(c.total_cavities) || c.total_cavities < 1) errors.push(`${tag}.connector[${j}]: 'total_cavities' must be a positive integer`);
+      });
+      if (!Array.isArray(d.signals) || d.signals.length === 0) warnings.push(`${tag}: no signals[]`);
+      (d.signals || []).forEach((s, j) => {
+        if (!isNonEmptyString(s.name)) errors.push(`${tag}.signal[${j}]: 'name' is required`);
+        if (!isNonEmptyString(s.interface)) errors.push(`${tag}.signal[${j}]: 'interface' is required`);
+        if (!isNonEmptyString(s.role)) errors.push(`${tag}.signal[${j}]: 'role' is required`);
+      });
+    });
+    return { errors, warnings };
+  }
+
+  /* ---- SWC ---- */
+  function buildSwcFile(swcs) { return { schema: "eec-swc-1.0", swcs: swcs || [] }; }
+  function makeSwcEntry(f) {
+    const e = { name: f.name || "", system: f.system || "" };
+    if (f.ref2x) e.ref_2x = f.ref2x;
+    if (f.system_ref_2x) e.system_ref_2x = f.system_ref_2x;
+    if (f.allocated_ecu) e.allocated_ecu = f.allocated_ecu;
+    if (f.dbc_file) e.dbc_file = f.dbc_file;
+    e.variables = []; e.messages = [];
+    return e;
+  }
+  function makeVariable(f) {
+    return {
+      name: f.name, type: f.type || "U1", interface: f.interface || "CAN", unit: f.unit || "NONE",
+      min: f.min || 0, max: f.max || 0, resolution: f.resolution != null ? f.resolution : 1,
+      scaling: f.scaling != null ? f.scaling : 1
+    };
+  }
+  function makeMessage(f) {
+    const idNum = typeof f.frame_id === "string" ? parseInt(f.frame_id, 16) : f.frame_id;
+    return {
+      name: f.name, frame_id: idNum, extended: !!f.extended,
+      tx: [{ bus: f.bus || "CAN1", port: 1, cycle_ms: f.cycle_ms != null ? f.cycle_ms : 100 }],
+      signals: (f.signals || []).map((s) => ({ name: s }))
+    };
+  }
+  function validateSwcFile(obj) {
+    const errors = [], warnings = [];
+    if (obj.schema !== "eec-swc-1.0") warnings.push(`schema '${obj.schema}' — expected 'eec-swc-1.0'`);
+    const swcs = Array.isArray(obj.swcs) ? obj.swcs : [];
+    if (swcs.length === 0) warnings.push("swcs[] is empty");
+    const seenRef = new Set();
+    swcs.forEach((s, i) => {
+      const tag = `swc[${i}] (${s.name || "?"})`;
+      if (!isNonEmptyString(s.name)) errors.push(`${tag}: 'name' is required`);
+      if (!isNonEmptyString(s.system) && !isNonEmptyString(s.system_ref_2x))
+        errors.push(`${tag}: needs 'system' or 'system_ref_2x' — EEC_swc_loader.c silently DROPS a SWC with neither`);
+      if (s.ref_2x) {
+        if (seenRef.has(s.ref_2x)) errors.push(`${tag}: duplicate ref_2x '${s.ref_2x}' — the loader skips duplicates silently`);
+        seenRef.add(s.ref_2x);
+      }
+      const varNames = new Set((s.variables || []).map((v) => v.name));
+      (s.messages || []).forEach((m, j) => {
+        const mtag = `${tag}.message[${j}] (${m.name || "?"})`;
+        if (!isNonEmptyString(m.name)) errors.push(`${mtag}: 'name' is required`);
+        if (!isInt(m.frame_id) || m.frame_id < 0) errors.push(`${mtag}: 'frame_id' must be a non-negative integer`);
+        if (!m.extended && m.frame_id > 0x7FF) errors.push(`${mtag}: frame_id 0x${(m.frame_id||0).toString(16)} exceeds 11-bit standard range — set extended=true`);
+        if (m.extended && m.frame_id > 0x1FFFFFFF) errors.push(`${mtag}: frame_id exceeds 29-bit extended range`);
+        (m.signals || []).forEach((sig) => {
+          if (!varNames.has(sig.name)) warnings.push(`${mtag}: signal '${sig.name}' has no matching entry in this SWC's variables[]`);
+        });
+      });
+      if (s.dbc_file) warnings.push(`${tag}: dbc_file '${s.dbc_file}' existence can only be checked by the real C loader, not in-browser`);
+    });
+    return { errors, warnings };
+  }
+
+  const Lib = { buildEcu, makePin, validateEcu, buildSystem, makeDevice, validateSystem,
+                buildSwcFile, makeSwcEntry, makeVariable, makeMessage, validateSwcFile, slug };
+  if (typeof module !== "undefined" && module.exports) { module.exports = Lib; }
+  else { root.EELib = Lib; }
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+ * UI WIRING — DOM-only, calls into window.EELib above.
+ * ════════════════════════════════════════════════════════════════════════ */
+const UI = (function () {
+  const L = window.EELib;
+  const $ = (id) => document.getElementById(id);
+
+  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+    document.querySelectorAll(".kind").forEach((x) => x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("kind-" + t.dataset.kind).classList.add("active");
+  }));
+
+  function bits(containerId) {
+    return Array.from(document.querySelectorAll("#" + containerId + " input:checked"))
+      .reduce((sum, el) => sum + parseInt(el.value, 10), 0);
+  }
+  function parseJsonSafe(text, fallback) {
+    try { return JSON.parse(text); } catch (e) { return fallback; }
+  }
+
+  function currentEcu() {
+    return L.buildEcu({
+      name: $("ecu_name").value, part_number: $("ecu_pn").value, variant: $("ecu_variant").value,
+      priority: $("ecu_prio").value, safety: $("ecu_safety").value, location: $("ecu_loc").value,
+      can_addresses: $("ecu_addrs").value.split(",").map((s) => s.trim()).filter(Boolean),
+      pins: parseJsonSafe($("ecu_pins_json").value, []),
+      connectors: parseJsonSafe($("ecu_conn_json").value, [])
+    });
+  }
+  function currentSystem() {
+    return L.buildSystem({
+      name: $("sys_name").value, ref2x: $("sys_ref").value, version: $("sys_ver").value,
+      system_level: $("sys_lvl").value, location: $("sys_loc").value, priority: $("sys_prio").value,
+      safety: $("sys_safety").value, take_rate: Number($("sys_rate").value) || 0,
+      is_mandatory: $("sys_mandatory").checked, auto_mapping_enabled: $("sys_automap").checked,
+      devices: parseJsonSafe($("sys_devices_json").value, [])
+    });
+  }
+  function currentSwc() {
+    return parseJsonSafe($("swc_json").value, { schema: "eec-swc-1.0", swcs: [] });
+  }
+
+  function renderMsgs(kind, result) {
+    const ul = $(kind + "_msgs");
+    ul.innerHTML = "";
+    if (result.errors.length === 0 && result.warnings.length === 0) {
+      ul.innerHTML = '<li class="msg-ok">✓ no errors or warnings — ready to download</li>';
+      return;
+    }
+    result.errors.forEach((e) => { const li = document.createElement("li"); li.className = "msg-err"; li.textContent = "✗ " + e; ul.appendChild(li); });
+    result.warnings.forEach((w) => { const li = document.createElement("li"); li.className = "msg-warn"; li.textContent = "⚠ " + w; ul.appendChild(li); });
+  }
+
+  function sync(kind) {
+    let obj, preview;
+    if (kind === "ecu") { obj = currentEcu(); preview = "ecu_preview"; }
+    else if (kind === "system") { obj = currentSystem(); preview = "system_preview"; }
+    else { obj = currentSwc(); preview = "swc_preview"; }
+    $(preview).textContent = JSON.stringify(obj, null, 2);
+    return obj;
+  }
+
+  function validate(kind) {
+    const obj = sync(kind);
+    let result;
+    if (kind === "ecu") result = L.validateEcu(obj);
+    else if (kind === "system") result = L.validateSystem(obj);
+    else result = L.validateSwcFile(obj);
+    renderMsgs(kind, result);
+    return result;
+  }
+
+  function download(kind) {
+    const result = validate(kind);
+    if (result.errors.length > 0 && !confirm(result.errors.length + " error(s) found — download anyway?")) return;
+    const obj = kind === "ecu" ? currentEcu() : kind === "system" ? currentSystem() : currentSwc();
+    const name = kind === "ecu" ? (obj.name || "ecu") : kind === "system" ? (obj.name || "system") : "swc_library";
+    const ext = kind === "swc" ? ".swc.json" : ".json";
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = L.slug(name) + ext; a.click();
+  }
+
+  function importFile(kind, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const obj = JSON.parse(reader.result);
+      if (kind === "ecu") {
+        $("ecu_name").value = obj.name || ""; $("ecu_pn").value = obj.part_number || "";
+        $("ecu_variant").value = obj.variant || "MEDIUM"; $("ecu_prio").value = obj.priority || "MEDIUM";
+        $("ecu_safety").value = obj.safety || "QM"; $("ecu_loc").value = obj.location || "";
+        $("ecu_addrs").value = (obj.can_addresses || []).join(", ");
+        $("ecu_pins_json").value = JSON.stringify(obj.pins || [], null, 2);
+        $("ecu_conn_json").value = JSON.stringify(obj.connectors || [], null, 2);
+      } else if (kind === "system") {
+        $("sys_name").value = obj.name || ""; $("sys_ref").value = obj["Ref-2X"] || "";
+        $("sys_ver").value = obj.version || "1.0"; $("sys_lvl").value = obj.system_level || "SL1";
+        $("sys_loc").value = obj.location || ""; $("sys_prio").value = obj.priority || "MEDIUM";
+        $("sys_safety").value = obj.safety || "QM"; $("sys_rate").value = obj.take_rate != null ? obj.take_rate : 100;
+        $("sys_mandatory").checked = obj.is_mandatory !== false; $("sys_automap").checked = obj.auto_mapping_enabled !== false;
+        $("sys_devices_json").value = JSON.stringify(obj.devices || [], null, 2);
+      } else {
+        $("swc_json").value = JSON.stringify(obj, null, 2);
+      }
+      sync(kind);
+    };
+    reader.readAsText(file);
+  }
+
+  function newObj(kind) {
+    if (kind === "ecu") {
+      ["ecu_name","ecu_pn","ecu_loc","ecu_addrs"].forEach((id) => $(id).value = "");
+      $("ecu_pins_json").value = "[]"; $("ecu_conn_json").value = "[]";
+    } else if (kind === "system") {
+      ["sys_name","sys_ref","sys_loc"].forEach((id) => $(id).value = "");
+      $("sys_rate").value = 100; $("sys_devices_json").value = "[]";
+    } else {
+      $("swc_json").value = JSON.stringify({ schema: "eec-swc-1.0", swcs: [] }, null, 2);
+    }
+    sync(kind);
+  }
+
+  function appendPinTemplate() {
+    const pin = L.makePin({
+      connector: $("ecu_pin_conn").value, physical_number: Number($("ecu_pin_num").value),
+      name: $("ecu_pin_name").value, group: $("ecu_pin_group").value, role: $("ecu_pin_role").value,
+      type: $("ecu_pin_type").value, electrical_capability: bits("ecu_cap_bits"),
+      diagnostic_flags: bits("ecu_diag_bits"), electrical: $("ecu_pin_elec").value
+    });
+    const arr = parseJsonSafe($("ecu_pins_json").value, []);
+    arr.push(pin);
+    $("ecu_pins_json").value = JSON.stringify(arr, null, 2);
+    $("ecu_pin_num").value = Number($("ecu_pin_num").value) + 1;
+    sync("ecu");
+  }
+
+  function appendDeviceTemplate() {
+    const dev = L.makeDevice({
+      kind: $("dev_kind").value, name: $("dev_name").value, manufacturer: $("dev_mfr").value,
+      part_number: $("dev_pn").value, conn_name: $("dev_conn_name").value, conn_cav: Number($("dev_conn_cav").value),
+      signal: { name: $("dev_sig_name").value, interface: $("dev_sig_iface").value, unit: $("dev_sig_unit").value,
+                role: $("dev_sig_role").value, min: Number($("dev_sig_min").value), max: Number($("dev_sig_max").value) }
+    });
+    const arr = parseJsonSafe($("sys_devices_json").value, []);
+    arr.push(dev);
+    $("sys_devices_json").value = JSON.stringify(arr, null, 2);
+    sync("system");
+  }
+
+  function lastSwcEntry(arr) {
+    if (arr.length === 0) { arr.push(L.makeSwcEntry({ name: "NewSWC", system: "NewSystem" })); }
+    return arr[arr.length - 1];
+  }
+  function appendSwcTemplate() {
+    const file = currentSwc();
+    file.swcs = file.swcs || [];
+    file.swcs.push(L.makeSwcEntry({
+      name: $("swc_name").value, ref2x: $("swc_ref").value, system: $("swc_sys").value,
+      system_ref_2x: $("swc_sysref").value, allocated_ecu: $("swc_ecu").value, dbc_file: $("swc_dbcfile").value
+    }));
+    $("swc_json").value = JSON.stringify(file, null, 2);
+    sync("swc");
+  }
+  function appendVariableTemplate() {
+    const file = currentSwc();
+    const entry = lastSwcEntry(file.swcs);
+    entry.variables = entry.variables || [];
+    entry.variables.push(L.makeVariable({
+      name: $("var_name").value, type: $("var_type").value, interface: $("var_iface").value,
+      unit: $("var_unit").value, min: Number($("var_min").value), max: Number($("var_max").value)
+    }));
+    $("swc_json").value = JSON.stringify(file, null, 2);
+    sync("swc");
+  }
+  function appendMessageTemplate() {
+    const file = currentSwc();
+    const entry = lastSwcEntry(file.swcs);
+    entry.messages = entry.messages || [];
+    entry.messages.push(L.makeMessage({
+      name: $("msg_name").value, frame_id: $("msg_id").value, bus: $("msg_bus").value,
+      cycle_ms: Number($("msg_cycle").value), signals: $("msg_sig").value.split(",").map((s) => s.trim()).filter(Boolean)
+    }));
+    $("swc_json").value = JSON.stringify(file, null, 2);
+    sync("swc");
+  }
+
+  function loadExample(kind) {
+    if (kind === "ecu") {
+      $("ecu_name").value = "EXAMPLE_ECU"; $("ecu_variant").value = "MEDIUM"; $("ecu_addrs").value = "0x10";
+      $("ecu_pins_json").value = JSON.stringify([
+        L.makePin({ connector: "X1", physical_number: 1, name: "SUPPLY_01", group: "SUPPLY", role: "SUPPLY", type: "POWER", electrical_capability: 0, diagnostic_flags: 0 }),
+        L.makePin({ connector: "X1", physical_number: 2, name: "GND_01", group: "GROUND", role: "GROUND", type: "GROUND", electrical_capability: 0, diagnostic_flags: 0 }),
+        L.makePin({ connector: "X1", physical_number: 3, name: "CAN1_H", group: "CAN_1", role: "INOUT", type: "CAN", electrical_capability: 128, diagnostic_flags: 64 })
+      ], null, 2);
+      $("ecu_conn_json").value = JSON.stringify([{ name: "X1", part_number: "", family: "CUSTOM", total_cavities: 3, used_cavities: 3, max_pin_number: 3 }], null, 2);
+    } else if (kind === "system") {
+      $("sys_name").value = "EXAMPLE_System"; $("sys_ref").value = "SYS-EXAMPLE-01";
+      $("sys_devices_json").value = JSON.stringify([
+        L.makeDevice({ kind: "sensor", name: "Example_Pressure_Sensor", manufacturer: "ACME", conn_name: "X1", conn_cav: 3,
+          signal: { name: "Example_Pressure_4_20mA", interface: "CURRENT", unit: "BAR", role: "OUTPUT", min: 0, max: 40 } })
+      ], null, 2);
+    } else {
+      const file = { schema: "eec-swc-1.0", swcs: [L.makeSwcEntry({ name: "Example_SWC", system: "EXAMPLE_System", allocated_ecu: "EXAMPLE_ECU" })] };
+      file.swcs[0].variables.push(L.makeVariable({ name: "ExampleSignal", type: "U16", interface: "CAN", unit: "NONE", min: 0, max: 65535 }));
+      file.swcs[0].messages.push(L.makeMessage({ name: "ExampleStatus", frame_id: "0x120", bus: "CAN1", cycle_ms: 100, signals: ["ExampleSignal"] }));
+      $("swc_json").value = JSON.stringify(file, null, 2);
+    }
+    sync(kind);
+  }
+
+  ["ecu", "system", "swc"].forEach(sync);
+
+  return { sync, validate, download, importFile, newObj, appendPinTemplate, appendDeviceTemplate,
+           appendSwcTemplate, appendVariableTemplate, appendMessageTemplate, loadExample };
+})();
+</script>
+</body>
+</html>
