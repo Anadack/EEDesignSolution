@@ -250,12 +250,15 @@ class DrawioDiagram:
 
     def add_line(self, cell_id: str, x1: float, y1: float, x2: float, y2: float,
                  color: str = "#233152", width: float = 1.5, dashed: bool = False,
+                 start_arrow: str = "none", end_arrow: str = "none",
                  track_bbox: bool = True) -> str:
         """A floating straight line (no attached source/target cell) between
         two absolute points — for bus rails and drop-stubs that don't
         correspond to a vertex-to-vertex connection."""
         cid = self._register(cell_id)
-        style = f"endArrow=none;html=1;strokeColor={color};strokeWidth={width};" + ("dashed=1;" if dashed else "")
+        fill = ";startFill=1;endFill=1" if "oval" in (start_arrow, end_arrow) else ""
+        style = (f"edgeStyle=none;html=1;strokeColor={color};strokeWidth={width};"
+                 f"startArrow={start_arrow};endArrow={end_arrow}{fill};") + ("dashed=1;" if dashed else "")
         self._cells.append(
             f'<mxCell id="{esc_attr(cid)}" value="" style="{esc_attr(style)}" edge="1" parent="1">'
             f'<mxGeometry relative="1" as="geometry">'

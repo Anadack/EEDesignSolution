@@ -8,19 +8,20 @@ cannot affect the existing --strict documentation gate or any tracked
 generator output while the format keeps being validated against a real
 Polarion instance.
 
-Every sheet follows the same print-layout convention (see
-eec_drawio_common.DrawioDiagram): a title banner, an A4 page sized (and
-oriented) to fit the actual content with a margin, an outer drawing
-border, an ISO-7200-style title block anchored to the bottom-right
-corner, and a color legend wherever pin/device types are color-coded.
-
 Produces, from the same data sources the HTML generators already use:
-  - network_bus_backbone.drawio : ECU / bus (CAN/LIN/Ethernet) topology,
-    from the architecture export JSON.
+  - network_bus_backbone.drawio : ECU / bus (CAN/LIN/Ethernet/ISOBUS)
+    topology, formatted to match a real OEM reference template (legend
+    block, full-width bus rails, ECU boxes above/below the bus band with
+    rotated per-port tabs) — every ECU, bus, address and port comes from
+    the compiled architecture export's own arch['ecus']/arch['buses'],
+    not a synthesized approximation.
   - architecture_tree.drawio    : systems -> components -> devices and
-    ECUs, from the same architecture export JSON.
+    ECUs, from the same architecture export JSON, with the
+    title-banner/A4-paging/legend print convention in
+    eec_drawio_common.DrawioDiagram.
   - pinout_<ECU>.drawio         : one library ECU connector pinout grid,
-    from library/ecus/*.json (default: BODAS_RC4_5_30).
+    from library/ecus/*.json (default: BODAS_RC4_5_30), same print
+    convention as the tree.
 """
 from __future__ import annotations
 
@@ -34,11 +35,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eec_archdoc_common import (
     iter_ecus, iter_systems, flatten_components, normalize_iface, cli_context, make_argparser,
 )
-from eec_drawio_common import DrawioDiagram, fill_stroke_for, esc_text, render_mxfile
+from eec_drawio_common import DrawioDiagram, fill_stroke_for, esc_text
 from eec_report_common import load_json, slug
-from generate_network_bus_backbone_html import (
-    extract_nodes_from_architecture, extract_buses_from_architecture, extract_connections_from_architecture,
-)
 
 MARGIN = 40
 CONTENT_X0 = 60
@@ -48,260 +46,162 @@ CONTENT_X0 = 60
 # 1. Network / bus backbone topology
 # ---------------------------------------------------------------------------
 
-_NETWORK_IFACES = ("CAN", "LIN", "ETHERNET", "ISOBUS", "FLEXRAY")
+_BUS_PALETTE = ["#3399FF", "#994C00", "#FFB570", "#A680B8", "#B3B3B3"]
+_BUS_TYPE_LABEL = {"CAN": "CAN", "LIN": "LIN", "ETHERNET": "ETH", "ISOBUS": "ISO", "FLEXRAY": "FR"}
+_DARK_BUS_COLORS = {"#994C00", "#A680B8", "#666666", "#EA6B66"}
+_VARIANT_STYLE = {
+    "SMALL": ("#FFFFFF", "STANDARD"),
+    "MEDIUM": ("#A9C4EB", "STANDARD"),
+    "LARGE": ("#FFE6CC", "STANDARD"),
+    "VALIDATION": ("#FFCCCC", "TEST FIXTURE"),
+}
 
 
-def _summarize_ecu_interfaces(ecu: dict[str, Any]) -> list[tuple[str, str]]:
-    """Group an ECU's raw pins by network interface type into a short,
-    printable summary per protocol, e.g. "CAN1_H (X29), CAN1_L (X210), ..."
-    or, for many identically-named pins (a bulk validation harness), a
-    condensed "40x VAL_BUS (T1201-T1240)" instead of forty repeats."""
-    by_iface: dict[str, list[tuple[str, str]]] = {}
-    for p in ecu.get("pins", []) or []:
-        if not isinstance(p, dict):
-            continue
-        iface = normalize_iface(p.get("type") or p.get("interface_type") or "")
-        if iface not in _NETWORK_IFACES:
-            continue
-        name = str(p.get("name", ""))
-        desc = f"{p.get('connector', '')}{p.get('physical_number', '')}"
-        by_iface.setdefault(iface, []).append((name, desc))
+def _assign_bus_colors(buses: list[dict[str, Any]]) -> dict[str, str]:
+    """One color per real bus, biased so LIN/Ethernet/ISOBUS keep the same
+    hues the reference template uses for those protocols, CAN/other buses
+    cycling through the remaining palette in export order."""
+    used: set[str] = set()
 
-    out: list[tuple[str, str]] = []
-    for iface in _NETWORK_IFACES:
-        items = by_iface.get(iface)
-        if not items:
-            continue
-        by_name: dict[str, list[str]] = {}
-        for name, desc in items:
-            by_name.setdefault(name, []).append(desc)
-        parts = []
-        for name, descs in by_name.items():
-            if len(descs) > 4:
-                parts.append(f"{len(descs)}x {name} ({descs[0]}–{descs[-1]})")
-            else:
-                parts.append(f"{name} ({','.join(descs)})")
-        out.append((iface, ", ".join(parts)))
-    return out
+    def pick(preferred: list[str]) -> str:
+        for c in preferred + _BUS_PALETTE:
+            if c not in used:
+                used.add(c)
+                return c
+        return _BUS_PALETTE[len(used) % len(_BUS_PALETTE)]
+
+    colors: dict[str, str] = {}
+    for b in buses:
+        t = str(b.get("type", "")).upper()
+        if t == "LIN":
+            colors[b["name"]] = pick(["#666666"])
+        elif t == "ETHERNET":
+            colors[b["name"]] = pick(["#EA6B66"])
+        elif t == "ISOBUS":
+            colors[b["name"]] = pick(["#8DBF36"])
+        else:
+            colors[b["name"]] = pick(_BUS_PALETTE)
+    return colors
 
 
-def build_network_backbone_sheets(arch: dict[str, Any]) -> list[DrawioDiagram]:
-    """Builds the 3-sheet Network Bus Backbone document:
-      1. Topology  — ECU cards (full interface/pin/address breakdown) in a
-         top/bottom-row layout, bus rails with their properties inline,
-         parallel same-color stubs where an ECU joins several buses, plus
-         the Buses properties table.
-      2. Software Components — one row per SWC (resource usage, owner).
-      3. CAN Messages — the full message list (moved off sheet 1 so it
-         doesn't compete for space with the topology and Buses table).
+def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
+    """Matches a real OEM network-architecture drawio template supplied as
+    a reference: a legend block (component category, then one colored bar
+    per bus), full-width horizontal bus rails, ECU boxes above and below
+    the bus band, and rotated port tabs on each box's bus-facing edge
+    dropping a same-colored stub straight to its bus. Every count/name/
+    address/port below comes from the real compiled architecture
+    (arch['ecus'], arch['buses']) — nothing here is synthesized, unlike
+    the mod-3 bus-assignment heuristic this replaces.
     """
-    nodes = extract_nodes_from_architecture(arch)
-    buses = extract_buses_from_architecture(arch)
-    _connectors, connections, messages = extract_connections_from_architecture(arch)
-    ecu_by_name = {str(e.get("name", "")): e for e in iter_ecus(arch)}
-    arch_name = str(arch.get("name", "Architecture Export"))
-    today = _date.today().isoformat()
+    ecus = list(iter_ecus(arch))
+    buses = arch.get("buses") if isinstance(arch.get("buses"), list) else []
+    bus_by_name = {b["name"]: b for b in buses}
+    bus_color = _assign_bus_colors(buses)
 
-    # ---------------------------------------------------------------
-    # Sheet 1: Topology
-    # ---------------------------------------------------------------
-    d1 = DrawioDiagram(name="Topology")
-    top = d1.add_header_banner(
-        "hdr", "Network Bus Backbone — Topology",
-        f"{arch_name}  ·  {len(nodes)} ECUs, {len(buses)} bus segments  ·  Generated {today}",
-        x=CONTENT_X0, w=1000,
-    )
-    d1.add_legend_row(
-        "legend",
-        [(f"{b['name']} ({b.get('protocol', '')})", b["color"], b["color"]) for b in buses],
-        x=CONTENT_X0, y=top,
-    )
+    ecu_ports: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for b in buses:
+        for node in b.get("nodes", []) or []:
+            ecu_ports.setdefault(node["ecu"], []).append((int(node.get("port_index", 0)), b))
+    for v in ecu_ports.values():
+        v.sort(key=lambda t: t[0])
 
-    card_w, card_h = 320, 175
-    card_gap_x = 40
-    diag_y0 = top + 40
-    top_nodes = [n for n in nodes if n.get("row") != "bottom"]
-    bot_nodes = [n for n in nodes if n.get("row") == "bottom"]
-    diagram_w = max(3, max(len(top_nodes), len(bot_nodes))) * (card_w + card_gap_x)
+    d = DrawioDiagram(name="Architecture")
 
-    node_center: dict[str, tuple[float, float]] = {}
+    box_w, box_h = 180, 160
+    gap_x = 50
+    top_ecus = [e for i, e in enumerate(ecus) if i % 2 == 0]
+    bot_ecus = [e for i, e in enumerate(ecus) if i % 2 == 1]
+    n_cols = max(len(top_ecus), len(bot_ecus), 1)
+    legend_w = 220
+    x0 = legend_w + 40
+    diagram_w = n_cols * (box_w + gap_x)
 
-    def layout_row(row_nodes: list[dict], local_y: float) -> None:
-        step = diagram_w / max(1, len(row_nodes))
-        for i, n in enumerate(row_nodes):
-            node_center[n["id"]] = (CONTENT_X0 + step * (i + 0.5), local_y)
+    # Component-category legend, top-left — adapted from the reference's
+    # OEM/optional split to this framework's real per-ECU variant field.
+    variants_present: list[str] = []
+    seen_v: set[str] = set()
+    for e in ecus:
+        v = str(e.get("variant", "")) or "STANDARD"
+        if v not in seen_v:
+            seen_v.add(v)
+            variants_present.append(v)
+    cat_y = 30
+    for v in variants_present:
+        fill, tag = _VARIANT_STYLE.get(v, ("#FFFFFF", "STANDARD"))
+        d.add_node(f"catlegend_{slug(v)}", f"[{v}] {tag}", 30, cat_y, 170, 30,
+                   style=f"whiteSpace=wrap;rounded=1;strokeColor=#000000;strokeWidth=2;fillColor={fill};fontStyle=1;align=left;spacingLeft=6;fontSize=11;")
+        cat_y += 36
 
-    top_y = diag_y0 + card_h / 2
-    layout_row(top_nodes, top_y)
-
+    top_y = cat_y + 30
+    bus_gap = 32
     n_buses = max(1, len(buses))
-    bus_band_h = 70 + (n_buses - 1) * 60
-    bus_y: dict[str, float] = {b["id"]: top_y + card_h / 2 + 60 + i * 60 for i, b in enumerate(buses)}
-    bot_y = top_y + card_h + bus_band_h + 60
-    layout_row(bot_nodes, bot_y)
+    bus_band_y0 = top_y + box_h + 150
+    bus_y = {b["name"]: bus_band_y0 + i * bus_gap for i, b in enumerate(buses)}
+    bot_y = bus_band_y0 + n_buses * bus_gap + 150
 
-    # ECU cards are added BEFORE the stub edges below, so those edges can
-    # attach to real cell IDs (source=ecu, target=bus) instead of floating
-    # lines with hardcoded points — genuine draw.io connections that stay
-    # attached if a shape is moved, and render flush against the shape's
-    # own border. Name, domain, diagnostic + bus-node addresses, then one
-    # color-coded line per network interface listing its actual pins.
-    for n in nodes:
-        pos = node_center.get(n["id"])
-        if pos is None:
-            continue
-        nx, ny = pos
-        ecu = ecu_by_name.get(n["id"], {})
-        can_addrs = ecu.get("can_addresses") or []
-        lines = [
-            f"<b>{esc_text(n.get('shortName') or n.get('name', ''))}</b> "
-            f"<font style=\"font-size:9px;color:#8fa2c4;\">{esc_text(n.get('domain', ''))}</font>",
-            f"<font style=\"font-size:9px;\">Diag: {esc_text(n.get('diagnosticAddress', ''))}"
-            + (f" &middot; Node addr: {esc_text(', '.join(can_addrs))}" if can_addrs else "") + "</font>",
-        ]
-        ifaces = _summarize_ecu_interfaces(ecu)
-        for iface, summary in ifaces:
-            _fill, stroke = fill_stroke_for(iface)
-            lines.append(f"<font style=\"font-size:8.5px;color:{stroke};\"><b>{iface}:</b> {esc_text(summary)}</font>")
-        if not ifaces:
-            lines.append("<font style=\"font-size:8.5px;color:#8fa2c4;\">(no network pins in export)</font>")
-        label = "<br/>".join(lines)
-        d1.add_node(f"ecu_{slug(n['id'])}", label, nx - card_w / 2, ny - card_h / 2, card_w, card_h,
-                   style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0e1626;strokeColor=#233152;fontColor=#e6edf7;"
-                         "fontSize=11;fontFamily=Helvetica;align=left;verticalAlign=top;spacing=8;")
+    def layout_row(row_ecus: list[dict[str, Any]]) -> dict[str, float]:
+        step = diagram_w / max(1, len(row_ecus))
+        return {e["name"]: x0 + step * (i + 0.5) for i, e in enumerate(row_ecus)}
 
-    # Bus rails are real vertex cells too (a thin "line"-shaped box, not a
-    # floating line) so stub edges can attach to a specific point along
-    # them via entryX — labeled inline with their real properties (not
-    # just a name) so they're readable without the table below.
+    row_x = {"top": layout_row(top_ecus), "bot": layout_row(bot_ecus)}
+
+    # Bus legend (left of the rails) + the rails themselves, spanning the
+    # full diagram width — floating lines, matching the reference exactly.
     for b in buses:
-        y = bus_y[b["id"]]
-        # A plain filled rectangle, not draw.io's special "line" stencil:
-        # that stencil's own perimeter/connection-point logic ignores an
-        # edge's requested entryX fraction (it snaps to a handful of its
-        # own points), which is exactly what turned every stub into a
-        # long diagonal converging on the same couple of spots instead of
-        # landing at its own distinct, vertically-aligned point. A plain
-        # rectangle has the standard perimeter every entryX/entryY relies on.
-        d1.add_node(f"bus_{slug(b['id'])}", "", CONTENT_X0, y - 3, diagram_w, 6,
-                   style=f"rounded=0;whiteSpace=wrap;html=1;fillColor={b['color']};strokeColor={b['color']};")
-        props = f"{b['name']}  —  {b.get('protocol', '')} · {b.get('bitrate', '')} · {b.get('termination', '')} · load target {b.get('loadTarget', '')}"
-        d1.add_text(f"bus_{slug(b['id'])}_lbl", props, CONTENT_X0, y - 22, diagram_w, 16,
-                    align="left", font_size=10, bold=True, color=b["color"], track_bbox=False)
+        y = bus_y[b["name"]]
+        color = bus_color[b["name"]]
+        font_color = "fontColor=#FFFFFF;" if color in _DARK_BUS_COLORS else ""
+        rate = b.get("bitrate", 0) or 0
+        rate_s = f"{rate // 1000} kbit/s" if rate < 1_000_000 else f"{rate / 1_000_000:g} Mbit/s"
+        label = f"{b['name']} — {b.get('type', '')}, {rate_s}"
+        d.add_node(f"buslegend_{slug(b['name'])}", label, 30, y, 190, 20,
+                   style=f"whiteSpace=wrap;strokeColor=none;align=left;fillColor={color};fontStyle=1;fontSize=10;{font_color}")
+        d.add_line(f"busrail_{slug(b['name'])}", x0, y + 10, x0 + diagram_w, y + 10, color=color, width=4)
 
-    # Stubs: real edges (source=ECU cell, target=bus-rail cell) so they are
-    # genuinely attached, each labeled with the actual port/pins it uses
-    # (e.g. "CAN_H/CAN_L", "ETH+/ETH-") so it's clear which port joins
-    # which bus. Every ECU's connections to several buses are offset into
-    # PARALLEL exit points (ordered by the bus's rail position) instead of
-    # exiting the card at the same point — so a multi-bus ECU shows one
-    # distinctly colored, distinctly labeled line per bus instead of lines
-    # silently overdrawing each other.
-    conns_by_node: dict[str, list[dict]] = {}
-    for c in connections:
-        conns_by_node.setdefault(c["nodeId"], []).append(c)
-
+    # ECU boxes (top row above the bus band, bottom row below it), each
+    # with real name/variant/CAN-address text and one rotated port tab per
+    # real (bus, port_index) pair, colored to match that bus, dropping a
+    # same-colored stub straight to the rail.
     stub_i = 0
-    for node_id, node_conns in conns_by_node.items():
-        pos = node_center.get(node_id)
-        if pos is None:
-            continue
-        nx, ny = pos
-        ecu_cell = f"ecu_{slug(node_id)}"
-        node_conns = sorted(node_conns, key=lambda c: bus_y.get(c["busId"], 0))
-        k = len(node_conns)
-        spread = min((k - 1) * 12, card_w * 0.7)
-        for i, c in enumerate(node_conns):
-            y = bus_y.get(c["busId"])
-            if y is None:
-                continue
-            bus_cell = f"bus_{slug(c['busId'])}"
-            offset = (-spread / 2 + i * (spread / (k - 1) if k > 1 else 0))
-            exit_x = max(0.05, min(0.95, 0.5 + offset / card_w))
-            exit_y = 1.0 if ny < y else 0.0  # top-row ECU exits its bottom edge; bottom-row exits its top edge
-            entry_x = max(0.02, min(0.98, ((nx + offset) - CONTENT_X0) / diagram_w))
-            bus_color = next((b["color"] for b in buses if b["id"] == c["busId"]), "#233152")
-            stub_i += 1
-            d1.add_edge(f"stub_{stub_i}", ecu_cell, bus_cell, label=c.get("pins", ""),
-                       style=f"edgeStyle=none;curved=0;rounded=0;endArrow=none;html=1;strokeColor={bus_color};strokeWidth=2;fontSize=8;"
-                             f"fontFamily=Helvetica;fontColor={bus_color};labelBackgroundColor=#0b1220;",
-                       exit_x=exit_x, exit_y=exit_y, entry_x=entry_x, entry_y=0.5)
+    for row_key, row_ecus, y, tabs_on_bottom_edge in (
+        ("top", top_ecus, top_y, True),
+        ("bot", bot_ecus, bot_y, False),
+    ):
+        for e in row_ecus:
+            name = str(e["name"])
+            cx = row_x[row_key][name]
+            variant = str(e.get("variant", "")) or "STANDARD"
+            fill, _tag = _VARIANT_STYLE.get(variant, ("#FFFFFF", "STANDARD"))
+            box_id = f"ecu_{slug(name)}"
+            d.add_node(box_id, "", cx - box_w / 2, y, box_w, box_h,
+                       style=f"rounded=1;whiteSpace=wrap;fontSize=18;strokeWidth=3;fillColor={fill};verticalAlign=top;")
+            d.add_text(f"{box_id}_title", esc_text(name), cx - box_w / 2 + 10, y + 8, box_w - 20, 40,
+                       align="left", font_size=15, bold=True, track_bbox=False)
+            addr = ", ".join(e.get("can_addresses") or []) or "—"
+            d.add_text(f"{box_id}_sub", f"{esc_text(variant)}<br/>Addr: {esc_text(addr)}",
+                       cx - box_w / 2 + 10, y + 50, box_w - 20, 50,
+                       align="left", font_size=11, bold=False, track_bbox=False)
 
-    y = bot_y + card_h / 2 + 50
-    d1.add_text("buses_title", "Buses", CONTENT_X0, y, 300, 20, align="left", font_size=13, bold=True)
-    y += 26
-    bus_rows = []
-    for b in buses:
-        node_count = len(set(c["nodeId"] for c in connections if c["busId"] == b["id"]))
-        bus_rows.append([b["name"], b.get("protocol", ""), b.get("bitrate", ""), b.get("addressScheme", ""),
-                          b.get("physicalLayer", ""), b.get("termination", ""), b.get("loadTarget", ""), node_count])
-    d1.add_table("bt", ["Bus", "Protocol", "Bitrate", "Address scheme", "Physical layer", "Termination", "Load target", "Nodes"],
-                 bus_rows, CONTENT_X0, y, [130, 70, 130, 110, 130, 120, 80, 50])
+            ports = ecu_ports.get(name, [])
+            tab_w, tab_h, tab_gap = 46, 14, 6
+            total_w = len(ports) * tab_w + max(0, len(ports) - 1) * tab_gap
+            tab_x0 = cx - total_w / 2
+            tab_y = (y + box_h - tab_h - 8) if tabs_on_bottom_edge else (y + 8)
+            for i, (port_idx, b) in enumerate(ports):
+                bt = str(b.get("type", "")).upper()
+                label = f"{_BUS_TYPE_LABEL.get(bt, bt)} {port_idx}"
+                color = bus_color[b["name"]]
+                tx = tab_x0 + i * (tab_w + tab_gap)
+                d.add_node(f"{box_id}_tab_{i}", label, tx, tab_y, tab_w, tab_h,
+                           style=f"rounded=1;whiteSpace=wrap;fontSize=9;fillColor={color};fontColor=#FFFFFF;fontStyle=1;align=center;")
+                stub_from_y = tab_y + tab_h if tabs_on_bottom_edge else tab_y
+                stub_i += 1
+                d.add_line(f"stub_{stub_i}", tx + tab_w / 2, stub_from_y, tx + tab_w / 2, bus_y[b["name"]] + 10,
+                           color=color, width=4, start_arrow="oval", end_arrow="oval")
 
-    d1.reserve_space(extra_h=130)
-    d1.set_page_to_content(orientation="landscape", margin=MARGIN)
-    d1.add_border()
-    d1.add_title_block("tb", doc_title="Network Bus Backbone — Topology", subtitle=arch_name,
-                        source="generated_doc/exports/exported_architecture.json", sheet_label="1/3")
-
-    # ---------------------------------------------------------------
-    # Sheet 2: Software Components
-    # ---------------------------------------------------------------
-    d2 = DrawioDiagram(name="Software Components")
-    swcs = arch.get("softwareComponents") if isinstance(arch.get("softwareComponents"), list) else None
-    if not swcs:
-        # extract_network_bus_backbone_html builds these itself from nodes;
-        # do the same here so this sheet has real content even though the
-        # architecture export doesn't carry a softwareComponents array.
-        swcs = []
-        for n in nodes:
-            for suffix, category in (("APP", "Application"), ("COM", "Communication")):
-                swcs.append({
-                    "id": f"SWC_{n['id']}_{suffix}", "ecuId": n["id"], "name": f"{n['name']} {category}",
-                    "category": category, "owner": "Feature owner" if category == "Application" else "Network architect",
-                    "version": "v1.0.0", "status": "Active", "cpuLoadPercent": "", "ramUsageKb": "", "flashUsageKb": "",
-                })
-    top2 = d2.add_header_banner(
-        "hdr", "Network Bus Backbone — Software Components",
-        f"{arch_name}  ·  {len(swcs)} SWC(s) across {len(nodes)} ECUs  ·  Generated {today}",
-        x=CONTENT_X0, w=1000,
-    )
-    swc_rows = [[s.get("id", ""), s.get("ecuId", ""), s.get("name", ""), s.get("category", ""),
-                 s.get("owner", ""), s.get("version", ""), s.get("status", ""),
-                 s.get("cpuLoadPercent", ""), s.get("ramUsageKb", ""), s.get("flashUsageKb", "")]
-                for s in swcs]
-    d2.add_table("swc", ["SWC ID", "ECU", "Name", "Category", "Owner", "Version", "Status", "CPU %", "RAM (KB)", "Flash (KB)"],
-                 swc_rows, CONTENT_X0, top2 + 10,
-                 [190, 130, 190, 100, 110, 60, 60, 50, 70, 70])
-    d2.reserve_space(extra_h=130)
-    d2.set_page_to_content(orientation="portrait", margin=MARGIN)
-    d2.add_border()
-    d2.add_title_block("tb", doc_title="Network Bus Backbone — Software Components", subtitle=arch_name,
-                        source="generated_doc/exports/exported_architecture.json", sheet_label="2/3")
-
-    # ---------------------------------------------------------------
-    # Sheet 3: CAN Messages
-    # ---------------------------------------------------------------
-    d3 = DrawioDiagram(name="CAN Messages")
-    top3 = d3.add_header_banner(
-        "hdr", "Network Bus Backbone — CAN Messages",
-        f"{arch_name}  ·  {len(messages)} message(s) across {len(buses)} buses  ·  Generated {today}",
-        x=CONTENT_X0, w=1000,
-    )
-    msg_rows = []
-    for m in messages:
-        msg_rows.append([m.get("name", ""), m.get("busId", ""), m.get("canId", ""), m.get("idFormat", ""),
-                          m.get("dlc", ""), m.get("cycleMs", ""), m.get("producerNodeId", ""),
-                          ", ".join(m.get("consumerNodeIds", []) or []), ", ".join(m.get("signals", []) or [])])
-    d3.add_table("mt", ["Message", "Bus", "CAN ID", "Format", "DLC", "Cycle (ms)", "Producer", "Consumers", "Signals"],
-                 msg_rows, CONTENT_X0, top3 + 10, [170, 90, 70, 60, 40, 70, 130, 200, 190], row_h=30, font_size=8)
-    d3.reserve_space(extra_h=130)
-    d3.set_page_to_content(orientation="landscape", margin=MARGIN)
-    d3.add_border()
-    d3.add_title_block("tb", doc_title="Network Bus Backbone — CAN Messages", subtitle=arch_name,
-                        source="generated_doc/exports/exported_architecture.json", sheet_label="3/3")
-
-    return [d1, d2, d3]
+    d.set_page_to_content(orientation="landscape", margin=MARGIN)
+    return d.to_xml()
 
 
 # ---------------------------------------------------------------------------
@@ -491,7 +391,7 @@ def main() -> int:
     written: list[Path] = []
 
     out = outdir / "network_bus_backbone.drawio"
-    out.write_text(render_mxfile(build_network_backbone_sheets(arch)), encoding="utf-8")
+    out.write_text(build_network_backbone_drawio(arch), encoding="utf-8")
     written.append(out)
 
     out = outdir / "architecture_tree.drawio"
