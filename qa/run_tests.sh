@@ -29,6 +29,7 @@ TESTS=(
     test_power_budget_p1
     test_swc_dbc_import
     test_uibuilder_v8_export
+    test_uibuilder_v7_swc_export
 )
 
 declare -a RESULTS=()

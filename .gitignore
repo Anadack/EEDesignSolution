@@ -30,3 +30,4 @@ qa/test_j1939_pgn
 qa/test_power_budget_p1
 qa/test_swc_dbc_import
 qa/test_uibuilder_v8_export
+qa/test_uibuilder_v7_swc_export

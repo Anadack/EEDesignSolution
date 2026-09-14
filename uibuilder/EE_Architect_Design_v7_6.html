@@ -471,6 +471,7 @@ label {
     <input id="importJson" class="file-input" type="file" accept=".json,application/json" multiple onchange="importJsonFiles(event)">
     <input id="importLibrary" class="file-input" type="file" accept=".json,application/json" multiple webkitdirectory onchange="importLibraryFiles(event)">
     <input id="importDbc" class="file-input" type="file" accept=".dbc,text/plain" multiple onchange="importDbcFiles(event)">
+    <input id="importSwc" class="file-input" type="file" accept=".json,application/json" multiple onchange="importSwcFiles(event)">
   </header>
 
   <!-- ── Main ──────────────────────────────────────────────────────────── -->
@@ -481,6 +482,7 @@ label {
       <div class="nav-tabs">
         <div id="navArchTab" class="nav-tab active" onclick="setNavTab('architecture')">Architecture</div>
         <div id="navLibTab" class="nav-tab" onclick="setNavTab('library')">Library</div>
+        <div id="navSwcTab" class="nav-tab" onclick="setNavTab('swc')">SWC</div>
       </div>
 
       <!-- Architecture pane -->
@@ -505,6 +507,21 @@ label {
           <button class="ghost small" onclick="renderAll()">Refresh</button>
         </div>
         <div id="libraryView" class="tree"></div>
+      </div>
+
+      <!-- SWC pane: SWC = software component, eec-swc-1.0. A system owns 0..n
+           SWCs; a SWC owns 0 or 1 imported DBC (dbc_file) plus its own
+           variables[]/messages[]. See src/EEC_swc_loader.c. -->
+      <div id="swcPane" class="nav-pane hidden">
+        <div class="nav-toolbar">
+          <button class="success small" onclick="newSwc()">+ SWC</button>
+          <button class="ghost small" onclick="triggerImportSwc()">Import SWC</button>
+        </div>
+        <div class="nav-toolbar" style="padding-top:0">
+          <button class="ghost small" onclick="exportSwcJson()">Export SWC JSON</button>
+          <button class="warn small" onclick="validateSwcModel(true)">Validate SWC</button>
+        </div>
+        <div id="swcList" class="tree"></div>
       </div>
     </aside>
 
@@ -604,7 +621,7 @@ function field(key,label,type='text',flag='',values=[]){return{key,label,type,fl
 function deviceFields(kind){return[field('name','Name','text','req'),field('device_type','Device type','enum','req',[kind]),field('part_number','Part number'),field('supplier_pn','Supplier PN'),field('is_mandatory','Mandatory','bool','req'),field('mapping_enabled','Mapping enabled','bool','req'),field('priority','Priority','enum','req',ENUMS.priority),field('safety','Safety','enum','req',ENUMS.safety),field('manufacturer','Manufacturer'),field('description','Description','textarea'),field('notes','Notes','textarea'),field('owner_system','Owner system'),field('owner_architecture','Owner architecture')]}
 const SCHEMA={system:[field('type','Type'),field('schema_version','Schema version'),field('name','Name','text','req'),field('version','Version'),field('Ref-2X','Ref-2X'),field('system_level','System level','enum','req',ENUMS.system_level),field('priority','Priority','enum','req',ENUMS.priority),field('safety','Safety','enum','req',ENUMS.safety),field('part_number','Part number'),field('location','Location','enum','',ENUMS.locations),field('take_rate','Take rate','number'),field('is_mandatory','Mandatory','bool'),field('auto_mapping_enabled','Auto mapping enabled','bool','req'),field('platforms','Platforms','csv'),field('brands','Brands','brands','',ENUMS.brands),field('description','Description','textarea'),field('manufacturer','Manufacturer'),field('notes','Notes','textarea')],component:[field('type','Type'),field('name','Name','text','req'),field('Ref-2X','Ref-2X'),field('part_number','Part number'),field('supplier_pn','Supplier PN'),field('priority','Priority','enum','req',ENUMS.priority),field('safety','Safety','enum','req',ENUMS.safety),field('location','Location','enum','',ENUMS.locations),field('take_rate','Take rate','number'),field('is_mandatory','Mandatory','bool'),field('mapping_enabled','Mapping enabled','bool','req'),field('weight_kg','Weight kg','number'),field('cost_eur','Cost EUR','number'),field('supplier','Supplier'),field('manufacturer','Manufacturer'),field('description','Description','textarea'),field('notes','Notes','textarea')],sensor:deviceFields('SENSOR'),actuator:[...deviceFields('ACTUATOR'),field('drive_topology','Drive topology','enum','map',ENUMS.drive_topology)],connector:[field('name','Name','text','req'),field('part_number','Part number'),field('family','Family','enum','req',ENUMS.family),field('gender','Gender','enum','req',ENUMS.gender),field('total_cavities','Total cavities','number','req'),field('used_cavities','Used cavities','number','req'),field('max_pin_number','Max pin number','number','req'),field('sealed','Sealed','bool'),field('color','Color'),field('mounting','Mounting'),field('ip_rating','IP rating'),field('rated_voltage','Rated voltage','number'),field('rated_current','Rated current','number'),field('temperature_min','Temperature min','number'),field('temperature_max','Temperature max','number')],pin:[field('number','Number','number','map'),field('name','Name','text','map'),field('role','Role','enum','map',ENUMS.pin_role),field('interface_type','Interface type','enum','map',ENUMS.iface),field('electrical_requirement','Electrical requirement','number','map'),field('signal','Signal','signalRef','map'),field('nominal_current','Nominal current','number','map'),field('inrush_current','Inrush current','number','map'),field('max_voltage','Max voltage','number','map'),field('diagnostics_required','Diagnostics required','number','map'),field('safety_relevant','Safety relevant','bool','map'),field('ground_class','Ground class','enum','map',ENUMS.ground),field('required_reset_state','Required reset state','enum','map',ENUMS.reset),field('required_sensor_supply','Required sensor supply','enum','map',ENUMS.supply),field('required_sensor_ground','Required sensor ground','enum','map',ENUMS.sensorGround),field('required_supply_voltage','Required supply voltage','number','map'),field('required_supply_voltage_min','Required supply min','number','map'),field('required_supply_voltage_max','Required supply max','number','map'),field('preferred_supply_voltage','Preferred supply voltage','number','map')],signal:[field('prefix','Prefix','text','map'),field('name','Name'),field('count','Count','number','map'),field('type','Payload type','enum','map',ENUMS.signalType),field('interface','Interface','enum','map',ENUMS.iface),field('unit','Unit','enum','map',ENUMS.unit),field('min','Min','number','map'),field('max','Max','number','map'),field('resolution','Resolution','number','map'),field('scaling','Scaling','number','map'),field('priority','Priority','enum','map',ENUMS.priority),field('safety','Safety','enum','map',ENUMS.safety),field('part_number','Part number'),field('digital_structure','Digital structure','enum','map',ENUMS.digital),field('electrical_requirement','Electrical requirement','number','map'),field('role','Role','enum','map',ENUMS.pin_role),field('description','Description','textarea'),field('notes','Notes','textarea'),field('is_mapped','Mapped','bool')]};
 const EEC_SCHEMA_VERSION='eec-system-1.4';
-const state={arch:{name:'EE_Architecture',schema_version:EEC_SCHEMA_VERSION,systems:[]},sel:{type:'none'},library:[],selectedLibraryId:null,libraryExpanded:{'library':true},archExpanded:{},navTab:'architecture',jsonVisible:true,termCollapsed:false,jsonTab:'object',logs:[],problems:[],warnings:[]};
+const state={arch:{name:'EE_Architecture',schema_version:EEC_SCHEMA_VERSION,systems:[],swcs:[]},sel:{type:'none'},library:[],selectedLibraryId:null,libraryExpanded:{'library':true},archExpanded:{},navTab:'architecture',jsonVisible:true,termCollapsed:false,jsonTab:'object',logs:[],problems:[],warnings:[]};
 const byId=id=>document.getElementById(id); const arr=x=>Array.isArray(x)?x:[]; const clone=o=>JSON.parse(JSON.stringify(o||{})); const uid=p=>p+'_'+((globalThis.crypto&&crypto.randomUUID)?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36)); const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function log(msg,level='info'){state.logs.push({msg,level,time:new Date().toLocaleTimeString()});renderLogs()} function clearLogs(){state.logs=[];renderLogs()} function nameOf(o){return o?.name||o?.prefix||'(unnamed)'}
 function proposedValue(def,o,t){const p={system:{location:'CHASSIS',brands:['MF','FT','VT'],platforms:['AGCO'],take_rate:100,is_mandatory:true,auto_mapping_enabled:true},component:{location:'CHASSIS',take_rate:100,is_mandatory:true,mapping_enabled:true},sensor:{device_type:'SENSOR',is_mandatory:true,mapping_enabled:true},actuator:{device_type:'ACTUATOR',is_mandatory:true,mapping_enabled:true}};return p[t]?.[def.key]}
@@ -645,7 +662,7 @@ function deleteSelected(){const t=state.sel.type;if(t==='io'){const d=getDevice(
 function badgeClass(kind){return'badge badge-'+(kind||'unknown')}
 
 /* ── NEW: UI toggles ── */
-function setNavTab(t){state.navTab=t;byId('navArchTab').classList.toggle('active',t==='architecture');byId('navLibTab').classList.toggle('active',t==='library');byId('archPane').classList.toggle('hidden',t!=='architecture');byId('libPane').classList.toggle('hidden',t!=='library')}
+function setNavTab(t){state.navTab=t;byId('navArchTab').classList.toggle('active',t==='architecture');byId('navLibTab').classList.toggle('active',t==='library');byId('navSwcTab').classList.toggle('active',t==='swc');byId('archPane').classList.toggle('hidden',t!=='architecture');byId('libPane').classList.toggle('hidden',t!=='library');byId('swcPane').classList.toggle('hidden',t!=='swc')}
 function toggleJson(){state.jsonVisible=!state.jsonVisible;byId('mainGrid').classList.toggle('json-hidden',!state.jsonVisible);byId('jsonToggleBtn').textContent=state.jsonVisible?'JSON ▸':'JSON ◂'}
 function toggleTerminal(){state.termCollapsed=!state.termCollapsed;byId('app').classList.toggle('term-collapsed',state.termCollapsed)}
 function expandAllArch(on){state.arch.systems.forEach(s=>{state.archExpanded['sys:'+s.id]=on;arr(s.components).forEach(c=>{state.archExpanded['cmp:'+c.id]=on;[...arr(c.sensors),...arr(c.actuators)].forEach(d=>{state.archExpanded['dev:'+d.id]=on})})});renderHierarchy()}
@@ -1181,7 +1198,85 @@ cSystemLegacy = function(sys=getSystem()||state.arch.systems[0]){
   return out;
 };
 
-window.addEventListener('DOMContentLoaded',()=>{initResize();newSystem();log('EE System modelling v7.1 ready — eec-system-1.4 explicit-pins adapter with legacy fallback','ok')});
+/* ════════════════════════════════════════════════════════════════════════
+ * SWC support (eec-swc-1.0) — additive, non-invasive.
+ * A System owns 0..n SWCs; a SWC owns 0 or 1 imported DBC (dbc_file) plus its
+ * own variables[] (produced signals) and messages[] (CAN frames referencing
+ * those variables by name). This mirrors src/EEC_swc_loader.c exactly: a SWC
+ * needs 'system' or 'system_ref_2x' or EEC_swc_loader.c silently drops it,
+ * and a duplicate ref_2x is silently skipped by that same loader.
+ * SWCs are modelled as a flat state.arch.swcs[] matching the real *.swc.json
+ * file shape ({schema:'eec-swc-1.0', swcs:[...]}), independent of
+ * state.arch.systems[] — a SWC references its owning system by name/ref_2x,
+ * exactly like the JSON schema does, rather than being nested under it.
+ * Wired into the existing generic editor/selection/delete/validate/render
+ * chain the same way the CAN/DBC feature above wires itself in: wrap the
+ * previous function and add a branch, never edit it in place. ════════════ */
+function getSwc(){ return arr(state.arch.swcs).find(s=>s.id===state.sel.swcId) || null; }
+SCHEMA.swc=[field('name','Name','text','req'),field('ref_2x','Ref-2X'),field('system','System (name)'),field('system_ref_2x','System Ref-2X'),field('allocated_ecu','Allocated ECU (name)'),field('dbc_file','DBC file (path)')];
+FIELD_HELP.system=(FIELD_HELP.system?FIELD_HELP.system+' ':'')+"For a SWC: system this SWC belongs to, matched by name at import. Required unless system_ref_2x is set — EEC_swc_loader.c silently drops a SWC with neither.";
+FIELD_HELP.system_ref_2x="System Ref-2X used to resolve the owning system when 'system' name is not set.";
+FIELD_HELP.allocated_ecu='ECU name this SWC runs on, matched by name at import (optional).';
+FIELD_HELP.dbc_file="Path to a .dbc file imported into this SWC's messages/signals at load time — 0 or 1 per SWC. Existence is only checked by the real C loader, not here.";
+
+function makeSwc(){const sys=getSystem();return{id:uid('swc'),type:'swc',name:'New_SWC',ref_2x:'',system:sys?sys.name:'',system_ref_2x:'',allocated_ecu:'',dbc_file:'',variables:[],messages:[]}}
+function newSwc(){state.arch.swcs=arr(state.arch.swcs);const s=makeSwc();state.arch.swcs.push(s);state.sel={type:'swc',swcId:s.id};log('SWC created','ok');renderAll()}
+function selectSwc(id){state.sel={type:'swc',swcId:id};renderAll()}
+
+function makeSwcVariable(){return{name:'NewVariable',type:'U16',interface:'CAN',unit:'NONE',min:0,max:65535,resolution:1,scaling:1}}
+function addSwcVariable(swcId){const s=arr(state.arch.swcs).find(x=>x.id===swcId);if(!s)return;s.variables=arr(s.variables);s.variables.push(makeSwcVariable());log('Variable added','ok');renderAll()}
+function removeSwcVariable(swcId,idx){const s=arr(state.arch.swcs).find(x=>x.id===swcId);if(!s)return;s.variables.splice(idx,1);log('Variable removed','warnlog');renderAll()}
+function updateSwcVariable(swcId,idx,key,val){const s=arr(state.arch.swcs).find(x=>x.id===swcId);const v=s&&s.variables[idx];if(!v)return;v[key]=['min','max','resolution','scaling'].includes(key)?Number(val):val;renderAll(false)}
+
+function makeSwcMessage(){return{name:'NewMessage',frame_id:'0x100',extended:false,bus:'CAN1',port:1,cycle_ms:100,signals:[]}}
+function addSwcMessage(swcId){const s=arr(state.arch.swcs).find(x=>x.id===swcId);if(!s)return;s.messages=arr(s.messages);s.messages.push(makeSwcMessage());log('Message added','ok');renderAll()}
+function removeSwcMessage(swcId,idx){const s=arr(state.arch.swcs).find(x=>x.id===swcId);if(!s)return;s.messages.splice(idx,1);log('Message removed','warnlog');renderAll()}
+function updateSwcMessage(swcId,idx,key,val){const s=arr(state.arch.swcs).find(x=>x.id===swcId);const m=s&&s.messages[idx];if(!m)return;if(key==='extended')m.extended=(val===true||val==='true');else if(key==='port'||key==='cycle_ms')m[key]=Number(val);else m[key]=val;renderAll(false)}
+function toggleSwcMessageSignal(swcId,idx,varName){const s=arr(state.arch.swcs).find(x=>x.id===swcId);const m=s&&s.messages[idx];if(!m)return;m.signals=arr(m.signals);const i=m.signals.findIndex(x=>x.name===varName);if(i>=0)m.signals.splice(i,1);else m.signals.push({name:varName});renderAll(false)}
+
+function renderSwcVariableRow(swcId,v,idx){return `<div class="dep-card"><div class="dep-title"><b>Variable ${idx+1}${v.name?': '+esc(v.name):''}</b><div class="card-actions"><button class="danger-link small" onclick="removeSwcVariable('${swcId}',${idx})">Del</button></div></div><div class="grid3">
+<div class="field-wrap"><label>Name</label><input value="${esc(v.name||'')}" onchange="updateSwcVariable('${swcId}',${idx},'name',this.value)"></div>
+<div class="field-wrap"><label>Type</label><select onchange="updateSwcVariable('${swcId}',${idx},'type',this.value)">${option(ENUMS.signalType,v.type)}</select></div>
+<div class="field-wrap"><label>Interface</label><select onchange="updateSwcVariable('${swcId}',${idx},'interface',this.value)">${option(ENUMS.iface,v.interface)}</select></div>
+<div class="field-wrap"><label>Unit</label><select onchange="updateSwcVariable('${swcId}',${idx},'unit',this.value)">${option(ENUMS.unit,v.unit)}</select></div>
+<div class="field-wrap"><label>Min</label><input type="number" step="any" value="${esc(v.min??0)}" onchange="updateSwcVariable('${swcId}',${idx},'min',this.value)"></div>
+<div class="field-wrap"><label>Max</label><input type="number" step="any" value="${esc(v.max??0)}" onchange="updateSwcVariable('${swcId}',${idx},'max',this.value)"></div>
+<div class="field-wrap"><label>Resolution</label><input type="number" step="any" value="${esc(v.resolution??1)}" onchange="updateSwcVariable('${swcId}',${idx},'resolution',this.value)"></div>
+<div class="field-wrap"><label>Scaling</label><input type="number" step="any" value="${esc(v.scaling??1)}" onchange="updateSwcVariable('${swcId}',${idx},'scaling',this.value)"></div>
+</div></div>`}
+function renderSwcMessageRow(swcId,s,m,idx){const varNames=arr(s.variables).map(v=>v.name).filter(Boolean);const sigSet=new Set(arr(m.signals).map(x=>x.name));return `<div class="dep-card"><div class="dep-title"><b>Message ${idx+1}${m.name?': '+esc(m.name):''}</b><div class="card-actions"><button class="danger-link small" onclick="removeSwcMessage('${swcId}',${idx})">Del</button></div></div><div class="grid3">
+<div class="field-wrap"><label>Name</label><input value="${esc(m.name||'')}" onchange="updateSwcMessage('${swcId}',${idx},'name',this.value)"></div>
+<div class="field-wrap"><label>Frame ID (dec or 0xHEX)</label><input value="${esc(m.frame_id??'')}" onchange="updateSwcMessage('${swcId}',${idx},'frame_id',this.value)"></div>
+<div class="field-wrap"><label>Extended (29-bit)</label><select onchange="updateSwcMessage('${swcId}',${idx},'extended',this.value)"><option value="false" ${!m.extended?'selected':''}>false</option><option value="true" ${m.extended?'selected':''}>true</option></select></div>
+<div class="field-wrap"><label>Bus</label><input value="${esc(m.bus||'CAN1')}" onchange="updateSwcMessage('${swcId}',${idx},'bus',this.value)"></div>
+<div class="field-wrap"><label>Port</label><input type="number" value="${esc(m.port??1)}" onchange="updateSwcMessage('${swcId}',${idx},'port',this.value)"></div>
+<div class="field-wrap"><label>Cycle (ms)</label><input type="number" value="${esc(m.cycle_ms??100)}" onchange="updateSwcMessage('${swcId}',${idx},'cycle_ms',this.value)"></div>
+</div><div class="field-wrap"><label>Signals (from this SWC's variables)</label><div>${varNames.length?varNames.map(n=>`<label style="margin-right:12px;display:inline-block"><input type="checkbox" ${sigSet.has(n)?'checked':''} onchange="toggleSwcMessageSignal('${swcId}',${idx},'${n.replace(/'/g,"\\'")}')"> ${esc(n)}</label>`).join(''):'<span class="muted">No variables yet — add one above first.</span>'}</div></div></div>`}
+function renderSwcDependencies(s){const vHtml=arr(s.variables).map((v,i)=>renderSwcVariableRow(s.id,v,i)).join('')||'<div class="empty">No variable yet.</div>';const mHtml=arr(s.messages).map((m,i)=>renderSwcMessageRow(s.id,s,m,i)).join('')||'<div class="empty">No message yet.</div>';return `<div class="section-title"><h3>Variables (produced signals)</h3><div class="toolbar"><button class="success small" onclick="addSwcVariable('${s.id}')">+ Variable</button></div></div><div class="dependency-grid">${vHtml}</div><div class="section-title"><h3>CAN messages</h3><div class="toolbar"><button class="success small" onclick="addSwcMessage('${s.id}')">+ Message</button></div></div><div class="dependency-grid">${mHtml}</div>`}
+
+function renderSwcList(){const el=byId('swcList');if(!el)return;const list=arr(state.arch.swcs);el.innerHTML=list.length?list.map(s=>`<div class="tnode ${state.sel.type==='swc'&&state.sel.swcId===s.id?'active':''}" style="padding-left:8px;cursor:pointer" onclick="selectSwc('${s.id}')">${esc(s.name||'(unnamed SWC)')} <span class="muted">${esc(s.system||s.system_ref_2x||'—')}</span></div>`).join(''):'<div class="empty">No SWC yet. Click + SWC to create one.</div>'}
+
+function cSwcVariable(v){return{name:v.name||'',type:ENUMS.signalType.includes(v.type)?v.type:'U1',interface:ENUMS.iface.includes(v.interface)?v.interface:'CAN',unit:ENUMS.unit.includes(v.unit)?v.unit:'NONE',min:Number(v.min||0),max:Number(v.max||0),resolution:v.resolution!=null?Number(v.resolution):1,scaling:v.scaling!=null?Number(v.scaling):1}}
+function cSwcMessage(m){return{name:m.name||'',frame_id:parseFrameId(m.frame_id),extended:!!m.extended,tx:[{bus:m.bus||'CAN1',port:Number(m.port||1),cycle_ms:m.cycle_ms!=null?Number(m.cycle_ms):100}],signals:arr(m.signals).map(x=>({name:x.name}))}}
+function cSwc(s){const out={name:s.name||''};if(s.ref_2x)out.ref_2x=s.ref_2x;if(s.system)out.system=s.system;if(s.system_ref_2x)out.system_ref_2x=s.system_ref_2x;if(s.allocated_ecu)out.allocated_ecu=s.allocated_ecu;if(s.dbc_file)out.dbc_file=s.dbc_file;out.variables=arr(s.variables).map(cSwcVariable);out.messages=arr(s.messages).map(cSwcMessage);return out}
+function buildSwcFile(){return{schema:'eec-swc-1.0',swcs:arr(state.arch.swcs).map(cSwc)}}
+
+function validateSwcModel(verbose=false){const p=[],w=[];const req=(ok,msg)=>{if(!ok)p.push(msg)},warn=(ok,msg)=>{if(!ok)w.push(msg)};const seenRef=new Set();arr(state.arch.swcs).forEach(s=>{const tag='SWC '+(s.name||'(unnamed)');req(Boolean(s.name&&String(s.name).trim()),tag+': name is required');req(Boolean(s.system&&String(s.system).trim())||Boolean(s.system_ref_2x&&String(s.system_ref_2x).trim()),tag+": needs 'system' or 'system_ref_2x' — EEC_swc_loader.c silently drops a SWC with neither");if(s.ref_2x){req(!seenRef.has(s.ref_2x),tag+": duplicate ref_2x '"+s.ref_2x+"' — the loader silently skips duplicates");seenRef.add(s.ref_2x)}const varNames=new Set(arr(s.variables).map(v=>v.name));arr(s.messages).forEach(m=>{const mtag=tag+' message '+(m.name||'(unnamed)');req(Boolean(m.name&&String(m.name).trim()),mtag+': name is required');const id=parseFrameId(m.frame_id);req(Number.isInteger(id)&&id>=0,mtag+': frame_id must be a non-negative integer');req(m.extended?id<=0x1FFFFFFF:id<=0x7FF,mtag+': frame_id 0x'+id.toString(16)+' exceeds '+(m.extended?'29-bit extended':'11-bit standard')+' range');arr(m.signals).forEach(sig=>{warn(varNames.has(sig.name),mtag+": signal '"+sig.name+"' has no matching entry in this SWC's variables[]")})})});validateSwcModel.lastWarnings=w;if(verbose){p.forEach(x=>log(x,'err'));w.forEach(x=>log(x,'warnlog'));if(!p.length&&!w.length)log('SWC validation passed','ok')}return p}
+
+function exportSwcJson(){const p=validateSwcModel(true);if(p.length)return log('SWC JSON export blocked: invalid SWC model','err');if(!arr(state.arch.swcs).length)return log('No SWC to export','err');downloadText((state.arch.name||'architecture')+'_swc.json',JSON.stringify(buildSwcFile(),null,2));log('SWC JSON exported ('+state.arch.swcs.length+' SWC(s))','export')}
+function triggerImportSwc(){byId('importSwc').click()}
+async function importSwcFiles(ev){const files=[...ev.target.files];for(const file of files){try{const data=JSON.parse(await file.text());const list=Array.isArray(data.swcs)?data.swcs:(Array.isArray(data)?data:[data]);list.forEach(raw=>{state.arch.swcs.push({id:uid('swc'),type:'swc',name:raw.name||'SWC',ref_2x:raw.ref_2x||'',system:raw.system||'',system_ref_2x:raw.system_ref_2x||'',allocated_ecu:raw.allocated_ecu||'',dbc_file:raw.dbc_file||'',variables:arr(raw.variables).map(v=>({name:v.name||'',type:v.type||'U1',interface:v.interface||'CAN',unit:v.unit||'NONE',min:v.min||0,max:v.max||0,resolution:v.resolution!=null?v.resolution:1,scaling:v.scaling!=null?v.scaling:1})),messages:arr(raw.messages).map(m=>{const t0=(arr(m.tx)[0])||{};return{name:m.name||'',frame_id:m.frame_id!=null?m.frame_id:0,extended:!!m.extended,bus:t0.bus||'CAN1',port:t0.port||1,cycle_ms:t0.cycle_ms!=null?t0.cycle_ms:100,signals:arr(m.signals).map(sg=>({name:sg.name}))}})})});log(list.length+' SWC(s) imported from '+file.name,'ok')}catch(e){log('Parse error '+file.name+': '+e.message,'err')}}ev.target.value='';renderAll()}
+
+/* ── Wire SWC into the existing generic editor/selection/delete/validate/render chain ── */
+const baseCurrent_SWC=current; current=function(){return getSwc()||baseCurrent_SWC()};
+const baseCurrentType_SWC=currentType; currentType=function(){return getSwc()?'swc':baseCurrentType_SWC()};
+const baseDeleteSelected_SWC=deleteSelected; deleteSelected=function(){if(state.sel.type==='swc'){state.arch.swcs=arr(state.arch.swcs).filter(x=>x.id!==state.sel.swcId);state.sel={type:'none'};log('SWC deleted','warnlog');renderAll();return}baseDeleteSelected_SWC()};
+const baseRenderEditor_SWC=renderEditor; renderEditor=function(){if(currentType()==='swc'){const o=current();byId('editorTitle').textContent=o?('swc · '+nameOf(o)):'Editor';const actions=`<div class="toolbar"><button class="danger small" onclick="deleteSelected()">Delete</button></div>`;byId('editorBody').innerHTML=`<div class="editor-split"><div><div class="section-title"><h3>SWC properties</h3>${actions}</div>${objectForm(o,'swc')}</div><div>${renderSwcDependencies(o)}</div></div>`;return}baseRenderEditor_SWC()};
+const baseApplyJson_SWC=applyJsonToSelected; applyJsonToSelected=function(){if(currentType()==='swc'){try{const text=byId('jsonEdit').classList.contains('hidden')?byId('jsonView').textContent:byId('jsonEdit').value;const obj=JSON.parse(text);const swc=getSwc();if(swc){obj.id=swc.id;obj.type='swc';obj.variables=arr(obj.variables);obj.messages=arr(obj.messages);Object.assign(swc,obj);log('JSON applied to selected SWC','ok');renderAll()}}catch(e){log('Cannot apply JSON: '+e.message,'err')}return}baseApplyJson_SWC()};
+const baseRenderAll_SWC=renderAll; renderAll=function(doValidate=true){baseRenderAll_SWC(doValidate);renderSwcList()};
+const baseValidateModel_SWC=validateModel; validateModel=function(verbose=false){const baseProblems=baseValidateModel_SWC(verbose),baseWarnings=clone(state.warnings);const sp=validateSwcModel(verbose),sw=validateSwcModel.lastWarnings||[];state.problems=[...baseProblems,...sp];state.warnings=[...baseWarnings,...sw];byId('problemCount').textContent=state.problems.length+' problems / '+state.warnings.length+' warnings';byId('modelStatus').textContent=state.problems.length?'INVALID':state.warnings.length?'VALID + WARNINGS':'VALID';byId('modelStatus').className='status '+(state.problems.length?'bad':'ok');return state.problems};
+
+window.addEventListener('DOMContentLoaded',()=>{initResize();newSystem();log('EE System modelling v7.1 ready — eec-system-1.4 explicit-pins adapter with legacy fallback, SWC (eec-swc-1.0) support added','ok')});
 </script>
 </body>
 </html>
