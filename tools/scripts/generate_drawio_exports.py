@@ -108,14 +108,42 @@ def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
 
     d = DrawioDiagram(name="Architecture")
 
-    box_w, box_h = 180, 160
+    box_h = 160
+    box_w_min = 180
     gap_x = 50
+    tab_w, tab_h, tab_gap, tab_side_margin = 46, 14, 6, 12
     top_ecus = [e for i, e in enumerate(ecus) if i % 2 == 0]
     bot_ecus = [e for i, e in enumerate(ecus) if i % 2 == 1]
-    n_cols = max(len(top_ecus), len(bot_ecus), 1)
     legend_w = 220
     x0 = legend_w + 40
-    diagram_w = n_cols * (box_w + gap_x)
+
+    # Every port tab must fit inside its box — widen the box past the
+    # reference's fixed 180 for any ECU whose port count would otherwise
+    # overflow it, instead of letting tabs spill past the left/right edges.
+    def box_width_for(name: str) -> float:
+        n = len(ecu_ports.get(name, []))
+        tabs_w = n * tab_w + max(0, n - 1) * tab_gap
+        return max(box_w_min, tabs_w + 2 * tab_side_margin)
+
+    box_w = {e["name"]: box_width_for(str(e["name"])) for e in ecus}
+
+    def layout_row(row_ecus: list[dict[str, Any]]) -> dict[str, float]:
+        """Left-to-right flow using each box's own width plus a fixed gap,
+        so adjacent ECUs always have real clearance between them instead
+        of a shared grid cell sized for the narrowest box."""
+        centers: dict[str, float] = {}
+        x = x0
+        for e in row_ecus:
+            name = str(e["name"])
+            w = box_w[name]
+            centers[name] = x + w / 2
+            x += w + gap_x
+        return centers
+
+    row_x = {"top": layout_row(top_ecus), "bot": layout_row(bot_ecus)}
+    row_width = lambda row_ecus: (sum(box_w[str(e["name"])] for e in row_ecus)
+                                   + gap_x * max(0, len(row_ecus) - 1)) if row_ecus else 0
+    diagram_w = max(row_width(top_ecus), row_width(bot_ecus), 400)
 
     # Component-category legend, top-left — adapted from the reference's
     # OEM/optional split to this framework's real per-ECU variant field.
@@ -139,12 +167,6 @@ def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
     bus_band_y0 = top_y + box_h + 150
     bus_y = {b["name"]: bus_band_y0 + i * bus_gap for i, b in enumerate(buses)}
     bot_y = bus_band_y0 + n_buses * bus_gap + 150
-
-    def layout_row(row_ecus: list[dict[str, Any]]) -> dict[str, float]:
-        step = diagram_w / max(1, len(row_ecus))
-        return {e["name"]: x0 + step * (i + 0.5) for i, e in enumerate(row_ecus)}
-
-    row_x = {"top": layout_row(top_ecus), "bot": layout_row(bot_ecus)}
 
     # Bus legend (left of the rails) + the rails themselves, spanning the
     # full diagram width — floating lines, matching the reference exactly.
@@ -171,20 +193,27 @@ def build_network_backbone_drawio(arch: dict[str, Any]) -> str:
         for e in row_ecus:
             name = str(e["name"])
             cx = row_x[row_key][name]
+            w = box_w[name]
             variant = str(e.get("variant", "")) or "STANDARD"
             fill, _tag = _VARIANT_STYLE.get(variant, ("#FFFFFF", "STANDARD"))
             box_id = f"ecu_{slug(name)}"
-            d.add_node(box_id, "", cx - box_w / 2, y, box_w, box_h,
+            d.add_node(box_id, "", cx - w / 2, y, w, box_h,
                        style=f"rounded=1;whiteSpace=wrap;fontSize=18;strokeWidth=3;fillColor={fill};verticalAlign=top;")
-            d.add_text(f"{box_id}_title", esc_text(name), cx - box_w / 2 + 10, y + 8, box_w - 20, 40,
+
+            # Tabs occupy a fixed band at whichever edge faces the bus band
+            # (top edge for a bottom-row box, bottom edge for a top-row
+            # one); the name/variant/address text is placed in the
+            # remaining band on the other side so the two never overlap.
+            tabs_band_h = tab_h + 16
+            text_y = y + tabs_band_h if not tabs_on_bottom_edge else y + 8
+            d.add_text(f"{box_id}_title", esc_text(name), cx - w / 2 + 10, text_y, w - 20, 30,
                        align="left", font_size=15, bold=True, track_bbox=False)
             addr = ", ".join(e.get("can_addresses") or []) or "—"
             d.add_text(f"{box_id}_sub", f"{esc_text(variant)}<br/>Addr: {esc_text(addr)}",
-                       cx - box_w / 2 + 10, y + 50, box_w - 20, 50,
+                       cx - w / 2 + 10, text_y + 34, w - 20, 50,
                        align="left", font_size=11, bold=False, track_bbox=False)
 
             ports = ecu_ports.get(name, [])
-            tab_w, tab_h, tab_gap = 46, 14, 6
             total_w = len(ports) * tab_w + max(0, len(ports) - 1) * tab_gap
             tab_x0 = cx - total_w / 2
             tab_y = (y + box_h - tab_h - 8) if tabs_on_bottom_edge else (y + 8)
