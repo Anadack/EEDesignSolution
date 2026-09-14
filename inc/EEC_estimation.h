@@ -79,6 +79,18 @@ typedef struct EEC_EcuEstimate_s {
     float    utilisation_pct;                 /**< Utilisation percentage. */
 } EEC_EcuEstimate_t;
 
+/** @brief Capacity and sizing result for an explicitly selected library ECU. */
+typedef struct EEC_SelectedEcuEstimate_s {
+    bool selected;
+    bool compatible;                           /**< Every required IO interface is supported. */
+    uint32_t unsupported_interface_count;
+    char source_path[512];
+    char name[64];
+    char variant[64];
+    EEC_EcuCapacity_t capacity;
+    EEC_EcuEstimate_t estimate;
+} EEC_SelectedEcuEstimate_t;
+
 /** @brief One ECU in the optimised mixed proposition. */
 typedef struct EEC_ProposedEcu_s {
     char variant[16];                         /**< SMALL / MEDIUM / LARGE. */
@@ -111,6 +123,7 @@ typedef struct EEC_EstimationResult_s {
 
     /* Homogeneous ECU estimates (one per variant, same order as capacities[]) */
     EEC_EcuEstimate_t estimates[EEC_EST_VARIANT_COUNT];  /**< All-SMALL, All-MEDIUM, All-LARGE. */
+    EEC_SelectedEcuEstimate_t selected_ecu;     /**< Optional user-selected ECU JSON result. */
 
     /* Optimised mixed proposition */
     EEC_ProposedEcu_t proposed[EEC_EST_MAX_PROPOSED_ECUS]; /**< Mixed ECU list. */
@@ -131,6 +144,12 @@ typedef struct EEC_EstimationResult_s {
 int EEC_Estimation_Run(const char *platform_path,
                        const char *library_dir,
                        const char *output_json);
+
+/** @brief Run estimation and evaluate one explicitly selected ECU JSON. */
+int EEC_Estimation_RunWithEcu(const char *platform_path,
+                              const char *library_dir,
+                              const char *ecu_json_path,
+                              const char *output_json);
 
 #ifdef __cplusplus
 }

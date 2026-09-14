@@ -545,6 +545,19 @@ Step 7  Export estimation_result.json + architecture_estimation.html
 
 The estimation HTML shows the recommended ECU mix with per-interface utilisation bars and a BOM cost comparison across scenarios.
 
+By default, the engine keeps the historical SMALL/MEDIUM/LARGE comparison. To
+evaluate a specific ECU from the JSON library against the same IO needs, select
+it at runtime without recompiling:
+
+```bash
+EEC_ESTIMATION_ECU=library/ecus/BODAS_RC5_6_40.json ./app
+```
+
+The selected ECU identity, pin capacity per interface, required ECU count, and
+utilisation are written to `estimation_result.json` under `selected_ecu`. Any
+ECU using the standard library JSON schema can be selected, including BODAS and
+ES3 definitions. An invalid path makes the estimation fail explicitly.
+
 ---
 
 ## 8. Architecture Comparison & Change Impact

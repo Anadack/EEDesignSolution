@@ -512,11 +512,17 @@ int main(void)
      * ------------------------------------------------------------------ */
     join_path(estimation_json_path, sizeof(estimation_json_path),
               exports_dir, "estimation_result.json");
-    if (EEC_Estimation_Run("library/platform.json", "library",
-                           estimation_json_path) == 0) {
-        printf("[INFO] Estimation JSON → %s\n", estimation_json_path);
-    } else {
-        fprintf(stderr, "[WARN] Estimation failed — check library/platform.json\n");
+    {
+        const char *estimation_ecu = getenv("EEC_ESTIMATION_ECU");
+        if (estimation_ecu && estimation_ecu[0] != '\0') {
+            printf("[INFO] Estimation ECU selected: %s\n", estimation_ecu);
+        }
+        if (EEC_Estimation_RunWithEcu("library/platform.json", "library",
+                                     estimation_ecu, estimation_json_path) == 0) {
+            printf("[INFO] Estimation JSON → %s\n", estimation_json_path);
+        } else {
+            fprintf(stderr, "[WARN] Estimation failed — check platform and selected ECU JSON\n");
+        }
     }
 
     /* ------------------------------------------------------------------
