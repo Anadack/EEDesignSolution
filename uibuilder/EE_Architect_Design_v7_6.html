@@ -1122,11 +1122,21 @@ buildDBC = function(sys=getSystem()||state.arch.systems[0]){
   lines.push('BA_DEF_DEF_  "DBName" "";');
   lines.push('BA_ "BusType" "CAN";');
   lines.push(`BA_ "DBName" "${dbcEscape(sys.name||'EE_System_Modelling_CAN')}";`);
+  /* GenMsgSendType is declared ENUM above (choices in the same order as this
+   * array) — per the DBC spec an ENUM attribute VALUE (BA_, as opposed to
+   * its BA_DEF_ declaration) must be the integer INDEX into that choice
+   * list, not the choice string itself. Emitting the quoted string here
+   * (as this line used to) makes strict DBC parsers such as cantools reject
+   * the whole file with a "decimal.InvalidOperation" error. */
+  const GEN_MSG_SEND_TYPE_ENUM = ['cyclic','NotUsed','IfActive','NotUsed','NotUsed','NotUsed','NotUsed','NotUsed','noMsgSendType'];
   getCanMessages(sys).forEach(m=>{
     const id = dbcMessageId(m.frame_id,m.is_extended);
     lines.push(`BA_ "VFrameFormat" BO_ ${id} ${m.is_extended?3:0};`);
     lines.push(`BA_ "GenMsgCycleTime" BO_ ${id} ${Number(m.cycle_time_ms||0)};`);
-    if(m.send_type) lines.push(`BA_ "GenMsgSendType" BO_ ${id} "${dbcEscape(dbcSendTypeForVector(m.send_type))}";`);
+    if(m.send_type){
+      const idx = GEN_MSG_SEND_TYPE_ENUM.indexOf(dbcSendTypeForVector(m.send_type));
+      lines.push(`BA_ "GenMsgSendType" BO_ ${id} ${idx >= 0 ? idx : 8};`);
+    }
   });
   getCanMessages(sys).forEach(m=>{
     const id = dbcMessageId(m.frame_id,m.is_extended);

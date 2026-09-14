@@ -30,6 +30,7 @@ TESTS=(
     test_swc_dbc_import
     test_uibuilder_v8_export
     test_uibuilder_v7_swc_export
+    test_uibuilder_v7_library_import
 )
 
 declare -a RESULTS=()
