@@ -8,6 +8,7 @@
 #include "EEC_swc_loader.h"
 #include "EEC_message.h"
 #include "EEC_log.h"
+#include "EEC_dbc.h"
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -472,6 +473,7 @@ static int parse_swc(Jr *r, EEC_Architecture_t *arch)
     char sysname[64] = {0};
     char sysref[26] = {0};
     char ecuname[64] = {0};
+    char dbcfile[256] = {0};
     EEC_System_t *sys;
     EEC_Swc_t *swc;
 
@@ -483,6 +485,7 @@ static int parse_swc(Jr *r, EEC_Architecture_t *arch)
     if (jr_seek(r, ss, "system"))        { (void)jr_string(r, sysname, sizeof(sysname)); }
     if (jr_seek(r, ss, "system_ref_2x")) { (void)jr_string(r, sysref, sizeof(sysref)); }
     if (jr_seek(r, ss, "allocated_ecu")) { (void)jr_string(r, ecuname, sizeof(ecuname)); }
+    if (jr_seek(r, ss, "dbc_file"))      { (void)jr_string(r, dbcfile, sizeof(dbcfile)); }
 
     if (sysname[0] == '\0' && sysref[0] == '\0') {
         r->cur = ss;
@@ -536,6 +539,22 @@ static int parse_swc(Jr *r, EEC_Architecture_t *arch)
         }
         if (ecuname[0] != '\0') {
             EEC_Swc_AllocateToEcu(swc, find_ecu(arch, ecuname));
+        }
+        /* A SWC owns 0 or 1 imported DBC (per-SWC import; export stays
+         * per-bus in EEC_Export_dbc_all). Messages/signals from the DBC
+         * are appended to the SWC alongside any inline "messages" below —
+         * the two sources are additive, not exclusive. */
+        if (dbcfile[0] != '\0') {
+            int n = EEC_Import_dbc(arch, swc, dbcfile);
+            if (n < 0) {
+                EEC_Log_Printf(EEC_LOG_WARN,
+                               "SWC '%s': failed to import dbc_file '%s'",
+                               swc->name, dbcfile);
+            } else {
+                EEC_Log_Printf(EEC_LOG_INFO,
+                               "SWC '%s': imported %d message(s) from '%s'",
+                               swc->name, n, dbcfile);
+            }
         }
         if (jr_seek(r, ss, "variables")) { parse_variables(r, swc); }
         if (jr_seek(r, ss, "messages"))  { parse_messages(r, arch, swc); }

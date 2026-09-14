@@ -28,3 +28,4 @@ qa/test_busload_b9
 qa/test_dbc_validate
 qa/test_j1939_pgn
 qa/test_power_budget_p1
+qa/test_swc_dbc_import

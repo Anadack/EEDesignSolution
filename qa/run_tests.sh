@@ -27,6 +27,7 @@ TESTS=(
     test_dbc_validate
     test_j1939_pgn
     test_power_budget_p1
+    test_swc_dbc_import
 )
 
 declare -a RESULTS=()
