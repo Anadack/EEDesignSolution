@@ -146,7 +146,7 @@ end
 function names = systemPropertyNames()
 names = ["RefIdBase", "Version", "SystemLevel", "Priority", "Safety", ...
     "Location", "TakeRate", "IsMandatory", "AutoMappingEnabled", ...
-    "PartNumber", "Description"];
+    "PartNumber", "Description", "Brands"];
 end
 
 function names = componentPropertyNames()

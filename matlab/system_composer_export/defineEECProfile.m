@@ -62,6 +62,7 @@ addBoolProp(sysType,   "IsMandatory",   true);
 addBoolProp(sysType,   "AutoMappingEnabled", true);
 addStringProp(sysType, "PartNumber",    "");
 addStringProp(sysType, "Description",   "");
+addStringProp(sysType, "Brands",        "");   % comma-separated, e.g. "MASSEY_FERGUSON" or "FENDT,MASSEY_FERGUSON" — see eecEnums().brands for the allowed names
 
 % ---------------------------------------------------------------------
 % ElectricalComponent — one per tagged sensor/actuator/ECU component

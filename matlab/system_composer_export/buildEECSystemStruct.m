@@ -81,6 +81,7 @@ sysStruct.auto_mapping_enabled = logical(systemMeta.AutoMappingEnabled);
 sysStruct.mapping_enabled = true;
 sysStruct.description = charOrEmpty(systemMeta.Description, ...
     "Physical variant " + variantLabel + " exported from MathWorks System Composer physical architecture.");
+sysStruct.brands = parseBrandList(systemMeta.Brands, enums.brands, "system.Brands");
 
 % Traceability stamp: which model produced this file and when, so a
 % freshness check (checkJsonFreshness.py) or a human can tell whether
@@ -269,6 +270,18 @@ if logical(signalProps.CurrentSense), mask = mask + bits.CURRENT_SENSE; end
 if logical(signalProps.VoltageIn),    mask = mask + bits.VOLTAGE_IN;    end
 if logical(signalProps.Differential), mask = mask + bits.DIFFERENTIAL;  end
 mask = int32(mask);
+end
+
+function out = parseBrandList(value, allowed, fieldDescription)
+% "FENDT,MASSEY_FERGUSON" -> {"FENDT","MASSEY_FERGUSON"}; "" -> {} (an
+% empty cell array jsonencodes as "[]", not omitted — brands is optional
+% but always present for a consistent, predictable file shape).
+raw = strtrim(split(string(value), ","));
+raw = raw(raw ~= "");
+out = {};
+for i = 1:numel(raw)
+    out{end+1} = checkEnum(raw(i), allowed, fieldDescription); %#ok<AGROW>
+end
 end
 
 function out = checkEnum(value, allowed, fieldDescription)

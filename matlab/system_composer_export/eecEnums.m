@@ -30,6 +30,13 @@ enums.safety_classes = ["QM", "AgPL_A", "AgPL_B", "AgPL_C", "AgPL_D"];
 
 enums.system_levels = ["SL0", "SL1", "SL2", "SL3", "SL4"];
 
+% Matches EEC_Brand_e in inc/EEC_types.h exactly (FENDT=0,
+% MASSEY_FERGUSON=1, VALTRA=2) — the JSON contract lists "brands" as a
+% known system-level key but (unlike interfaces/roles/units/...) does not
+% itself constrain its values, so this list is this exporter's own
+% enforcement, kept in sync with the C enum by hand.
+enums.brands = ["FENDT", "MASSEY_FERGUSON", "VALTRA"];
+
 enums.connector_families = ["DEUTSCH", "DEUTSCH_DT04_2P", "AMP_SUPERSEAL", ...
     "AMP_JUNIOR_TIMER", "MOLEX", "TE_CONNECTIVITY", "YAZAKI", "JAE", "AMPSEAL", ...
     "CUSTOM", "DIN_EN_175301_803", "BINDER", "M12", "ISO_4400", "KOSTAL"];
