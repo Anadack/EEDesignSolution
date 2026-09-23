@@ -933,6 +933,10 @@ EE_Architect_Design/
 │   ├── main.c generator/        Drag-and-drop main.c code generator
 │   └── system json generator/   Visual system JSON editor with live validation
 ├── spec/                        Architecture specification documents
+├── matlab/                       MathWorks System Composer bridge
+│   └── system_composer_export/  Tag physical-architecture components in
+│                                 System Composer, export one system JSON
+│                                 per physical variant (see its README.md)
 ├── releases/                    Release packages (gitignored)
 └── .gitignore
 ```
@@ -1018,6 +1022,8 @@ EE_Architect_Design/
 | **CANoe Integration** | Auto-launch CANoe with generated .dbc, simulation configs | Streamlined CAN testing workflow |
 | **MathWorks / Simulink Export** | Generate Simulink bus objects, message structures from architecture | Model-based development pipeline |
 | **PSCR (Predictive Safety & Change Request)** | AI-assisted anomaly detection in architecture diffs | Highlight risky changes before review |
+
+✅ **Shipped (the other direction):** `matlab/system_composer_export/` — a System Composer → library JSON bridge. Tag the electronic / electronically-driven components and their electrical ports of a **physical architecture** model with the included `EEDesignSolutionProfile` stereotypes, then export one `eec-system-1.4` system JSON per **physical variant** (one saved model = one variant), ready to reference from `library/platform.json`. See that folder's `README.md` for the tagging workflow, the full property→field mapping table, and the verification performed (strict schema validation + a real `EEC_Library_ImportSystem` → auto-map → 23-rule-verify pass against the C engine). The Simulink-bus-object direction in the row above remains open.
 
 ### **Performance & Scalability**
 
