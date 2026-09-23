@@ -40,6 +40,7 @@ This is the tool referenced as "MathWorks / Simulink Export" in the root
 | `eecEnums.m` | Enum value lists, mirrored 1:1 from `tools/scripts/eec_json_contract.v4.json`. No System Composer dependency. |
 | `defineEECProfile.m` | Creates/saves `EEDesignSolutionProfile.sysml` (3 stereotypes). Run once. |
 | `autoTagElectricalComponents.m` | Bulk-applies the stereotypes using a name-keyword classification table, instead of tagging every component/port by hand. Optional — skip it and tag manually if you prefer. Calls the System Composer model API directly (see below). |
+| `exportDatasheetLookupBOM.m` | Writes a component BOM + signal checklist CSV from the tagged data, for sourcing real datasheets before export. Reuses `collectTaggedElements.m` — same source of truth as the JSON export. |
 | `collectTaggedElements.m` | Walks one model, returns plain MATLAB structs. Together with `autoTagElectricalComponents.m`, **the only two files that call System Composer's model API.** If a MATLAB-release API difference bites, these are the files to patch. |
 | `buildEECSystemStruct.m` | Pure mapping logic: plain structs → the exact JSON struct (enum validation, `electrical_requirement` bitmask, cavity/pin numbering, Ref-2X sanitizing). No System Composer dependency — can be exercised standalone. |
 | `exportEECSystemJSON.m` | Orchestrator: loops variants, calls the two above, writes the files, prints a summary + the `platform.json`/`main.c` snippet to add. |
@@ -113,7 +114,37 @@ Repeat per variant model. Components/ports common to all variants need
 tagging in each model that contains them (there is currently no shared
 "tag once, reuse across variant models" step — see *Limitations* below).
 
-### 3. Export
+### 3. Datasheet-sourcing BOM (recommended before export)
+
+Tagging fixes WHICH components are electronic and gives them a first pass
+at Priority/Safety/electrical values, but a name and a rough guess are not
+a real datasheet. Before trusting the export, generate the sourcing BOM —
+reuses the same tagged data, so it can never drift from what gets
+exported next:
+
+```matlab
+bom = exportDatasheetLookupBOM(variants, "Steering_Assist", "generated_doc/exports");
+```
+
+Writes two CSVs to `generated_doc/exports/`:
+
+- `Steering_Assist_component_bom.csv` — one row per **distinct** part
+  (deduplicated across variants by Manufacturer+PartNumber), with a
+  ready-to-paste `SearchHint`, which `Variants` it appears in, and a
+  `Conflicts` column flagging inconsistent tagging of what should be the
+  same physical part. `DatasheetURL` / `DatasheetConfirmed` /
+  `ResearchNotes` are blank — hand this to whoever sources datasheets.
+- `Steering_Assist_signal_checklist.csv` — one row per (variant,
+  component, port) with every currently-tagged electrical value
+  (Min/Max/currents/voltage/...) to confirm or correct once the real
+  datasheet is in hand — this is what feeds back into the Property
+  Inspector (or a re-run of `autoTagElectricalComponents.m` with
+  datasheet-informed rules) before the next export.
+
+Column names are self-explanatory; full details, including the
+dedup/conflict logic, are in `exportDatasheetLookupBOM.m`'s help text.
+
+### 4. Export
 
 ```matlab
 variants(1) = struct('ModelName', 'SteeringAssist_BASE', 'Label', "BASE");
@@ -127,13 +158,13 @@ next step. `summary` is a table you can inspect programmatically (one row
 per variant, with `OK`/`Message` columns — a bad tag on one variant does
 not stop the others from exporting).
 
-### 4. Validate (optional but recommended)
+### 5. Validate (optional but recommended)
 
 ```bash
 python3 tools/scripts/validate_system_json_code_aligned.py library/systems/Steering_Assist__*.json
 ```
 
-### 5. Wiring the output into a build
+### 6. Wiring the output into a build
 
 Add each new `Ref-2X` to `library/platform.json`:
 
