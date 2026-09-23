@@ -74,8 +74,11 @@ for i = 1:n
     ModelName(i) = string(variants(i).ModelName);
     Label(i) = string(variants(i).Label);
     try
-        [systemMeta, elements] = collectTaggedElements(ModelName(i));
-        sysStruct = buildEECSystemStruct(systemMeta, elements, Label(i), nameBase);
+        [systemMeta, elements, sourceModelFile] = collectTaggedElements(ModelName(i));
+        % Millisecond precision — see the matching comment in
+        % buildEECSystemStruct.m's default exportedAt for why.
+        exportedAt = string(datetime("now", "TimeZone", "UTC"), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        sysStruct = buildEECSystemStruct(systemMeta, elements, Label(i), nameBase, sourceModelFile, exportedAt);
         Ref2X(i) = string(sysStruct.REF2X_JSON_KEY);
 
         jsonText = jsonencode(sysStruct, "PrettyPrint", true);

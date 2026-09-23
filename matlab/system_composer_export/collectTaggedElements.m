@@ -1,9 +1,9 @@
-function [systemMeta, elements] = collectTaggedElements(modelName)
+function [systemMeta, elements, sourceModelFile] = collectTaggedElements(modelName)
 %COLLECTTAGGEDELEMENTS Walk one System Composer physical architecture model
 %   and pull out everything tagged with the EEDesignSolutionProfile
 %   stereotypes, as plain MATLAB structs (no System Composer objects).
 %
-%   [systemMeta, elements] = collectTaggedElements(modelName)
+%   [systemMeta, elements, sourceModelFile] = collectTaggedElements(modelName)
 %
 %   modelName   Name of an already-saved System Composer architecture
 %               model (.slx) representing ONE physical variant of the
@@ -23,6 +23,15 @@ function [systemMeta, elements] = collectTaggedElements(modelName)
 %                 .Ports  struct array, one per port on that component
 %                         tagged "EEDesignSolutionProfile.ElectricalSignal",
 %                         each with fields .Name and .Props
+%
+%   sourceModelFile  Basename of the model's .slx file (e.g.
+%               "BrakingSystem_ABS.slx"), or "" if the model has never
+%               been saved to disk. Used by buildEECSystemStruct.m to
+%               stamp the exported JSON's "metadata.source_model" — the
+%               traceability link from a JSON file back to the model that
+%               produced it (see checkJsonFreshness.py, which uses that
+%               stamp to detect a JSON that has gone stale relative to
+%               the model).
 %
 %   This is the ONLY file in this folder that calls System Composer's
 %   model-traversal API. It is kept short and isolated on purpose: the
@@ -44,6 +53,21 @@ PROFILE = "EEDesignSolutionProfile";
 
 model = systemcomposer.loadModel(modelName); % adjust to systemcomposer.openModel(...) if your release needs it
 rootArch = model.Architecture;
+
+% get_param(...,'FileName') is standard, long-stable Simulink API (System
+% Composer architecture models are Simulink models under the hood) — kept
+% in a try/catch anyway so a traceability nice-to-have can never break
+% the actual export if it behaves unexpectedly on some release/model state.
+sourceModelFile = "";
+try
+    fullPath = get_param(char(modelName), "FileName");
+    if ~isempty(fullPath)
+        [~, baseName, ext] = fileparts(fullPath);
+        sourceModelFile = string(baseName) + string(ext);
+    end
+catch
+    % Model never saved to disk yet, or FileName not applicable — leave "".
+end
 
 systemMeta = readStereotypeProps(rootArch, PROFILE + ".ElectricalSystem", systemPropertyNames());
 if isempty(fieldnames(systemMeta))

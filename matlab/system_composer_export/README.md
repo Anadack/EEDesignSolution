@@ -32,6 +32,11 @@ This is the tool referenced as "MathWorks / Simulink Export" in the root
 - It does **not** attempt ECU pin auto-mapping or run the 23 verification
   rules — that happens when you rebuild `./app` with the new system
   referenced, same as any other library file.
+- **Traceability**: every exported JSON is stamped with which model and
+  which save produced it (`metadata.source_model`, `metadata.exported_at`
+  — see "Traceability" below), so a JSON can never silently claim to
+  represent a model state it no longer matches — you can always tell, or
+  check automatically, whether it's stale.
 
 ## Files
 
@@ -42,8 +47,11 @@ This is the tool referenced as "MathWorks / Simulink Export" in the root
 | `autoTagElectricalComponents.m` | Bulk-applies the stereotypes using a name-keyword classification table, instead of tagging every component/port by hand. Optional — skip it and tag manually if you prefer. Calls the System Composer model API directly (see below). |
 | `exportDatasheetLookupBOM.m` | Writes a component BOM + signal checklist CSV from the tagged data, for sourcing real datasheets before export. Reuses `collectTaggedElements.m` — same source of truth as the JSON export. |
 | `collectTaggedElements.m` | Walks one model, returns plain MATLAB structs. Together with `autoTagElectricalComponents.m`, **the only two files that call System Composer's model API.** If a MATLAB-release API difference bites, these are the files to patch. |
-| `buildEECSystemStruct.m` | Pure mapping logic: plain structs → the exact JSON struct (enum validation, `electrical_requirement` bitmask, cavity/pin numbering, Ref-2X sanitizing). No System Composer dependency — can be exercised standalone. |
+| `buildEECSystemStruct.m` | Pure mapping logic: plain structs → the exact JSON struct (enum validation, `electrical_requirement` bitmask, cavity/pin numbering, Ref-2X sanitizing, traceability `metadata` stamp). No System Composer dependency — can be exercised standalone. |
 | `exportEECSystemJSON.m` | Orchestrator: loops variants, calls the two above, writes the files, prints a summary + the `platform.json`/`main.c` snippet to add. |
+| `onSaveExportAndValidate.m` | Re-exports + re-validates one variant. Meant to be wired to a model's save event, not called directly. |
+| `installAutoExportOnSave.m` | Wires `onSaveExportAndValidate.m` to a model's `PostSaveFcn` — run once per model so every save keeps its JSON current automatically. |
+| `checkJsonFreshness.py` | Needs no MATLAB. Compares each JSON's `metadata.exported_at` stamp against its source `.slx` file's current mtime and flags stale files — a CI-able or pre-commit-able safety net for models that were saved without the hook above (or before it was installed). |
 
 ## Prerequisites
 
@@ -183,6 +191,59 @@ EEC_platform_add_system(&platform, "SYS-STEERING-ASSIST-HD");
 Then `./app` auto-maps the new system's signals onto real ECU pins and
 runs the 23-rule verification pass as usual.
 
+## Traceability
+
+The point of this whole pipeline is that a JSON in `library/systems/`
+should never silently drift out of sync with the model that produced it.
+Three pieces work together for that:
+
+**1. Every export is stamped automatically** — no setup needed. Every
+system JSON carries:
+
+```json
+"metadata": {
+  "source_model": "BrakingSystem_ABS.slx",
+  "exported_at": "2026-09-23T23:50:00.123Z",
+  "exporter": "matlab/system_composer_export"
+}
+```
+
+This JSON is a **generated artifact** — treat it like a compiled binary,
+not source: never hand-edit it (the stamp would then be lying about what
+produced it), re-tag the model and re-export instead. `metadata` is a
+contract-recognized pass-through key (`eec_json_contract.v4.json`
+`known_keys.system`); it was re-verified against the real C importer
+after adding it — see "Verification performed" below.
+
+**2. Make it automatic — install the save hook** (recommended), once per
+variant model:
+
+```matlab
+installAutoExportOnSave('BrakingSystem_ABS', "ABS", "Braking_System");
+```
+
+Every subsequent save of that model re-exports and re-validates its JSON
+and prints `[auto-export] ... (validated OK)` — or a clear warning if
+either step fails — without you having to remember Step 4/5 above. It
+never re-runs `exportDatasheetLookupBOM.m` (that CSV is meant to be
+hand-edited as datasheets are found — auto-overwriting it on every save
+would destroy that work).
+
+**3. Check for drift without needing MATLAB at all** — the safety net for
+models that were saved without the hook installed, or before it existed:
+
+```bash
+python3 matlab/system_composer_export/checkJsonFreshness.py \
+    --root . --models-dir /path/to/your/slx/files
+```
+
+Reports `FRESH` / `STALE` / `MODEL_NOT_FOUND` / `NO_STAMP` per file and
+exits non-zero if anything is definitely `STALE` — safe to run in CI or a
+pre-commit hook on a machine that has never had MATLAB on it. This is a
+heuristic (a purely cosmetic model save also flags as stale — the price
+of not needing to re-read the tagged data to know for sure), with a
+2-second tolerance built in for filesystem mtime granularity.
+
 ## Field mapping
 
 ### `ElectricalSystem` (root architecture) → JSON `system` object
@@ -275,8 +336,30 @@ load-pressure sensor in an `HD` variant) and running it through:
    verification pass then ran exactly as they would for any other
    library file.
 
+When the `metadata` traceability stamp was added, both checks were
+re-run against the same sample with `metadata.{source_model,exported_at,
+exporter}` added at the system level: still **0 errors** from the
+validator, and `EEC_Library_ImportSystem` still imported it with zero
+structural errors (the one finding in both runs — an unmapped 4-20mA
+signal with no compatible free pin on the SMALL ECU preset — is a
+genuine hardware-fit result from `EEC_Verify_architecture`, unrelated to
+`metadata` and present before that field existed).
+
+`checkJsonFreshness.py`'s STALE/FRESH logic was independently verified
+with real files and a real filesystem: a JSON stamped `exported_at` right
+after its (fake) model file was written reports `FRESH`; the same model
+file touched several seconds later reports `STALE`; a model file that
+does not exist under `--models-dir` reports `MODEL_NOT_FOUND` rather than
+a false `STALE`; a JSON with no `metadata` block reports `NO_STAMP`. The
+millisecond-precision timestamp and the 2-second tolerance both exist
+because the first version of this check, tested the same way, produced a
+false `STALE` for a JSON exported in the same wall-clock second as its
+model file — exactly what `installAutoExportOnSave.m` triggers.
+
 What was **not** verified end-to-end is the System Composer side itself
-(`collectTaggedElements.m`) against a live model, since this environment
-has no MATLAB/System Composer installation. That function is kept
-deliberately short and isolated so it is the one place to fix if your
-release's traversal API differs — see the comments inside it.
+(`collectTaggedElements.m`, `autoTagElectricalComponents.m`, and by
+extension `installAutoExportOnSave.m`'s `PostSaveFcn` wiring) against a
+live model, since this environment has no MATLAB/System Composer
+installation. Those are kept deliberately short and isolated so they are
+the files to fix if your release's API differs — see the comments inside
+each.

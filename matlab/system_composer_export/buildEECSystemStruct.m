@@ -1,4 +1,4 @@
-function sysStruct = buildEECSystemStruct(systemMeta, elements, variantLabel, nameBase)
+function sysStruct = buildEECSystemStruct(systemMeta, elements, variantLabel, nameBase, sourceModelFile, exportedAt)
 %BUILDEECSYSTEMSTRUCT Turn plain tagged-element structs (from
 %   collectTaggedElements) into a MATLAB struct ready for jsonencode,
 %   matching the EEDesignSolution "system" JSON contract exactly
@@ -7,7 +7,7 @@ function sysStruct = buildEECSystemStruct(systemMeta, elements, variantLabel, na
 %   tools/scripts/eec_json_contract.v4.json and by the real C importer,
 %   EEC_Library_ImportSystem).
 %
-%   sysStruct = buildEECSystemStruct(systemMeta, elements, variantLabel, nameBase)
+%   sysStruct = buildEECSystemStruct(systemMeta, elements, variantLabel, nameBase, sourceModelFile, exportedAt)
 %
 %   systemMeta, elements  Outputs of collectTaggedElements(modelName).
 %   variantLabel          Short variant tag, e.g. "BASE", "HD", "SMALL".
@@ -19,6 +19,16 @@ function sysStruct = buildEECSystemStruct(systemMeta, elements, variantLabel, na
 %   nameBase               Logical system name shared by all variants,
 %                          e.g. "Steering_Assist". The emitted "name" is
 %                          "<nameBase>__<variantLabel>".
+%   sourceModelFile        Optional. The 3rd output of
+%                          collectTaggedElements(modelName) — the model's
+%                          .slx basename, or "" if unknown. Stamped into
+%                          "metadata.source_model" for traceability.
+%   exportedAt             Optional. ISO-8601 UTC timestamp string (e.g.
+%                          from exportEECSystemJSON.m, computed right
+%                          before writing the file) — stamped into
+%                          "metadata.exported_at". Defaults to "now" if
+%                          omitted, so calling this function directly
+%                          still produces a valid, useful stamp.
 %
 %   This function has NO System Composer dependency — it only touches
 %   plain MATLAB structs/strings/numbers, so it can be exercised and
@@ -36,6 +46,18 @@ function sysStruct = buildEECSystemStruct(systemMeta, elements, variantLabel, na
 enums = eecEnums();
 variantLabel = string(variantLabel);
 nameBase = string(nameBase);
+if nargin < 5 || isempty(sourceModelFile), sourceModelFile = ""; end
+if nargin < 6 || isempty(exportedAt)
+    % Millisecond precision matters here, not just cosmetically: when
+    % installAutoExportOnSave.m fires, the export can run within the same
+    % whole second as the model's own save — a whole-second-truncated
+    % timestamp would then make the export look OLDER than the save it
+    % followed, and checkJsonFreshness.py would wrongly call a
+    % just-written JSON "stale". See its STALE_TOLERANCE_SECONDS too.
+    exportedAt = string(datetime("now", "TimeZone", "UTC"), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+end
+sourceModelFile = string(sourceModelFile);
+exportedAt = string(exportedAt);
 
 sysStruct = struct();
 sysStruct.type = "system";
@@ -59,6 +81,22 @@ sysStruct.auto_mapping_enabled = logical(systemMeta.AutoMappingEnabled);
 sysStruct.mapping_enabled = true;
 sysStruct.description = charOrEmpty(systemMeta.Description, ...
     "Physical variant " + variantLabel + " exported from MathWorks System Composer physical architecture.");
+
+% Traceability stamp: which model produced this file and when, so a
+% freshness check (checkJsonFreshness.py) or a human can tell whether
+% this JSON still reflects the current state of the model. This JSON is
+% a GENERATED artifact — treat it as disposable/re-creatable, never
+% hand-edit it, or the stamp becomes a lie.
+if sourceModelFile == ""
+    warning("buildEECSystemStruct:UnknownSourceModel", ...
+        "Could not determine the source .slx file name for variant '%s' " + ...
+        "(model never saved to disk?) — 'metadata.source_model' will be " + ...
+        "empty and checkJsonFreshness.py will not be able to verify this file.", variantLabel);
+end
+sysStruct.metadata = struct( ...
+    "source_model", char(sourceModelFile), ...
+    "exported_at", char(exportedAt), ...
+    "exporter", "matlab/system_composer_export");
 
 devices = {};
 for i = 1:numel(elements)
