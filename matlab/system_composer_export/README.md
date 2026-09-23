@@ -11,10 +11,12 @@ This is the tool referenced as "MathWorks / Simulink Export" in the root
 ## What this does and does not do
 
 - **Tagging**: a System Composer *Profile* (`EEDesignSolutionProfile`) with
-  three stereotypes lets you mark, directly in the Property Inspector,
-  which components are electronic/electronically-driven and which ports
-  are their electrical nets. Everything untagged (valve bodies, brackets,
-  hoses, structural parts…) is ignored by the exporter.
+  three stereotypes lets you mark which components are
+  electronic/electronically-driven and which ports are their electrical
+  nets, either by hand in the Property Inspector or in bulk with
+  `autoTagElectricalComponents.m` (a name-keyword classification table —
+  see "Automatic tagging" below). Everything untagged (valve bodies,
+  brackets, hoses, structural parts…) is ignored by the exporter.
 - **Variants**: each physical variant is one saved architecture model.
   The exporter takes a list of `(model, variant label)` pairs and writes
   one independent system JSON per variant, each with its own `name` and
@@ -37,7 +39,8 @@ This is the tool referenced as "MathWorks / Simulink Export" in the root
 |---|---|
 | `eecEnums.m` | Enum value lists, mirrored 1:1 from `tools/scripts/eec_json_contract.v4.json`. No System Composer dependency. |
 | `defineEECProfile.m` | Creates/saves `EEDesignSolutionProfile.sysml` (3 stereotypes). Run once. |
-| `collectTaggedElements.m` | **The only file that calls System Composer's model API.** Walks one model, returns plain MATLAB structs. If a MATLAB-release API difference bites, this is the one file to patch. |
+| `autoTagElectricalComponents.m` | Bulk-applies the stereotypes using a name-keyword classification table, instead of tagging every component/port by hand. Optional — skip it and tag manually if you prefer. Calls the System Composer model API directly (see below). |
+| `collectTaggedElements.m` | Walks one model, returns plain MATLAB structs. Together with `autoTagElectricalComponents.m`, **the only two files that call System Composer's model API.** If a MATLAB-release API difference bites, these are the files to patch. |
 | `buildEECSystemStruct.m` | Pure mapping logic: plain structs → the exact JSON struct (enum validation, `electrical_requirement` bitmask, cavity/pin numbering, Ref-2X sanitizing). No System Composer dependency — can be exercised standalone. |
 | `exportEECSystemJSON.m` | Orchestrator: loops variants, calls the two above, writes the files, prints a summary + the `platform.json`/`main.c` snippet to add. |
 
@@ -64,7 +67,26 @@ Model**, pick `EEDesignSolutionProfile`.
 
 ### 2. Tag the model
 
-For **every physical variant**, in that variant's model:
+**Faster option:** if your components/ports follow a reasonably consistent
+naming convention, run the classification script first and only hand-fix
+what it could not decide:
+
+```matlab
+r = autoTagElectricalComponents('MyPhysicalArchModel', 'Apply', false);  % dry run
+disp(r)                                                                  % review Kind/MatchedBy/NumPortsTagged
+autoTagElectricalComponents('MyPhysicalArchModel');                     % apply for real
+```
+
+This sets `ElectricalComponent`/`ElectricalSignal` + `Kind`/`Role`/
+`InterfaceType`/`CavityNumber` from a name-keyword table (see its help
+text for the default table and how to override it) — it does **not** fill
+in `PartNumber`, `Manufacturer`, `Priority`, `Safety`, or the electrical
+ratings, so step 2 below is still a quick pass over the report, not a step
+you skip entirely. `ElectricalSystem` on the root is always manual (step 1
+below still needs `RefIdBase` etc. filled in by hand).
+
+**Manual / step-by-step, for every physical variant**, in that variant's
+model:
 
 1. Select the **root architecture** → Property Inspector → apply
    `EEDesignSolutionProfile.ElectricalSystem` → fill in `RefIdBase`
