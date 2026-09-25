@@ -22,6 +22,12 @@ Produces, from the same data sources the HTML generators already use:
   - pinout_<ECU>.drawio         : one library ECU connector pinout grid,
     from library/ecus/*.json (default: BODAS_RC4_5_30), same print
     convention as the tree.
+  - device_wiring_concept.drawio: one page per sensor/actuator device in
+    the compiled architecture, its own pins wired to the ECU connector/pin
+    each is actually routed to -- or flagged UNMAPPED when it isn't. Reuses
+    eec_report_common.collect_allocation_rows(), the same device<->ECU-pin
+    route index the HTML wiring/allocation-matrix reports are built from,
+    so this never drifts from what those reports say is actually wired.
 """
 from __future__ import annotations
 
@@ -36,8 +42,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eec_archdoc_common import (
     iter_ecus, iter_systems, flatten_components, normalize_iface, cli_context, make_argparser,
 )
-from eec_drawio_common import DrawioDiagram, fill_stroke_for, esc_text
-from eec_report_common import load_json, slug
+from eec_drawio_common import DrawioDiagram, fill_stroke_for, esc_text, render_mxfile
+from eec_report_common import load_json, slug, collect_allocation_rows
 
 MARGIN = 40
 CONTENT_X0 = 60
@@ -459,6 +465,129 @@ def build_ecu_pinout_drawio(ecu_data: dict[str, Any], source_path: str, cols: in
 
 
 # ---------------------------------------------------------------------------
+# 4. Device wiring concept (sensor/actuator -> ECU pin routes)
+# ---------------------------------------------------------------------------
+
+_UNMAPPED_FILL = ("#fdecea", "#ef4444")  # matches .status-UNMAPPED in the HTML wiring report
+
+
+def _cavity_sort_key(row: dict[str, Any]) -> tuple[int, Any]:
+    try:
+        return (0, int(row.get("device_cavity", 0) or 0))
+    except (TypeError, ValueError):
+        return (1, str(row.get("device_cavity", "")))
+
+
+def build_device_wiring_sheets(arch: dict[str, Any], cfg: dict[str, Any]) -> list[DrawioDiagram]:
+    """One sheet per sensor/actuator device in the compiled architecture.
+    Grouping and device<->ECU-pin routing both come straight from
+    collect_allocation_rows(), the same route index the HTML wiring and
+    allocation-matrix reports use -- so a device this page calls UNMAPPED
+    is UNMAPPED in those reports too, never a drawio-only discrepancy."""
+    all_rows = collect_allocation_rows(arch, cfg)
+    rows_by_device: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    for r in all_rows:
+        if r.get("device_type") not in ("SENSOR", "ACTUATOR"):
+            continue
+        key = (str(r.get("system", "")), str(r.get("component", "")), str(r.get("device", "")))
+        rows_by_device.setdefault(key, []).append(r)
+
+    sheets: list[DrawioDiagram] = []
+    for system in iter_systems(arch):
+        sys_name = str(system.get("name", ""))
+        for dev in flatten_components(system):
+            dtype = str(dev.get("device_type") or dev.get("type") or "").upper()
+            if dtype not in ("SENSOR", "ACTUATOR"):
+                continue
+            key = (sys_name, str(dev.get("_component", "")), str(dev.get("name", "")))
+            sheets.append(_build_one_wiring_sheet(sys_name, dev, dtype, rows_by_device.get(key, [])))
+    return sheets
+
+
+def _build_one_wiring_sheet(sys_name: str, dev: dict[str, Any], dtype: str,
+                             rows: list[dict[str, Any]]) -> DrawioDiagram:
+    dev_name = str(dev.get("name", ""))
+    d = DrawioDiagram(name=f"{dtype[:3]}_{dev_name}"[:60])
+
+    rows = sorted(rows, key=_cavity_sort_key)
+    n_pins = len(rows)
+    n_mapped = sum(1 for r in rows if r.get("status") == "MAPPED")
+    top = d.add_header_banner(
+        "hdr", f"{dev_name} — Wiring Concept",
+        f"{dtype}  ·  P/N {dev.get('part_number', '')}  ·  System: {sys_name}  ·  "
+        f"Safety: {dev.get('safety', '')}  ·  {n_mapped}/{n_pins} pin(s) wired  ·  "
+        f"Generated {_date.today().isoformat()}",
+        x=CONTENT_X0, w=1000,
+    )
+
+    box_w, box_h = 260, 56
+    row_gap = 20
+    left_x = CONTENT_X0
+    right_x = left_x + box_w + 220
+    y0 = top + 16
+
+    types_seen: dict[str, tuple[str, str]] = {}
+    for i, row in enumerate(rows):
+        y = y0 + i * (box_h + row_gap)
+        iface = normalize_iface(row.get("interface", "")) or "?"
+        fill, stroke = fill_stroke_for(iface)
+        types_seen[iface] = (fill, stroke)
+
+        left_id = f"dp_{i}"
+        d.add_node(
+            left_id,
+            f"{row.get('device_pin', '')}\n{row.get('role', '')} / {iface}\n{row.get('signal', '')}",
+            left_x, y, box_w, box_h,
+            style=f"rounded=1;whiteSpace=wrap;html=1;fillColor={fill};strokeColor={stroke};"
+                  f"fontSize=9;fontFamily=Helvetica;align=center;verticalAlign=middle;",
+        )
+
+        right_id = f"ep_{i}"
+        if row.get("status") == "MAPPED":
+            d.add_node(
+                right_id,
+                f"{row.get('ecu', '')}\n{row.get('ecu_connector', '')}-{row.get('ecu_pin', '')}\n"
+                f"{row.get('ecu_role', '')}",
+                right_x, y, box_w, box_h,
+                style=f"rounded=1;whiteSpace=wrap;html=1;fillColor={fill};strokeColor={stroke};"
+                      f"fontSize=9;fontFamily=Helvetica;align=center;verticalAlign=middle;",
+            )
+            wire_color = stroke
+        else:
+            u_fill, u_stroke = _UNMAPPED_FILL
+            d.add_node(
+                right_id, "UNMAPPED\n(no ECU route in\ncompiled architecture)",
+                right_x, y, box_w, box_h,
+                style=f"rounded=1;whiteSpace=wrap;html=1;fillColor={u_fill};strokeColor={u_stroke};"
+                      f"fontSize=9;fontFamily=Helvetica;fontStyle=1;align=center;verticalAlign=middle;",
+            )
+            wire_color = u_stroke
+
+        d.add_edge(
+            f"wire_{i}", left_id, right_id,
+            style=f"edgeStyle=none;html=1;rounded=0;strokeColor={wire_color};strokeWidth=2;",
+            exit_x=1, exit_y=0.5, entry_x=0, entry_y=0.5,
+        )
+
+    legend_y = y0 + n_pins * (box_h + row_gap) + 10
+    entries = [(t, f, s) for t, (f, s) in sorted(types_seen.items())]
+    if n_mapped < n_pins:
+        entries.append(("UNMAPPED", _UNMAPPED_FILL[0], _UNMAPPED_FILL[1]))
+    d.add_text("legend_title", "Pin interface:", left_x, legend_y, 100, 18, align="left", font_size=10, bold=True)
+    d.add_legend_row("legend", entries, x=left_x + 104, y=legend_y)
+
+    d.reserve_space(extra_h=100)
+    d.set_page_to_content(orientation="auto", margin=MARGIN)
+    d.add_border()
+    d.add_title_block(
+        "tb", doc_title=f"{dev_name} Wiring Concept",
+        subtitle=f"{dtype} · {sys_name}",
+        source="generated_doc/exports/exported_architecture.json",
+    )
+    return d
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -491,6 +620,14 @@ def main() -> int:
         out = outdir / f"pinout_{slug(ecu_data.get('name', match.stem))}.drawio"
         out.write_text(build_ecu_pinout_drawio(ecu_data, rel_source), encoding="utf-8")
         written.append(out)
+
+    wiring_sheets = build_device_wiring_sheets(arch, cfg)
+    if wiring_sheets:
+        out = outdir / "device_wiring_concept.drawio"
+        out.write_text(render_mxfile(wiring_sheets), encoding="utf-8")
+        written.append(out)
+    else:
+        print("[WARN] No sensor/actuator devices found; skipping device_wiring_concept.drawio.", file=sys.stderr)
 
     for p in written:
         print(p)
