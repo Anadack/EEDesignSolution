@@ -1195,8 +1195,22 @@ static int import_signal_batch(JsonReader *r, EEC_Architecture_t *arch,
         } else {
             sig->digital_structure = EEC_DIGITAL_STRUCTURE_UNSPECIFIED;
         }
-        /* Auto-generate clean signal name following SYSTEM_Function_[POSITION_]TYPE */
-        EEC_GenerateCleanSignalNameEx(sig, NULL, parse_pin_role(role_s));
+        /* Auto-generate clean signal name following SYSTEM_Function_[POSITION_]TYPE.
+         * The owning system's name is reachable via sensor/actuator->owner_system,
+         * set at device-creation time and always populated by the time signals are
+         * imported for an already-existing device (true at all 5 call sites of this
+         * function). Passing NULL unconditionally here was the root cause of every
+         * clean_signal_name getting the "UNKN_" system-code fallback regardless of
+         * which real system the device belonged to. */
+        {
+            const char *owning_system_name = NULL;
+            if (sensor && sensor->owner_system) {
+                owning_system_name = sensor->owner_system->name;
+            } else if (actuator && actuator->owner_system) {
+                owning_system_name = actuator->owner_system->name;
+            }
+            EEC_GenerateCleanSignalNameEx(sig, owning_system_name, parse_pin_role(role_s));
+        }
 
         {
             EEC_DevicePin_t *dp = NULL;

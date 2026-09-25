@@ -287,8 +287,16 @@ def _collect_signals(arch: dict) -> list[tuple[str, str, str, str]]:
                 if not isinstance(pin, dict):
                     continue
                 sig = pin.get('signal', {})
-                name = (sig.get('name', '') if isinstance(sig, dict)
-                        else (sig if isinstance(sig, str) else ''))
+                if isinstance(sig, dict):
+                    # Prefer the engine's auto-generated compliant name
+                    # (SYSTEM_Function_[POSITION_]TYPE) when present; it is
+                    # the framework's own authoritative "final" signal name
+                    # (see LOGICAL_ARCHITECTURE_GENERATOR.md's signal_name()
+                    # preference). Fall back to the raw/original name for
+                    # architectures exported before clean_name existed.
+                    name = sig.get('clean_name') or sig.get('name', '')
+                else:
+                    name = sig if isinstance(sig, str) else ''
                 name = str(name).strip()
                 if name and name not in ('', '-', 'N/A', 'NC', 'nc', 'none', 'None'):
                     pin_label = str(pin.get('name', pin.get('number', '')))
@@ -303,8 +311,10 @@ def _collect_signals(arch: dict) -> list[tuple[str, str, str, str]]:
             if not isinstance(pin, dict):
                 continue
             sig = pin.get('signal', {})
-            name = (sig.get('name', '') if isinstance(sig, dict)
-                    else (sig if isinstance(sig, str) else ''))
+            if isinstance(sig, dict):
+                name = sig.get('clean_name') or sig.get('name', '')
+            else:
+                name = sig if isinstance(sig, str) else ''
             name = str(name).strip()
             if name and name not in ('', '-', 'N/A', 'NC', 'nc', 'none', 'None'):
                 pin_label = str(pin.get('name', pin.get('physical_number', '')))

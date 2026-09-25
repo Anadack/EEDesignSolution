@@ -1,12 +1,14 @@
 {
   "schema_version": "eec-report-config-1.0",
   "architecture_json_candidates": [
+    "generated_doc/exports/exported_architecture.json",
     "generated_doc/exports/example_architecture.json",
     "generated_doc/exports/example_physical_architecture.json",
     "examples/example_architecture.json",
     "examples/example_physical_architecture.json"
   ],
   "physical_architecture_json_candidates": [
+    "generated_doc/exports/exported_physical_architecture.json",
     "generated_doc/exports/example_physical_architecture.json",
     "generated_doc/exports/example_architecture.json",
     "examples/example_physical_architecture.json",
