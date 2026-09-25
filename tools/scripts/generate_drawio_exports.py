@@ -507,7 +507,12 @@ def build_device_wiring_sheets(arch: dict[str, Any], cfg: dict[str, Any]) -> lis
 def _build_one_wiring_sheet(sys_name: str, dev: dict[str, Any], dtype: str,
                              rows: list[dict[str, Any]]) -> DrawioDiagram:
     dev_name = str(dev.get("name", ""))
-    d = DrawioDiagram(name=f"{dtype[:3]}_{dev_name}"[:60])
+    # 90 chars comfortably covers real device names (63 observed max in the
+    # current library) with margin; render_mxfile() also guarantees the
+    # underlying <diagram> id stays unique even if two names still collide
+    # after this cap, so a long tail here is a cosmetic tab-label question,
+    # never a file-won't-load one.
+    d = DrawioDiagram(name=f"{dtype[:3]}_{dev_name}"[:90])
 
     rows = sorted(rows, key=_cavity_sort_key)
     n_pins = len(rows)

@@ -728,7 +728,7 @@ GROUND" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eceff3;strokeColor=#4
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram name="ACT_Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_" id="ACT_Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_1">
+  <diagram name="ACT_Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN" id="ACT_Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_GROUND_RETURN_1">
     <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
@@ -757,7 +757,7 @@ GROUND" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eceff3;strokeColor=#4
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram name="ACT_Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SID" id="ACT_Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SID_1">
+  <diagram name="ACT_Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SIDE" id="ACT_Rexroth_D36_CLASS_H_20W_OD0236403POB00_HIGH_SIDE_LOW_SIDE_1">
     <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
@@ -790,7 +790,7 @@ OUTPUT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e9fff5;strokeColor=#2
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram name="ACT_Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SID" id="ACT_Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SID_1">
+  <diagram name="ACT_Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN" id="ACT_Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_GROUN_1">
     <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
@@ -819,7 +819,7 @@ GROUND" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eceff3;strokeColor=#4
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram name="ACT_Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SID" id="ACT_Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SID_1">
+  <diagram name="ACT_Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_LOW_S" id="ACT_Rexroth_GP37_PROPORTIONAL_CLASS_H_37_C4_R11p500_HIGH_SIDE_LOW_S_1">
     <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
@@ -918,7 +918,7 @@ INPUT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf3ff;strokeColor=#5a
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram name="ACT_Rexroth_S8_356_CLASS_H_17W_OD0227203POC00_HIGH_SIDE_GROU" id="ACT_Rexroth_S8_356_CLASS_H_17W_OD0227203POC00_HIGH_SIDE_GROU_1">
+  <diagram name="ACT_Rexroth_S8_356_CLASS_H_17W_OD0227203POC00_HIGH_SIDE_GROUND_RETU" id="ACT_Rexroth_S8_356_CLASS_H_17W_OD0227203POC00_HIGH_SIDE_GROUND_RETU_1">
     <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />

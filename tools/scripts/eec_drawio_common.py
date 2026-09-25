@@ -322,12 +322,21 @@ class DrawioDiagram:
         token = re.sub(r"[^A-Za-z0-9]+", "_", self.name).strip("_") or "Page"
         return f"{token}_1"
 
-    def diagram_xml(self) -> str:
+    def diagram_xml(self, diagram_id: Optional[str] = None) -> str:
         """Just this sheet's <diagram>...</diagram> block, for embedding
-        alongside other sheets in one multi-tab file via render_mxfile()."""
+        alongside other sheets in one multi-tab file via render_mxfile().
+
+        diagram_id overrides the id derived from self.name. render_mxfile()
+        uses this to guarantee document-wide uniqueness: two sheets whose
+        names collide after _diagram_id()'s slugification (e.g. two long
+        device names identical in their first N characters) would otherwise
+        emit two <diagram> tags with the same id, which draw.io/diagrams.net
+        rejects outright when opening the file — not merely a cosmetic
+        duplicate-tab-label issue."""
         body = "".join(self._cells)
+        did = diagram_id if diagram_id is not None else self._diagram_id()
         return (
-            f'  <diagram name="{esc_attr(self.name)}" id="{esc_attr(self._diagram_id())}">\n'
+            f'  <diagram name="{esc_attr(self.name)}" id="{esc_attr(did)}">\n'
             f'    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" '
             f'connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{self.page_w:g}" '
             f'pageHeight="{self.page_h:g}" background="#ffffff" math="0" shadow="0">\n'
@@ -358,7 +367,14 @@ def render_mxfile(sheets: list["DrawioDiagram"]) -> str:
     "type"/"modified" attributes) — verified against a user-supplied
     native draw.io export rather than a hand-guessed header shape.
     """
-    body = "".join(s.diagram_xml() for s in sheets)
+    seen: dict[str, int] = {}
+    parts = []
+    for s in sheets:
+        base_id = s._diagram_id()
+        seen[base_id] = seen.get(base_id, 0) + 1
+        did = base_id if seen[base_id] == 1 else f"{base_id}_{seen[base_id]}"
+        parts.append(s.diagram_xml(did))
+    body = "".join(parts)
     return (
         '<mxfile host="app.diagrams.net" agent="Mozilla/5.0" version="24.0.0">\n'
         f'{body}'
