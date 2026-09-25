@@ -8,6 +8,7 @@
 #   3. Arch HTML — architecture views (allocation, bus, signal-flow, pinout…)
 #   4. Doc suite — signal dictionary, dataflow, safety trace, harness book…
 #   5. Extras    — estimation, system overview, system config viewer
+#   6. Draw.io   — print-ready .drawio exports (Polarion / A4)
 #
 # Usage:
 #   ./run.sh                   full pipeline
@@ -30,7 +31,7 @@ APP="$ROOT/app"
 SKIP_BUILD=0
 SKIP_RUN=0
 WARN_COUNT=0
-TOTAL_STEPS=7
+TOTAL_STEPS=8
 
 for arg in "$@"; do
     case "$arg" in
@@ -169,6 +170,19 @@ step 7 "Architecture console — single-file bundle of every report"
 py_run generate_architecture_console_html.py
 
 # =============================================================================
+# STEP 8 — Print-ready draw.io exports (Polarion / A4)
+#
+# Kept as its own non-fatal step (like STEP 6/7 above, via py_run) rather
+# than folded into generate_all_architecture_docs.py: this format is still
+# being validated against a real Polarion instance, so a problem here must
+# never be able to fail the --strict documentation gate CI runs separately —
+# see generate_drawio_exports.py's own docstring.
+# =============================================================================
+step 8 "Print-ready draw.io exports (Polarion / A4)"
+
+py_run generate_drawio_exports.py
+
+# =============================================================================
 # Summary
 # =============================================================================
 echo
@@ -182,6 +196,7 @@ echo
 echo "  Exports : $GENDIR/exports/"
 echo "  Reports : $GENDIR/architecture_html/"
 echo "  Console : $GENDIR/architecture_console.html  (single-file, all reports embedded)"
+echo "  Draw.io : $GENDIR/drawio/  (Polarion / A4 print-ready)"
 echo
 echo "  Release packaging (separate step):"
 echo "    python3 tools/scripts/package_release.py"

@@ -2,12 +2,13 @@
 # run.ps1 - E/E Architect Design full build + report pipeline (Windows/PowerShell)
 #
 # PowerShell equivalent of run.sh for environments without bash (native Windows
-# + VS Code). Executes the same 6 steps, in the same order:
+# + VS Code). Executes the same steps, in the same order:
 #   1. Compile   - build the C framework binary (app.exe)
 #   2. Run       - execute app.exe, refresh generated_doc/exports/
 #   3. Arch HTML - architecture views (allocation, bus, signal-flow, pinout...)
 #   4. Doc suite - signal dictionary, dataflow, safety trace, harness book...
 #   5. Extras    - estimation, system overview, system config viewer, connector view
+#   6. Draw.io   - print-ready .drawio exports (Polarion / A4)
 #
 # Usage (PowerShell terminal, repo root):
 #   .\run.ps1                      full pipeline
@@ -42,7 +43,7 @@ $GenDir = Join-Path $Root "generated_doc"
 $App    = Join-Path $Root "app.exe"
 
 $WarnCount  = 0
-$TotalSteps = 7
+$TotalSteps = 8
 
 # -----------------------------------------------------------------------------
 function Find-Python {
@@ -225,6 +226,19 @@ Step 7 "Architecture console - single-file bundle of every report"
 Invoke-PyRun "generate_architecture_console_html.py"
 
 # =============================================================================
+# STEP 8 - Print-ready draw.io exports (Polarion / A4)
+#
+# Kept as its own non-fatal step (like STEP 6/7 above, via Invoke-PyRun)
+# rather than folded into generate_all_architecture_docs.py: this format is
+# still being validated against a real Polarion instance, so a problem here
+# must never be able to fail the --strict documentation gate CI runs
+# separately - see generate_drawio_exports.py's own docstring.
+# =============================================================================
+Step 8 "Print-ready draw.io exports (Polarion / A4)"
+
+Invoke-PyRun "generate_drawio_exports.py"
+
+# =============================================================================
 # Summary
 # =============================================================================
 Write-Host ""
@@ -238,6 +252,7 @@ Write-Host ""
 Write-Host "  Exports : $GenDir\exports\"
 Write-Host "  Reports : $GenDir\architecture_html\"
 Write-Host "  Console : $GenDir\architecture_console.html  (single-file, all reports embedded)"
+Write-Host "  Draw.io : $GenDir\drawio\  (Polarion / A4 print-ready)"
 Write-Host ""
 Write-Host "  Release packaging (separate step):"
 Write-Host "    python tools\scripts\package_release.py"
