@@ -7,7 +7,7 @@
 #   2. Run       — execute app, refresh generated_doc/exports/
 #   3. Arch HTML — architecture views (allocation, bus, signal-flow, pinout…)
 #   4. Doc suite — signal dictionary, dataflow, safety trace, harness book…
-#   5. Extras    — estimation, system overview, system config viewer
+#   5. Extras    — estimation, system config viewer
 #   6. Draw.io   — print-ready .drawio exports (Polarion / A4)
 #
 # Usage:
@@ -155,10 +155,9 @@ step 5 "Documentation suite — signal dictionary, dataflow, safety, harness…"
 # =============================================================================
 # STEP 6 — Standalone reports not covered by the suites above
 # =============================================================================
-step 6 "Standalone reports — estimation, system overview, config viewer, connector view"
+step 6 "Standalone reports — estimation, config viewer, connector view"
 
 py_run generate_estimation_html.py
-py_run generate_system_overview_html.py
 py_run generate_system_configuration_viewer_html.py
 py_run generate_connector_view_html.py
 

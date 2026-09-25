@@ -7,7 +7,7 @@
 #   2. Run       - execute app.exe, refresh generated_doc/exports/
 #   3. Arch HTML - architecture views (allocation, bus, signal-flow, pinout...)
 #   4. Doc suite - signal dictionary, dataflow, safety trace, harness book...
-#   5. Extras    - estimation, system overview, system config viewer, connector view
+#   5. Extras    - estimation, system config viewer, connector view
 #   6. Draw.io   - print-ready .drawio exports (Polarion / A4)
 #
 # Usage (PowerShell terminal, repo root):
@@ -211,10 +211,9 @@ try {
 # =============================================================================
 # STEP 6 - Standalone reports not covered by the suites above
 # =============================================================================
-Step 6 "Standalone reports - estimation, system overview, config viewer, connector view"
+Step 6 "Standalone reports - estimation, config viewer, connector view"
 
 Invoke-PyRun "generate_estimation_html.py"
-Invoke-PyRun "generate_system_overview_html.py"
 Invoke-PyRun "generate_system_configuration_viewer_html.py"
 Invoke-PyRun "generate_connector_view_html.py"
 
